@@ -1,13 +1,5 @@
 # Horizon: a personal task board where position means time
 
-## About me and how to work with me
-I'm a librarian and a proficient vibe coder, not a trained programmer. Explain
-technical decisions in plain language as you go. Only implement what I
-explicitly ask for. If you see something else that should change, propose it,
-explain why, and wait for my approval before writing it. Work in phases and stop
-at the end of each phase so I can test. Before writing any code in Phase 1,
-propose the Firestore data model and wait for my OK.
-
 ## What this is, and what it refuses to be
 A single-user board that shows what I need to do and when, at a glance. It is
 not a team tool. No notifications, no streaks, no engagement tricks. The goal is
@@ -212,17 +204,34 @@ owner. No user, including an admin, can view another user's Done record.
 
 Explain how your proposed data model and file structure leave room for this.
 
-## Phases
-Phase 1: Sign-in, the Horizon, the Someday drawer, quick add (title only),
-card editing, drag to reschedule, hard and soft deadlines, repeating cards,
-morning triage, the Since yesterday line, the Done record, Firestore
-persistence. Stop here.
+## Testing aids
+Time-based behavior (cards drifting between zones, morning triage, Since
+yesterday) cannot be tested by waiting. Support a URL parameter such as
+`?today=2026-10-22` that makes the whole app treat that date as today. It only
+changes what the app displays and computes; it never rewrites stored dates.
 
-Phase 2: Projects and project pages. Stop here.
+## Build order
+Each slice ends with something I can open and click. Plan it, build it, let me
+test it, commit it, then start the next slice in a fresh session.
 
-Phase 3: The Apps Script backend, the screenshot-to-card pipeline, Haiku
-parsing for quick add, and the Inbox review panel. Stop here.
+Phase 1, the board:
+- 1a: Config file, Google sign-in, Firestore rules, and the Horizon rendering
+  cards from Firestore (I can add test cards by hand in the console).
+- 1b: Quick add (title only), card editing, marking done, in-progress status.
+- 1c: Drag to reschedule, reordering within zones, the Someday drawer.
+- 1d: Hard and soft deadlines, morning triage, Let it go, the Since yesterday
+  line, the 14-day header strip, and the `?today=` testing parameter.
+- 1e: Repeating cards.
+- 1f: The Done record view.
 
-For each phase, include the setup steps I need to do myself in the Firebase
+Phase 2: Projects and project pages.
+
+Phase 3:
+- 3a: The Apps Script backend with token check, allowlist, and rate limit,
+  tested on its own before the site uses it.
+- 3b: Screenshot to Inbox draft, and the Inbox review panel.
+- 3c: Haiku parsing for quick add.
+
+For each slice, include the setup steps I need to do myself in the Firebase
 console, Google Apps Script, or GitHub, written for someone who has done this
 a few times but not often.
