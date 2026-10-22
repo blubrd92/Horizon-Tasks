@@ -1,0 +1,144 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Horizon Done record</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&amp;family=IBM+Plex+Mono:wght@400;500&amp;family=IBM+Plex+Sans:wght@400;500;600&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#F3F1EB}
+a{color:#2F5BD3}a:hover{color:#1C3E9E}
+button{font-family:inherit}
+</style>
+</helmet>
+<div style="min-height: 1180px; box-sizing: border-box; font-family: 'IBM Plex Sans', system-ui, sans-serif; color: #18191C; background: #F3F1EB">
+
+  <header style="background: #FBFAF6; border-bottom: 1px solid #E2DFD6; padding: 18px 32px; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 16px">
+    <div style="font-family: 'Bricolage Grotesque', 'IBM Plex Sans', sans-serif; font-size: 28px; font-weight: 700; letter-spacing: -0.02em">Horizon</div>
+    <a href="Main.dc.html" style="height: 44px; padding: 0 16px; border: 1px solid #DDD9CF; background: #FFFFFF; border-radius: 10px; font-size: 14px; color: #18191C; text-decoration: none; display: inline-flex; align-items: center; gap: 8px; box-sizing: border-box">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 18l-6-6 6-6"></path></svg>
+      Back to the board
+    </a>
+  </header>
+
+  <main style="max-width: 1040px; margin: 0 auto; padding: 40px 32px 64px; display: flex; flex-direction: column; gap: 32px">
+
+    <div style="display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 20px">
+      <div style="display: flex; flex-direction: column; gap: 6px">
+        <h1 style="margin: 0; font-family: 'Bricolage Grotesque', sans-serif; font-size: 52px; font-weight: 700; letter-spacing: -0.03em; line-height: 1">What you did</h1>
+        <p style="margin: 0; font-size: 16px; color: #4B4F57">October so far. Every card you finished, kept.</p>
+      </div>
+      <div style="display: flex; flex-wrap: wrap; gap: 8px; align-items: center">
+        <div role="group" aria-label="Time range" style="display: flex; background: #E8E5DD; border-radius: 12px; padding: 4px; gap: 2px">
+          <button type="button" style="height: 40px; padding: 0 14px; border: none; background: transparent; border-radius: 9px; font-size: 14px; color: #33363C; cursor: pointer">Week</button>
+          <button type="button" aria-pressed="true" style="height: 40px; padding: 0 14px; border: none; background: #FFFFFF; border-radius: 9px; font-size: 14px; font-weight: 600; color: #18191C; cursor: pointer; box-shadow: 0 1px 2px rgba(24,25,28,0.08)">Month</button>
+          <button type="button" style="height: 40px; padding: 0 14px; border: none; background: transparent; border-radius: 9px; font-size: 14px; color: #33363C; cursor: pointer">Year</button>
+        </div>
+        <button type="button" style="height: 48px; padding: 0 16px; border: 1px solid #DDD9CF; background: #FFFFFF; border-radius: 12px; font-size: 14px; color: #18191C; cursor: pointer; display: flex; align-items: center; gap: 8px">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="12" height="12" rx="2"></rect><path d="M5 15H4a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v1"></path></svg>
+          Copy as text
+        </button>
+      </div>
+    </div>
+
+    <section aria-label="Finished by category" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 12px">
+      <div style="background: #18191C; color: #FBFAF6; border-radius: 18px; padding: 18px 20px; display: flex; flex-direction: column; gap: 4px">
+        <span style="font-family: 'Bricolage Grotesque', sans-serif; font-size: 44px; font-weight: 700; line-height: 1">{{total}}</span>
+        <span style="font-size: 14px; color: #D8D5CD">cards finished</span>
+      </div>
+      <sc-for list="{{summary}}" as="cat" hint-placeholder-count="5">
+        <div style="background: #FFFFFF; border: 1px solid #DDD9CF; border-radius: 18px; padding: 18px 20px; display: flex; flex-direction: column; gap: 4px">
+          <span style="font-family: 'Bricolage Grotesque', sans-serif; font-size: 36px; font-weight: 700; line-height: 1">{{cat.count}}</span>
+          <span style="display: flex; align-items: center; gap: 7px; font-size: 13px; color: #4B4F57">
+            <span style="{{cat.swatch}}"></span>
+            {{cat.name}}
+          </span>
+        </div>
+      </sc-for>
+    </section>
+
+    <sc-for list="{{weeks}}" as="week" hint-placeholder-count="3">
+      <section aria-label="{{week.label}}" style="display: flex; flex-direction: column; gap: 10px">
+        <div style="display: flex; align-items: baseline; justify-content: space-between; gap: 12px; padding: 0 4px">
+          <h2 style="margin: 0; font-family: 'Bricolage Grotesque', sans-serif; font-size: 22px; font-weight: 700">{{week.label}}</h2>
+          <span style="font-family: 'IBM Plex Mono', monospace; font-size: 12px; color: #4B4F57">{{week.countLabel}}</span>
+        </div>
+        <ul style="list-style: none; margin: 0; padding: 0; background: #FFFFFF; border: 1px solid #DDD9CF; border-radius: 18px; overflow: hidden">
+          <sc-for list="{{week.items}}" as="item" hint-placeholder-count="3">
+            <li style="{{item.rowStyle}}">
+              <svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true" style="flex: none"><circle cx="12" cy="12" r="10" fill="#E3E9FA"></circle><path d="M7.5 12.5l3 3 6-6.5" fill="none" stroke="#2F5BD3" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+              <span style="flex: 1 1 260px; min-width: 0; font-size: 15px; font-weight: 500">{{item.title}}</span>
+              <span style="display: flex; align-items: center; gap: 7px; font-size: 13px; color: #4B4F57; flex: 0 0 190px">
+                <span style="{{item.swatch}}"></span>
+                {{item.category}}
+              </span>
+              <span style="font-family: 'IBM Plex Mono', monospace; font-size: 12px; color: #33363C; flex: 0 0 82px; text-align: right">{{item.date}}</span>
+            </li>
+          </sc-for>
+        </ul>
+      </section>
+    </sc-for>
+
+    <div style="display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; padding: 16px 20px; border: 1px dashed #CFCBC1; border-radius: 18px">
+      <span style="font-size: 14px; color: #4B4F57">You let 1 card go this month. It&rsquo;s kept here too, quietly.</span>
+      <button type="button" style="height: 44px; padding: 0 14px; border: 1px solid #DDD9CF; background: #FFFFFF; border-radius: 10px; font-size: 14px; color: #18191C; cursor: pointer">Show</button>
+    </div>
+  </main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":1180}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const cats = {
+      'Collection Development': '#2F7D6B',
+      'Programs': '#6A4FB3',
+      'Digital Resources': '#3B6FB6',
+      'Saturday PIC': '#B07A00',
+      'Admin': '#6B6F78'
+    };
+    const sw = (c) => 'width: 10px; height: 10px; border-radius: 3px; display: inline-block; flex: none; background: ' + cats[c];
+    const raw = [
+      { label: 'This week', items: [
+        ['Booklist descriptions for the November display', 'Programs', 'Wed, Oct 21'],
+        ['Weekly order: 600s nonfiction', 'Collection Development', 'Tue, Oct 20'],
+        ['Sorted out a patron Libby login problem', 'Digital Resources', 'Mon, Oct 19']
+      ]},
+      { label: 'Oct 12 to 18', items: [
+        ['Saturday opening checklist', 'Saturday PIC', 'Sat, Oct 17'],
+        ['Sobremesa Literaria session', 'Programs', 'Thu, Oct 15'],
+        ['Weekly order: 300s nonfiction', 'Collection Development', 'Thu, Oct 15'],
+        ['Kanopy usage check', 'Digital Resources', 'Tue, Oct 13']
+      ]},
+      { label: 'Oct 5 to 11', items: [
+        ['Saturday opening checklist', 'Saturday PIC', 'Sat, Oct 10'],
+        ['Graphic novel order', 'Collection Development', 'Fri, Oct 9'],
+        ['Weekly order: 300s nonfiction', 'Collection Development', 'Thu, Oct 8'],
+        ['Video game collection inventory', 'Collection Development', 'Tue, Oct 6']
+      ]}
+    ];
+    const counts = {};
+    let total = 0;
+    const weeks = raw.map((w) => ({
+      label: w.label,
+      countLabel: w.items.length + ' finished',
+      items: w.items.map((it, i) => {
+        counts[it[1]] = (counts[it[1]] || 0) + 1;
+        total++;
+        return {
+          title: it[0], category: it[1], date: it[2], swatch: sw(it[1]),
+          rowStyle: 'display: flex; flex-wrap: wrap; align-items: center; gap: 14px; padding: 14px 20px;' + (i > 0 ? ' border-top: 1px solid #ECE9E1;' : '')
+        };
+      })
+    }));
+    const summary = Object.keys(cats).filter((c) => counts[c]).map((c) => ({ name: c, count: String(counts[c]), swatch: sw(c) }));
+    return { weeks, summary, total: String(total) };
+  }
+}
+</script>
+</body>
+</html>
