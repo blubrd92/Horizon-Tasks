@@ -18,7 +18,8 @@ drawer). Start it in a fresh session: read this file, then the 1c parts of
 SPEC.md ("Core concept: two layers", the Someday drawer paragraph). Two
 things from 1b to settle there: whether the "Added to Someday. Edit" line
 stays once the drawer exists, and where a card's manual order is stored
-(reordering needs a field the 1a/1b cards don't have yet).
+(reordering needs a field the 1a/1b cards don't have yet). Also decide how
+dragging works on a phone, where there's no mouse.
 
 ## Slice 1b: quick add, card editing, marking done, in progress
 

@@ -30,3 +30,14 @@ every time. Visual references are in `/design`.
 
 ## Style
 - Match the colors, type, and spacing in SPEC.md "Visual design" and `/design`.
+
+## Handing off to the next session
+- Whenever we finish a step and the next one belongs in a fresh session (a
+  slice confirmed, committed, and merged, for example), end your message
+  with the prompt for that next session in a single fenced code block, so I
+  can copy it with one click. Put nothing else inside the block.
+- Make the prompt stand on its own: name the slice, say to read PLAN.md
+  first, point to the SPEC.md sections and `/design` files it needs, carry
+  over any open questions PLAN.md lists, and end with "plan first, write the
+  plan to PLAN.md, then build and stop so I can test."
+- Keep the "Next" line in PLAN.md's Status section saying the same thing.
