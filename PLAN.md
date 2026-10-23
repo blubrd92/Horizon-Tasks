@@ -62,7 +62,18 @@ mockup's tab.
 use 16px side margins instead of 32px, and the "Enter" key hint in quick add
 is hidden on phones, which have no physical Enter key to hint at.
 
-Files touched: `js/drag.js` (the slot, zone hopping), `js/someday.js` and
+**5. A double-click on a panel's X can't sign you out** (added after your
+second note). The editor's X, and on a phone the Someday sheet's X, sit
+right over the Sign out button. A double-click on the X closed the panel
+with the first click and signed you out with the second. Now Sign out
+ignores clicks for 0.6 seconds after any panel closes (the editor, the
+Someday sheet, the date box). A double-click lands well inside that window,
+and nobody signs out on purpose that fast, so it costs nothing when you do
+mean it. The other fix I considered, an "Are you sure?" step on Sign out,
+would also catch a stray single click, but it adds a step every time. Say if
+you'd like it anyway.
+
+Files touched: `js/app.js` (the Sign out guard), `js/drag.js` (the slot, zone hopping), `js/someday.js` and
 `index.html` (the sheet's close button), `css/horizon.css` (everything
 visual). No data or Firebase changes.
 
@@ -82,6 +93,8 @@ Test list for this round:
 - [ ] Phone: scroll to the bottom of a long zone; the last card clears the
       pill.
 - [ ] Desktop: the side tab and drawer look and work as before.
+- [ ] Open a card, then double-click the panel's X: the panel closes and
+      you're still signed in. Wait a moment, click Sign out: it works.
 
 What I checked here, with the same pretend Firebase and simulated touch:
 the whole first-round list again plus this round's (80 checks, all

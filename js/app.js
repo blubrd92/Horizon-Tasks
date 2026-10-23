@@ -39,6 +39,17 @@ let uid = null;
 let dragging = false;
 let drawWaiting = false;
 
+// A panel's X sits right over the Sign out button, so a double-click on the
+// X would close the panel and then sign you out. For a moment after any
+// panel closes, Sign out ignores clicks.
+const SIGNOUT_PAUSE = 600;
+let panelClosedAt = 0;
+function notePanelClosed() {
+  panelClosedAt = performance.now();
+}
+for (const id of ['editor', 'datepick']) document.getElementById(id).addEventListener('close', notePanelClosed);
+document.getElementById('someday-close').addEventListener('click', notePanelClosed);
+
 const someday = setupSomeday({
   tab: document.getElementById('someday-tab'),
   panel: document.getElementById('someday-panel'),
@@ -97,7 +108,10 @@ async function start() {
       }
     }
   });
-  signoutButton.addEventListener('click', () => fb.signOut());
+  signoutButton.addEventListener('click', () => {
+    if (performance.now() - panelClosedAt < SIGNOUT_PAUSE) return;
+    fb.signOut();
+  });
   notallowedSignout.addEventListener('click', () => fb.signOut());
 
   const quickAdd = setupQuickAdd({
