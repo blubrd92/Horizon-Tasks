@@ -18,11 +18,12 @@ import {
   query,
   serverTimestamp,
   setDoc,
+  updateDoc,
   where,
 } from 'https://www.gstatic.com/firebasejs/12.19.0/firebase-firestore.js';
 
 import { config } from '../config.js';
-import { ACTIVE_STATUSES, normalizeCard } from './model.js';
+import { ACTIVE_STATUSES, STATUS, normalizeCard } from './model.js';
 
 const app = initializeApp(config.firebase);
 const auth = getAuth(app);
@@ -76,7 +77,29 @@ export function watchActiveCards(uid, onChange, onError) {
   );
   return onSnapshot(
     q,
-    (snapshot) => onChange(snapshot.docs.map((d) => normalizeCard(d.id, d.data()))),
+    // "estimate" fills in a just-added card's createdAt right away, instead
+    // of leaving it blank until Firestore confirms the save.
+    (snapshot) => onChange(snapshot.docs.map((d) => normalizeCard(d.id, d.data({ serverTimestamps: 'estimate' })))),
     onError,
   );
+}
+
+// Saves a new card. Returns its id at once (the board shows the card before
+// Firestore confirms), plus `saved`, which fails if Firestore refuses it.
+export function addCard(uid, fields) {
+  const ref = doc(collection(db, 'users', uid, 'cards'));
+  const saved = setDoc(ref, { ...fields, createdAt: serverTimestamp(), updatedAt: serverTimestamp() });
+  return { id: ref.id, saved };
+}
+
+// Writes only the fields in `changes`, so anything changed elsewhere in the
+// meantime is left alone.
+export function updateCard(uid, cardId, changes) {
+  return updateDoc(doc(db, 'users', uid, 'cards', cardId), { ...changes, updatedAt: serverTimestamp() });
+}
+
+// Marks a card done, along with any edits made at the same moment. The card
+// stays in Firestore for the Done record; the board stops showing it.
+export function markDone(uid, cardId, changes = {}) {
+  return updateCard(uid, cardId, { ...changes, status: STATUS.DONE, completedAt: serverTimestamp() });
 }

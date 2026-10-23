@@ -34,6 +34,22 @@ export const STATUS = {
 // Cards that belong on the board (and in the Someday drawer).
 export const ACTIVE_STATUSES = [STATUS.OPEN, STATUS.IN_PROGRESS];
 
+// A card as quick add creates it: just a title, and either no date (Someday)
+// or today. firebase.js adds the createdAt and updatedAt times.
+export function newCard({ title, dueDate = null }) {
+  return {
+    title,
+    notes: '',
+    dueDate,
+    deadlineType: 'soft',
+    projectId: null,
+    category: null,
+    status: STATUS.OPEN,
+    repeat: 'none',
+    source: 'quick_add',
+  };
+}
+
 // Turns a Firestore card document into a predictable object, filling in
 // defaults so a card typed by hand in the console with a few fields missing
 // still renders.
