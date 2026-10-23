@@ -2,11 +2,15 @@
 // sync with Firestore.
 
 import { config } from '../config.js';
-import { formatShort, todayISO } from './dates.js';
-import { renderBoard } from './board.js';
+import { formatShort, todayISO, zoneBounds, zoneFor, zoneStart } from './dates.js';
+import { cardsIn, describeZone, placeOf, renderBoard, renderSomeday } from './board.js';
 import { newCard } from './model.js';
+import { planDrop } from './order.js';
 import { setupQuickAdd } from './quickadd.js';
 import { setupEditor } from './editor.js';
+import { setupDrag } from './drag.js';
+import { setupSomeday } from './someday.js';
+import { setupDatePick } from './datepick.js';
 
 const views = {
   setup: document.getElementById('view-setup'),
@@ -15,6 +19,8 @@ const views = {
   board: document.getElementById('view-board'),
 };
 const zonesEl = document.getElementById('zones');
+const horizonEl = document.getElementById('horizon');
+const somedayCardsEl = document.getElementById('someday-cards');
 const boardMessage = document.getElementById('board-message');
 const signinButton = document.getElementById('signin-button');
 const signinError = document.getElementById('signin-error');
@@ -28,6 +34,16 @@ let latest = null;
 let drawnForDay = null;
 // The signed-in, approved user's ID, or null. Every save goes under it.
 let uid = null;
+// While a card is being dragged, redrawing would pull it out from under the
+// pointer, so news from Firestore waits until the card is dropped.
+let dragging = false;
+let drawWaiting = false;
+
+const someday = setupSomeday({
+  tab: document.getElementById('someday-tab'),
+  panel: document.getElementById('someday-panel'),
+  counts: document.querySelectorAll('[data-someday-count]'),
+});
 
 function show(name) {
   for (const [key, el] of Object.entries(views)) el.hidden = key !== name;
@@ -36,8 +52,14 @@ function show(name) {
 
 function draw() {
   if (!latest) return;
+  if (dragging) {
+    drawWaiting = true;
+    return;
+  }
   drawnForDay = todayISO();
-  renderBoard(zonesEl, { ...latest, today: drawnForDay });
+  const data = { ...latest, today: drawnForDay };
+  renderBoard(zonesEl, data);
+  someday.setCount(renderSomeday(somedayCardsEl, data));
 }
 
 // Cards drift left at midnight even if the page stays open: once a minute,
@@ -86,7 +108,12 @@ async function start() {
   });
 
   const editor = setupEditor({
-    onSave: (cardId, changes) => fb.updateCard(uid, cardId, changes).catch(showSaveError),
+    onSave: (cardId, changes) => {
+      // A new date means a new zone, where the card's old place among its
+      // neighbors means nothing; it goes back to date order (see order.js).
+      if ('dueDate' in changes) changes.order = null;
+      fb.updateCard(uid, cardId, changes).catch(showSaveError);
+    },
     onDone: (cardId, changes) => fb.markDone(uid, cardId, changes).catch(showSaveError),
     onCreate: (values) => {
       const { id, saved } = fb.addCard(uid, { ...newCard(values), ...values });
@@ -105,7 +132,7 @@ async function start() {
       }
       // The board redraws whenever Firestore sends news, which replaces the
       // card that opened the panel. Focus goes back to the new copy of it.
-      const button = zonesEl.querySelector(`[data-card-id="${CSS.escape(card.id)}"]`);
+      const button = views.board.querySelector(`[data-card-id="${CSS.escape(card.id)}"]`);
       if (button) button.focus();
     },
   });
@@ -121,10 +148,102 @@ async function start() {
     if (card) editor.open(card, latest.categories);
   }
 
-  zonesEl.addEventListener('click', (event) => {
-    const button = event.target.closest('[data-card-id]');
-    if (button) openCard(button.dataset.cardId);
+  for (const el of [zonesEl, somedayCardsEl]) {
+    el.addEventListener('click', (event) => {
+      const button = event.target.closest('[data-card-id]');
+      if (button) openCard(button.dataset.cardId);
+    });
+  }
+
+  const datePick = setupDatePick();
+
+  setupDrag({
+    root: views.board,
+    scrollers: () => [horizonEl, somedayCardsEl],
+    canDrop: (place, cardId) => {
+      const card = findCard(cardId);
+      if (!card || !uid) return false;
+      const bounds = zoneBounds(todayISO());
+      // Rearranging where it already is is always fine.
+      if (place === placeOf(card, bounds)) return true;
+      // Nobody means to schedule something in the past.
+      if (place === 'overdue') return false;
+      // On a Sunday, This Week has no days left.
+      if (place === 'week' && bounds.weekEnd <= bounds.today) return false;
+      return true;
+    },
+    onStart: (cardId, cardEl) => {
+      dragging = true;
+      // On a phone the open drawer covers the board; get it out of the way
+      // so the card can be dropped on a zone.
+      if (someday.coversBoard() && somedayCardsEl.contains(cardEl)) someday.close();
+    },
+    onEnd: () => {
+      dragging = false;
+      if (drawWaiting) {
+        drawWaiting = false;
+        draw();
+      }
+    },
+    onDrop: (drop) => handleDrop(drop).catch(showSaveError),
   });
+
+  // What a drop means. place is a zone ("today", "week", ...) or "someday";
+  // index is the card's new position among the cards already there.
+  async function handleDrop({ cardId, place, index }) {
+    const card = findCard(cardId);
+    if (!card || !uid) return;
+    const today = todayISO();
+    const from = placeOf(card, zoneBounds(today));
+    // The cards there now, in their shown order, without the dropped one.
+    const neighborIds = cardsIn(place, latest.cards, today)
+      .map((c) => c.id)
+      .filter((id) => id !== cardId);
+
+    let dueDate = card.dueDate;
+    if (place === from) {
+      const shown = cardsIn(place, latest.cards, today).map((c) => c.id);
+      if (shown.indexOf(cardId) === index) return; // dropped where it was
+    } else if (place === 'someday') {
+      dueDate = null;
+    } else if (place === 'today') {
+      dueDate = today;
+    } else {
+      const { name, range } = describeZone(place, today);
+      dueDate = await datePick.ask({
+        title: `Move to ${name}`,
+        card: card.title,
+        rangeText: place === 'later' ? `Later is anything ${range}.` : `${name} runs ${range}.`,
+        preset: zoneStart(place, zoneBounds(today)),
+      });
+      if (!dueDate) return;
+    }
+
+    // The picker may have been open a while; work from the freshest cards.
+    const moved = findCard(cardId);
+    if (!moved || !uid) return;
+    const updates = new Map();
+    if (dueDate !== moved.dueDate) updates.set(cardId, { dueDate });
+
+    const lands = dueDate ? zoneFor(dueDate, zoneBounds(todayISO())) : 'someday';
+    if (lands !== place) {
+      // A date picked outside the zone it was dropped on: the card goes
+      // where its date says, in date order.
+      updates.set(cardId, { dueDate, order: null });
+    } else {
+      const list = neighborIds.map(findCard).filter(Boolean);
+      const at = Math.min(index, list.length);
+      list.splice(at, 0, { ...moved, dueDate });
+      for (const [id, order] of planDrop(list, at)) {
+        updates.set(id, { ...updates.get(id), order });
+      }
+    }
+    await fb.saveCards(uid, [...updates].map(([id, changes]) => ({ id, changes })));
+  }
+
+  function findCard(cardId) {
+    return latest ? latest.cards.find((c) => c.id === cardId) : undefined;
+  }
 
   fb.watchAuth(async (user) => {
     const thisChange = ++authChange;
@@ -135,6 +254,10 @@ async function start() {
     latest = null;
     uid = null;
     zonesEl.innerHTML = '';
+    somedayCardsEl.innerHTML = '';
+    someday.setCount(0);
+    someday.close();
+    datePick.cancel();
     editor.close();
     quickAdd.clear();
     quickAdd.setEnabled(false);

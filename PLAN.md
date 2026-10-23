@@ -13,13 +13,221 @@ updates, and done cards disappearing all checked out.
 card, Ctrl+Enter adds to Someday, Shift+Enter adds to Today), the editing
 panel, Mark done, and the In progress pill.
 
-**Next: slice 1c** (drag to reschedule, reordering within zones, the Someday
-drawer). Start it in a fresh session: read this file, then the 1c parts of
-SPEC.md ("Core concept: two layers", the Someday drawer paragraph). Two
-things from 1b to settle there: whether the "Added to Someday. Edit" line
-stays once the drawer exists, and where a card's manual order is stored
-(reordering needs a field the 1a/1b cards don't have yet). Also decide how
-dragging works on a phone, where there's no mouse.
+**Slice 1c: built, waiting for your test.** Drag to reschedule, reordering
+within zones, and the Someday drawer. Details and the test list are below.
+
+**Next, once you confirm 1c:** commit it, then start slice 1d in a fresh
+session.
+
+## Slice 1c: drag to reschedule, reorder within zones, the Someday drawer
+
+### What it does
+
+**Dragging.** Grab any card and drag it. A blue line shows where it will land
+and the zone under it gets a blue outline.
+
+- **Into Today:** the card gets today's date at once.
+- **Into This Week, Next Two Weeks, or Later:** a small "Move to This Week"
+  box opens with a date already filled in: the first day of that range
+  (tomorrow for This Week, the next Monday for Next Two Weeks, the day after
+  the Next Two Weeks range for Later). Press Enter or Move to accept it, or
+  pick another date. Cancel or Escape leaves the card where it was.
+- **Within the same zone:** the card just changes places. Its date stays.
+- **Into Overdue:** refused (no outline, no line). Nobody means to schedule
+  something in the past. Reordering cards that are already in Overdue works.
+- **On a Sunday,** This Week is empty ("nothing left this week") and refuses
+  drops too.
+- **Escape** while dragging puts the card back.
+
+**The Someday drawer.** The tab on the right edge, styled as in the mockup,
+shows "Someday" and the count of undated cards. Click it and a drawer opens
+between the board and the tab, listing every undated card. Newest cards sit
+on top until you arrange them. Click a card in the drawer to edit it, the
+same as on the board.
+
+- Drag a drawer card onto a zone: it gets a date, by the same rules as above.
+- Drag a board card into the drawer: its date is cleared. Drop it on the
+  closed tab and it goes to the top of the drawer.
+- Cards inside the drawer can be reordered too.
+- The drawer stays open while you drag, so you can change your mind and drop
+  the card back. On a phone the open drawer covers the board, so it tucks
+  itself away the moment you start dragging a card out of it.
+
+The mockup only shows the closed tab, so the open drawer is my design within
+the SPEC palette: the tab keeps its mockup look, and the drawer is a
+`#FBFAF6` column, 300px wide, with "Someday" as a heading, the count, and
+one line: "No date yet. Drag a card onto the board to give it one."
+
+### The three open questions, settled
+
+**1. The "Added to Someday. Edit" line stays.** It was never only about
+Someday: it is also the only confirmation that Shift+Enter landed in Today
+and that a new card went to "Fri, Oct 30". And with the drawer closed, a
+Ctrl+Enter add still changes nothing you can see except a number on the tab.
+The Edit button stays useful for catching a typo the second after you press
+Enter. One note for 1d: the Since yesterday line will want the same spot, so
+1d should probably make this confirmation fade after a few seconds and give
+the spot back.
+
+**2. Manual order is one optional number per card, `order`.**
+
+- A card you have never dragged has no `order` (it's `null`), and it sorts
+  by date, exactly as it did in 1a and 1b. Your existing cards need no
+  change.
+- When you drop a card, it gets an `order` that puts it between its new
+  neighbors. Usually only that one card is written. If two neighbors are tied
+  (two cards due the same day with nothing to tell them apart), the cards
+  below get a small nudge, and those are saved too, all in one write.
+- The trick that keeps this sane as time passes: the numbers are on the same
+  scale as dates, one step per day. A card you place "above the Friday card"
+  gets a number just under Friday's. So when a new card with a later date
+  shows up in that zone, it lands by its date around the cards you arranged,
+  and when days pass and cards drift into a new zone, your arrangement comes
+  along instead of turning into nonsense.
+- Changing a card's date any other way (the editor, and later 1d's triage
+  buttons) clears its `order`, so it falls back to date order in its new
+  zone. A number left over from the old zone would put it somewhere
+  arbitrary.
+- In the Someday drawer there are no dates, so the scale there is "when it
+  was created, newest first" instead.
+
+The rejected alternatives: a plain 1, 2, 3 position per zone (zones change
+every midnight, so "position 2" in This Week means nothing once the card
+drifts into Today), and date order with manual order only among same-day
+cards (then dragging a Saturday card above a Friday card would snap back,
+which feels broken).
+
+**3. On a phone, press and hold a card for about a third of a second, then
+drag.** A quick swipe still scrolls the board, because the zones scroll
+sideways inside their own container on narrow screens and the page scrolls
+down. Holding is how the phone tells "I want to scroll" from "I want to pick
+this up". Once a card is lifted, scrolling stops so the card follows your
+finger, and the board scrolls by itself when you drag near an edge (this
+works with a mouse too). A plain tap still opens the editor. On a computer
+it's an ordinary drag: press, move a few pixels, and the card lifts.
+
+How it's built: one piece of code handles mouse, touch, and pen alike
+(browsers call these "pointer events"). The browser's built-in drag and drop
+was the other option, but it doesn't work on most phones, which would have
+meant writing touch dragging separately anyway.
+
+### Decisions I made that SPEC doesn't cover (change any of them)
+
+1. **Later accepts drops** and opens the date picker preset to its first day.
+   SPEC names Today, This Week, and Next Two Weeks; leaving Later out would
+   mean the only way to push something far out is the editor.
+2. **Overdue refuses drops** from other zones and the drawer (see above).
+3. **The date picker allows any date**, not just dates inside the zone you
+   dropped on. If you pick one outside it, the card goes where its date says,
+   in date order.
+4. **The drawer is closed when the page loads.** Remembering open or closed
+   between visits is a proposal below.
+5. **Opening the drawer narrows the board.** On a typical laptop the five
+   zones then don't quite fit, so they scroll sideways inside their own area
+   (never the whole page), and dragging near the edge scrolls them for you.
+
+### Files touched
+
+```
+index.html         the Someday drawer and its tab; the date picker box
+css/horizon.css    drawer, tab, picker, drag visuals
+js/model.js        cards gain an `order` field (null by default)
+js/dates.js        dayNumber(): a date as a count of days, for ordering
+js/order.js        NEW: how cards sort within a zone, and where a dropped
+                   card's number goes; no Firebase, no page
+js/board.js        sorts with order.js; draws the drawer's cards; marks
+                   zones as drop targets
+js/drag.js         NEW: the dragging itself (mouse, touch, pen); reports
+                   "card X dropped on zone Y at position N"; no Firebase
+js/someday.js      NEW: opening and closing the drawer
+js/datepick.js     NEW: the "Move to This Week" box
+js/firebase.js     saveCards(): several card changes in one write
+js/app.js          decides what a drop means and saves it; clears `order`
+                   when the editor changes a date; holds off redrawing the
+                   board while a card is mid-drag
+```
+
+The same split as before: dragging, the drawer, and the picker only report
+what you did. `app.js` decides what that means and saves it.
+
+### Setup steps (yours)
+
+None. No new rules, no new index. The cards query is unchanged; sorting
+happens in the browser.
+
+### Proposals (not built; say yes and I'll add them)
+
+- **Keyboard reordering.** Dragging needs a mouse or a finger. Moving a
+  focused card up or down with Alt+Arrow keys would cover keyboard use. (A
+  keyboard user can already reschedule through the editor's date field.)
+- **Remember the drawer** open or closed on this device between visits.
+- **Quick day buttons in the picker** (Fri, Sat, Sun for This Week) in place
+  of, or beside, the calendar field. One tap instead of a calendar on a phone.
+- **A short buzz on Android** when a held card lifts, so you feel it pick up.
+  (iPhones don't allow this from a web page.)
+
+### How to test
+
+Desktop:
+- [ ] Drag a card from This Week into Today: it moves and gets today's date
+      at once.
+- [ ] Drag a card from Today into This Week: a "Move to This Week" box opens
+      with tomorrow filled in. Enter: the card moves there. Try again with
+      Next Two Weeks (next Monday) and Later (the day after Next Two Weeks
+      ends).
+- [ ] In that box, pick a different date and press Move: the card lands by
+      that date. Cancel or Escape: nothing changes.
+- [ ] Drag a card onto Overdue from another zone: no outline, and letting go
+      puts it back.
+- [ ] Reorder within Today (4 cards due the same day): move the bottom card
+      to the top, then one into the middle. Reload: the order holds.
+- [ ] Reorder within Next Two Weeks across dates (put a Nov 5 card above an
+      Oct 30 card): it stays. Then add a card dated between them: it lands by
+      its date relative to the untouched cards.
+- [ ] Change an arranged card's date in the editor: it drops back into date
+      order in its new zone.
+- [ ] Press Escape mid-drag: the card goes back.
+- [ ] A plain click on a card still opens the editor; a drag never does.
+- [ ] The Someday tab shows the right count. Ctrl+Enter a new card: the count
+      goes up and "Added to Someday. Edit" still appears.
+- [ ] Click the tab: the drawer opens, newest card on top. Click a drawer
+      card: the editor opens.
+- [ ] Drag a drawer card onto Today: it leaves the drawer with today's date.
+- [ ] Drag a board card into the open drawer: its date is cleared and it
+      lands where the line showed. Close the drawer and drop a card on the
+      tab: it goes to the top of the drawer.
+- [ ] Reorder inside the drawer; reload; the order holds.
+- [ ] In the console, a dragged card has a number in `order`; a card never
+      dragged has `order: null` or no `order` at all.
+
+Phone (or the browser's phone view with touch on):
+- [ ] A quick swipe across the board scrolls it sideways; it doesn't grab a
+      card.
+- [ ] Press and hold a card, then drag: it lifts and follows your finger,
+      and the page doesn't scroll. Near the screen's edge, the board scrolls.
+- [ ] A tap opens the editor. Holding without moving and letting go does
+      nothing.
+- [ ] Open the drawer (it covers the board), hold a card and drag: the
+      drawer tucks away and you can drop the card on a zone.
+
+What I checked here, in a real browser (Chromium) with a pretend Firebase
+standing in for Google's and the clock set to Thursday, Oct 22: every item
+above except real Firestore saves (65 checks, all passing, no console
+errors). That covers mouse drags into each zone and the picker presets
+(Oct 23, Oct 26, Nov 9); Escape and Cancel in the picker; Overdue refusing;
+reordering in Today and across dates; dropping a card where it was, which
+saves nothing; a redraw arriving mid-drag waiting until the drop; the drawer
+in both directions, the tab drop, and drawer reordering; and, with simulated
+touch on a phone-sized screen, swipe-to-scroll, tap-to-edit, hold-and-drag,
+hold-and-release, the drawer tucking away, and the board scrolling itself
+near the edge. Also: opening the drawer never makes the page itself scroll
+sideways or grow taller, and the drawer stays in view on a short window.
+Not checked: a real phone's finger (the simulation is close but not the
+same), and real Firestore.
+
+Known rough edge: on a phone, the open drawer covers the header as well as
+the board, so a narrow strip of the header shows above the tab. It works;
+it just isn't tidy. Easy to adjust once you've seen it on your phone.
 
 ## Slice 1b: quick add, card editing, marking done, in progress
 

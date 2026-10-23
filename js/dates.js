@@ -47,6 +47,12 @@ export function daysBetween(a, b) {
   return Math.round((Date.UTC(by, bm - 1, bd) - Date.UTC(ay, am - 1, ad)) / 86400000);
 }
 
+// A date as a count of days since Jan 1, 1970. Cards sort on this scale
+// within a zone (see order.js).
+export function dayNumber(iso) {
+  return daysBetween('1970-01-01', iso);
+}
+
 // The last day of each zone, given today.
 //   This Week:      tomorrow through this Sunday
 //   Next Two Weeks: the following Monday through the Sunday two weeks later
@@ -56,6 +62,15 @@ export function zoneBounds(today) {
   const weekEnd = addDays(today, (7 - dow) % 7);
   const twoWeeksEnd = addDays(weekEnd, 14);
   return { today, weekEnd, twoWeeksEnd };
+}
+
+// The first day of a zone that spans several days: where the date picker
+// starts when a card is dropped there.
+export function zoneStart(zone, bounds) {
+  if (zone === 'week') return addDays(bounds.today, 1);
+  if (zone === 'twoWeeks') return addDays(bounds.weekEnd, 1);
+  if (zone === 'later') return addDays(bounds.twoWeeksEnd, 1);
+  return bounds.today;
 }
 
 export function zoneFor(due, bounds) {

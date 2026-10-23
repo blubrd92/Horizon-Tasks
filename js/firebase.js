@@ -20,6 +20,7 @@ import {
   setDoc,
   updateDoc,
   where,
+  writeBatch,
 } from 'https://www.gstatic.com/firebasejs/12.19.0/firebase-firestore.js';
 
 import { config } from '../config.js';
@@ -96,6 +97,17 @@ export function addCard(uid, fields) {
 // meantime is left alone.
 export function updateCard(uid, cardId, changes) {
   return updateDoc(doc(db, 'users', uid, 'cards', cardId), { ...changes, updatedAt: serverTimestamp() });
+}
+
+// Saves changes to several cards in one write: a drop can nudge a few
+// neighbors along with the card you moved. Either all of them save or none.
+// `updates` is a list of { id, changes }.
+export function saveCards(uid, updates) {
+  const batch = writeBatch(db);
+  for (const { id, changes } of updates) {
+    batch.update(doc(db, 'users', uid, 'cards', id), { ...changes, updatedAt: serverTimestamp() });
+  }
+  return batch.commit();
 }
 
 // Marks a card done, along with any edits made at the same moment. The card

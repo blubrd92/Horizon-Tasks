@@ -59,10 +59,30 @@
     </div>
 
     <div class="board-area">
-      <main class="horizon">
+      <main id="horizon" class="horizon">
         <p id="board-message" class="board-message" role="alert" hidden></p>
         <div id="zones" class="zones"></div>
       </main>
+
+      <!-- The Someday drawer: undated cards. The tab opens it; both the open
+           drawer and the tab accept dropped cards (data-drop, see drag.js). -->
+      <aside class="someday">
+        <div class="someday-inner">
+          <section id="someday-panel" class="someday-panel" aria-labelledby="someday-heading" data-drop="someday" hidden>
+            <div class="someday-head">
+              <h2 id="someday-heading" class="zone-title">Someday</h2>
+              <span class="zone-count" data-someday-count aria-label="0 cards">0</span>
+            </div>
+            <p class="someday-note">No date yet. Drag a card onto the board to give it one.</p>
+            <div id="someday-cards" class="zone-cards someday-cards" data-drop-list></div>
+          </section>
+          <button type="button" id="someday-tab" class="someday-tab" aria-controls="someday-panel" aria-expanded="false" aria-label="Open Someday drawer" data-drop="someday" data-drop-top>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 18l-6-6 6-6"></path></svg>
+            <span class="someday-tab-label">Someday</span>
+            <span class="someday-tab-count" data-someday-count>0</span>
+          </button>
+        </div>
+      </aside>
     </div>
   </div>
 
@@ -115,6 +135,22 @@
           <button type="button" id="editor-cancel" class="button">Cancel</button>
           <button type="submit" id="editor-save" class="button button-primary">Save</button>
         </div>
+      </div>
+    </form>
+  </dialog>
+
+  <!-- Opens when a card is dropped on This Week, Next Two Weeks, or Later. -->
+  <dialog id="datepick" class="small-dialog" aria-labelledby="datepick-heading">
+    <form id="datepick-form" class="small-panel" novalidate>
+      <h2 id="datepick-heading" class="panel-title">Move to This Week</h2>
+      <p id="datepick-card" class="datepick-card"></p>
+      <label class="field">New date
+        <input type="date" id="datepick-date" class="field-input field-date" aria-describedby="datepick-range">
+      </label>
+      <p id="datepick-range" class="datepick-range"></p>
+      <div class="small-foot">
+        <button type="button" id="datepick-cancel" class="button">Cancel</button>
+        <button type="submit" class="button button-primary">Move</button>
       </div>
     </form>
   </dialog>

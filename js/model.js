@@ -20,6 +20,8 @@
 //   status         "open", "in_progress", "done", or "let_go"
 //   repeat         "none", "weekly", or "monthly"
 //   source         "manual", "quick_add", or "screenshot"
+//   order          number, or null: the card's place within its zone, set
+//                  when you drag it (see order.js). null means date order.
 //   createdAt, updatedAt, completedAt, letGoAt   Firestore timestamps
 
 import { isISODate, toISO } from './dates.js';
@@ -47,6 +49,7 @@ export function newCard({ title, dueDate = null }) {
     status: STATUS.OPEN,
     repeat: 'none',
     source: 'quick_add',
+    order: null,
   };
 }
 
@@ -65,6 +68,7 @@ export function normalizeCard(id, data) {
     status: data.status || STATUS.OPEN,
     repeat: data.repeat || 'none',
     source: data.source || 'manual',
+    order: typeof data.order === 'number' && Number.isFinite(data.order) ? data.order : null,
     createdAt: millis(data.createdAt),
     updatedAt: millis(data.updatedAt),
   };

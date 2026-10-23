@@ -22,6 +22,7 @@
   --today-tint: #DCE4F7;
   --progress-tint: #E3E9FA;
   --plain-count: #D6D3CA;
+  --tab: #E3E0D8;
 
   --font-display: 'Bricolage Grotesque', 'IBM Plex Sans', sans-serif;
   --font-body: 'IBM Plex Sans', system-ui, sans-serif;
@@ -355,6 +356,201 @@ code { font-family: var(--font-mono); font-size: 0.92em; }
 .card:has(.card-open:focus-visible) {
   outline: 2px solid var(--accent);
   outline-offset: 2px;
+}
+
+/* Dragging (drag.js). A lifted card leaves a faded copy in its place while
+   a floating copy follows the pointer. A blue line shows where it will land,
+   and the zone it would land in gets a blue outline. */
+
+.card {
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+}
+
+.card.is-lifted { opacity: 0.35; }
+
+.card-ghost {
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 50;
+  margin: 0;
+  pointer-events: none;
+  box-shadow: 0 12px 28px rgba(24, 25, 28, 0.22);
+}
+
+body.is-dragging,
+body.is-dragging * { cursor: grabbing !important; }
+
+body.is-dragging .card:hover { border-color: var(--border); border-top-color: var(--band); }
+
+.drop-marker {
+  height: 4px;
+  border-radius: 2px;
+  background: var(--accent);
+}
+
+.is-drop-target { box-shadow: inset 0 0 0 2px var(--accent); }
+
+.zone.is-drop-target:not(.zone-overdue):not(.zone-today) { background: rgba(47, 91, 211, 0.05); }
+
+/* The Someday drawer: a tab on the right edge (as in the mockup) that opens
+   a column of undated cards between the board and the tab. It stays in view
+   while the page scrolls. */
+
+/* The drawer is pinned to the board's right edge rather than sitting in the
+   row with it, so it is always exactly as tall as the board and never makes
+   the page taller. The board leaves room for it. */
+.board-area { padding-right: 53px; }
+.board-area:has(.someday-panel:not([hidden])) { padding-right: 353px; }
+
+.someday {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  border-left: 1px solid var(--field-border);
+  background: var(--tab);
+}
+
+.someday-inner {
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  max-height: 100%;
+  display: flex;
+}
+
+.someday-tab {
+  width: 52px;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  padding: 28px 0;
+  color: var(--ink);
+}
+
+.someday-tab:hover { background: rgba(24, 25, 28, 0.04); }
+
+.someday-tab svg { transition: transform 150ms ease-out; }
+.someday-tab.is-open svg { transform: rotate(180deg); }
+
+.someday-tab-label {
+  writing-mode: vertical-rl;
+  transform: rotate(180deg);
+  font-family: var(--font-display);
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+}
+
+.someday-tab-count {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--ink-secondary);
+}
+
+.someday-panel {
+  width: 300px;
+  display: flex;
+  flex-direction: column;
+  background: var(--surface-soft);
+  border-right: 1px solid var(--field-border);
+}
+
+.someday-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 24px 16px 4px;
+}
+
+.someday-note {
+  margin: 0;
+  padding: 0 16px 14px;
+  font-size: 13px;
+  line-height: 1.4;
+  color: var(--ink-secondary);
+}
+
+.someday-cards {
+  flex: 1;
+  overflow-y: auto;
+  padding: 4px 16px 24px;
+}
+
+.someday-empty {
+  margin: 0;
+  padding: 16px 4px;
+  font-size: 14px;
+  line-height: 1.4;
+  color: var(--ink-secondary);
+}
+
+/* On a phone the open drawer covers the board, leaving the tab showing. */
+@media (max-width: 760px) {
+  .board-area:has(.someday-panel:not([hidden])) { padding-right: 53px; }
+
+  .someday-panel {
+    position: fixed;
+    top: 0;
+    bottom: 0;
+    right: 52px;
+    z-index: 20;
+    width: min(340px, calc(100vw - 52px));
+    box-shadow: -12px 0 32px rgba(24, 25, 28, 0.18);
+  }
+}
+
+/* The "Move to This Week" box (datepick.js). */
+
+.small-dialog {
+  width: min(380px, calc(100% - 32px));
+  padding: 0;
+  border: none;
+  border-radius: var(--radius-panel);
+  background: var(--surface-soft);
+  color: var(--ink);
+  box-shadow: 0 12px 32px rgba(24, 25, 28, 0.18);
+}
+
+.small-dialog::backdrop { background: rgba(24, 25, 28, 0.28); }
+
+.small-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 24px;
+}
+
+.small-panel .panel-title { font-size: 22px; }
+
+.datepick-card {
+  margin: -6px 0 0;
+  font-size: 15px;
+  font-weight: 500;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+}
+
+.datepick-range {
+  margin: -6px 0 0;
+  font-size: 13px;
+  color: var(--ink-secondary);
+}
+
+.small-foot {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  padding-top: 4px;
 }
 
 /* Quick add */
