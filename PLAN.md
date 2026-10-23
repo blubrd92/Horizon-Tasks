@@ -1,0 +1,254 @@
+# PLAN
+
+Working notes so any session can pick up where the last one stopped.
+
+## Status
+
+**Slice 1a: done and confirmed** (2026-10-23) on the live site,
+`https://blubrd92.github.io/Horizon-Tasks/`, with Firebase project
+`horizontasks-29d6c`. Sign-in, the approved list, zone placement, live
+updates, and done cards disappearing all checked out.
+
+**Next: slice 1b** (quick add with title only, card editing, marking done,
+in-progress status). Start it in a fresh session: read this file, then the
+1b parts of SPEC.md ("Cards", "Quick add" Phase 1).
+
+## Slice 1a: config, sign-in, rules, and the Horizon from Firestore
+
+### What it does
+
+Open the site and you see a sign-in screen. Sign in with Google and the
+Horizon appears: five zones (Overdue, Today, This Week, Next Two Weeks,
+Later) at the mockup's unequal widths, with every open or in-progress card
+placed by its due date. Cards show their category band, category name, title,
+date, and "N days late" when overdue. The board updates live: change a card
+in the Firebase console and the page moves it without a reload.
+
+Only people on the approved list get in. Anyone else who signs in sees a
+plain "this Horizon is private" screen with a Sign out button. If the page
+stays open past midnight, cards drift into their new zones within a minute.
+
+If `config.js` still has placeholder values, the site says so instead of
+throwing a Firebase error. If Firestore refuses to share your cards (usually
+because the rules aren't published), the board says that too.
+
+Deliberately not in 1a, because later slices own them: quick add, the 14-day
+strip, the Projects/Done/Inbox buttons, the Someday drawer (undated cards are
+simply not shown yet), hard-deadline chips, in-progress pills, repeat icons,
+triage buttons, and clicking a card.
+
+### Files
+
+```
+index.html         the page: setup note, sign-in screen, board
+config.js          THE config file: every instance-specific value
+firestore.rules    security rules, pasted into the Firebase console
+css/horizon.css    all styles; colors and type from SPEC "Visual design"
+js/app.js          starts the app: config check, sign-in, live board
+js/firebase.js     the only file that talks to Firebase (SDK pinned here)
+js/model.js        the data model, written down, plus card cleanup
+js/dates.js        date math and formatting; zone boundaries
+js/board.js        turns cards into the Horizon's HTML; no Firebase
+```
+
+Why split this way: the board and date code don't know Firebase exists. That
+matters for two later features. The `?today=` testing parameter (1d) is a
+one-function change in `dates.js`. Demo mode (future) can feed sample cards
+straight into `renderBoard` with no sign-in and nothing saved.
+
+Firebase SDK: version 12.19.0, loaded from Google's CDN. npm shows 12.19.0
+released 2026-09-09. Version 13 exists but its first release came out this
+month, so I stayed on the mature line. Upgrading means changing the three URLs
+at the top of `js/firebase.js`.
+
+### Data model
+
+Everything you own lives under one path, `users/{your user ID}`. The
+approved list sits beside it:
+
+```
+allowlist/{email}            one document per approved person
+users/{uid}                  profile: createdAt, categories
+users/{uid}/cards/{cardId}   every card, whatever its status
+```
+
+Later: `users/{uid}/projects/...` (Phase 2) and `users/{uid}/inbox/...`
+(Phase 3). The full card shape is written at the top of `js/model.js`.
+
+Decisions worth knowing:
+
+- **Due dates are text, like `2026-10-22`,** not Firestore timestamps. A
+  timestamp is a moment in time, and when the browser converts it to your time
+  zone a date near midnight can slide to the day before. Plain text can't
+  slide. (If you type a timestamp by hand in the console, the app still reads
+  it.)
+- **Cards store a category id** (`programs`), not the name. Your categories
+  live on your profile with id, name, and color, so you can rename "Saturday
+  PIC" later without touching a single card.
+- **On first sign-in** the app creates your profile with the starter
+  categories from `config.js`. This also makes the `users` collection appear in
+  the console, which makes adding test cards by hand easier.
+- **Done and let-go cards stay in the same `cards` collection,** just with a
+  different status. The board only downloads open and in-progress cards, so
+  years of Done history never slow it down or eat the free read quota.
+- **Weeks run Monday to Sunday**, matching the mockups ("Oct 23 to 25" on a
+  Thursday, "Oct 12 to 18" in the Done view).
+
+### How this leaves room for colleagues and forks
+
+*Colleagues on your instance.* Each person's data is already sealed under their
+own user ID, so adding people adds new `users/{uid}` branches and changes
+nothing about yours. Sending a card later means writing a draft into the
+recipient's `users/{them}/inbox`, with a `linkId` shared by both copies. The
+rules would gain one narrow exception: an allowlisted sender may *create* (not
+read) a document in someone else's inbox. Shared projects would live in a
+separate top-level `projects` collection with a members list; the cards stay
+on each person's own board under their own ID.
+
+*Your Done record stays private.* Done cards live under your user ID, and the
+rules let only that ID read them. No future feature needs to read another
+person's cards, so no rule will ever grant it. (See the open question below
+about the Firebase console, which is the one honest exception.)
+
+*People running their own copy.* Every instance value is in `config.js`. The
+rules file contains no IDs, emails, or project names, so a fork pastes it in
+unchanged.
+
+### The security rules, in plain language
+
+`firestore.rules` has two rules, and everything not covered by them is closed.
+
+1. **Your own cards.** You may read or write anything under `users/X` only if
+   your user ID is X *and* your email has a document in `allowlist`. The
+   first part keeps everyone out of everyone else's data. The second keeps
+   strangers from opening boards in your project and using your free quota.
+2. **Your own place on the list.** You may look up the `allowlist` document
+   with your own email, and no other. That's how the app knows to show "you're
+   not on the list" instead of a cryptic error, without letting anyone see who
+   else is on it. Nobody can add themselves: the app has no write access to
+   the list. Only you can, in the console.
+
+The list is keyed by email rather than user ID because you can add an email
+before that person has ever signed in. The rules also require the email to be
+verified, so nobody can claim an address they don't own. Google accounts are
+always verified.
+
+This is what makes the Firebase config values safe to publish on GitHub: they
+say *which* database, and the rules decide *who* gets in.
+
+### Setup steps (yours)
+
+**1. Create the Firebase project**
+1. Go to console.firebase.google.com, click **Create a project**, name it
+   (e.g. "horizon"). You can turn Google Analytics off.
+2. It starts on the free Spark plan. Don't upgrade.
+
+**2. Turn on Google sign-in**
+1. Left menu: **Build > Authentication > Get started**.
+2. **Sign-in method** tab > **Google** > Enable. Pick your support email. Save.
+3. **Settings** tab > **Authorized domains** > **Add domain** >
+   `blubrd92.github.io`. (`localhost` is already there.)
+
+**3. Create Firestore and publish the rules**
+1. **Build > Firestore Database > Create database.** Pick a location near you
+   (it can't be changed later). Start in **production mode**.
+2. **Rules** tab: delete what's there, paste all of `firestore.rules`, click
+   **Publish**.
+3. **Data** tab: put yourself on the approved list. Click **Start
+   collection**, Collection ID `allowlist`, Next. For **Document ID**, type
+   your Google email in all lowercase. The console wants at least one field,
+   so add `note` (string) with anything in it, like `owner`. Save.
+
+**4. Register the web app and fill in config.js**
+1. Gear icon > **Project settings** > **General** > "Your apps" > the `</>`
+   (Web) icon. Nickname "horizon web". Skip Firebase Hosting.
+2. It shows a `firebaseConfig` block. Copy each value into the matching line
+   of `config.firebase` in `config.js`, replacing the `PASTE_...` text.
+3. Commit and push that change.
+
+**5. Turn on GitHub Pages**
+1. On GitHub: the repo > **Settings > Pages**.
+2. Source: **Deploy from a branch**. Branch: the one with this slice on it
+   (`claude/exciting-wozniak-20fv7s` for now, `main` once merged), folder
+   `/ (root)`. Save.
+3. After a minute or two the site is at
+   `https://blubrd92.github.io/Horizon-Tasks/`.
+
+(Or test on your computer: in the repo folder run `python3 -m http.server`,
+then open `http://localhost:8000`. Opening `index.html` by double-clicking
+won't work, because browsers block modules on `file://` pages.)
+
+**6. Sign in, then add test cards by hand**
+1. Open the site and sign in. The empty board appears. (If you see "this
+   Horizon is private", check that the `allowlist` document ID matches your
+   email exactly, in lowercase.)
+2. Firebase console > **Firestore Database > Data**. Open `users`, then your
+   document (the long ID; it matches your user UID under Authentication >
+   Users).
+3. **Start collection** > Collection ID `cards` > Auto-ID, then add fields:
+
+   | Field      | Type   | Example                         |
+   |------------|--------|---------------------------------|
+   | `title`    | string | `Finalize the display booklist` |
+   | `dueDate`  | string | `2026-10-22`                    |
+   | `category` | string | `programs`                      |
+   | `status`   | string | `open`                          |
+   | `createdAt`| timestamp | (any)                        |
+
+   `status` is required: without it the card won't appear. Category ids:
+   `collection-development`, `programs`, `digital-resources`, `saturday-pic`,
+   `admin`.
+4. Add a few with dates in the past, today, later this week, in two weeks,
+   and next month, and watch each land in its zone.
+
+### How to test
+
+- [ ] Before filling in config.js, the site shows the "isn't connected" note.
+- [ ] Sign-in works; Sign out returns to the sign-in screen.
+- [ ] A Google account that isn't on the list sees the "private" screen, and
+      its Sign out button works.
+- [ ] Removing your own `allowlist` document locks you out; adding it back
+      lets you in.
+- [ ] Each test card lands in the right zone; zone counts are right.
+- [ ] An overdue card says "N days late" in rose.
+- [ ] Editing a card's `dueDate` in the console moves it live.
+- [ ] Setting a card's `status` to `done` makes it disappear.
+- [ ] A card with no `dueDate` doesn't appear (it's for the Someday drawer).
+- [ ] An unknown category shows in gray with its raw id.
+
+What I checked here: zone math against the mockup dates (Thursday Oct 22
+gives "Oct 23 to 25" and "Oct 26 to Nov 8"), across the November daylight
+saving change, and on a Sunday; a screenshot of the board with the mockup's
+sample cards (Firebase stubbed out); that HTML in a title shows as text; no
+page-level sideways scrolling at phone width; the "private" screen for an
+account that isn't approved; and, with a fake clock, the board redrawing
+itself between 11:59 pm and 12:01 am. I could not test real sign-in, the
+rules, or Firestore, since there's no Firebase project yet.
+
+## Decisions made
+
+- **Approved list:** yes. Built as the `allowlist` collection (see the rules
+  section above).
+- **Design files** moved into `design/`, where SPEC and CLAUDE.md say they
+  are.
+- **Sunday:** literal. This Week is empty and reads "nothing left this
+  week"; Next Two Weeks starts the next morning.
+- **Sign out** stays at the right of the header, where Projects, Done, and
+  Inbox will join it.
+- **Midnight:** fixed now rather than in 1d, since it was a few lines. The
+  board checks the date once a minute and redraws when it changes.
+
+## Parked for later
+
+- **The console exception to Done privacy.** Rules bind the app, not the
+  Firebase project owner: whoever owns the project can open any document in
+  the console. Today that's only you reading your own data. Once colleagues
+  join your instance, you as owner could technically see their Done records,
+  which collides with "No user, including an admin." The real fix is
+  encrypting Done records in the browser with a key only their owner holds.
+  Decide before colleagues join.
+- **One approved list, not two (for slice 3a).** SPEC puts the Apps Script
+  allowlist in Script Properties, which would mean keeping two lists in sync.
+  The script will already receive your Firebase sign-in token, and with it
+  it can ask Firestore "is this person on `allowlist`?" exactly the way the
+  app does. Worth deciding when 3a starts.

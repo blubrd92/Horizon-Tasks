@@ -1,0 +1,320 @@
+/* Horizon styles. Colors, type, and spacing follow SPEC.md "Visual design"
+   and the mockups. */
+
+:root {
+  --ground: #F3F1EB;
+  --surface: #FFFFFF;
+  --surface-soft: #FBFAF6;
+  --border: #DDD9CF;
+  --border-soft: #E2DFD6;
+  --ink: #18191C;
+  --ink-secondary: #4B4F57;
+  --ink-date: #33363C;
+
+  --accent: #2F5BD3;
+  --accent-dark: #1C3E9E;
+
+  --overdue-tint: #F5E3EA;
+  --overdue-ink: #8E2F51;
+  --overdue-count: #A23B5E;
+  --today-tint: #DCE4F7;
+  --plain-count: #D6D3CA;
+
+  --font-display: 'Bricolage Grotesque', 'IBM Plex Sans', sans-serif;
+  --font-body: 'IBM Plex Sans', system-ui, sans-serif;
+  --font-mono: 'IBM Plex Mono', ui-monospace, monospace;
+
+  --radius-button: 10px;
+  --radius-card: 12px;
+  --radius-panel: 18px;
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  background: var(--ground);
+  color: var(--ink);
+  font-family: var(--font-body);
+}
+
+body.is-loading { visibility: hidden; }
+
+[hidden] { display: none !important; }
+
+a { color: var(--accent); }
+a:hover { color: var(--accent-dark); }
+
+button, input, select { font-family: inherit; }
+
+code { font-family: var(--font-mono); font-size: 0.92em; }
+
+/* Buttons */
+
+.button {
+  min-height: 44px;
+  padding: 0 14px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  border-radius: var(--radius-button);
+  font-size: 14px;
+  color: var(--ink);
+  cursor: pointer;
+}
+
+.button:hover { background: var(--surface-soft); }
+
+.button-primary {
+  border: none;
+  background: var(--accent);
+  color: #FFFFFF;
+  font-weight: 600;
+  padding: 0 18px;
+}
+
+.button-primary:hover { background: var(--accent-dark); }
+
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.wordmark {
+  font-family: var(--font-display);
+  font-size: 28px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+/* Setup and sign-in */
+
+.center-view {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+}
+
+.center-panel {
+  width: 100%;
+  max-width: 380px;
+  background: var(--surface-soft);
+  border: 1px solid var(--border-soft);
+  border-radius: var(--radius-panel);
+  padding: 32px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 16px;
+  box-shadow: 0 1px 2px rgba(24, 25, 28, 0.06);
+}
+
+.center-panel p {
+  margin: 0;
+  font-size: 15px;
+  line-height: 1.5;
+  color: var(--ink-secondary);
+}
+
+.signin-error:empty { display: none; }
+.center-panel .signin-error { color: var(--overdue-ink); font-size: 14px; }
+
+/* Board layout */
+
+.board-view {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.site-header {
+  background: var(--surface-soft);
+  border-bottom: 1px solid var(--border-soft);
+  padding: 18px 32px;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+}
+
+.header-nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+
+.board-area {
+  flex: 1;
+  display: flex;
+  min-height: 0;
+  position: relative;
+}
+
+/* The zones scroll sideways inside this box on narrow screens, so the page
+   itself never scrolls horizontally. */
+.horizon {
+  flex: 1;
+  min-width: 0;
+  overflow-x: auto;
+  padding: 28px 0 36px 24px;
+}
+
+.board-message {
+  margin: 0 20px 16px 0;
+  padding: 12px 14px;
+  border-radius: var(--radius-card);
+  background: var(--overdue-tint);
+  color: var(--overdue-ink);
+  font-size: 14px;
+}
+
+/* Nearer time gets more space. */
+.zones {
+  display: grid;
+  grid-template-columns: 0.85fr 1.4fr 1.15fr 1fr 0.85fr;
+  gap: 12px;
+  min-width: 1120px;
+  padding-right: 20px;
+  align-items: start;
+}
+
+.zone {
+  padding: 16px 12px;
+  border-radius: var(--radius-panel);
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.zone-overdue { background: var(--overdue-tint); }
+.zone-today { background: var(--today-tint); }
+
+.zone-head {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 0 2px 14px;
+  min-height: 52px;
+}
+
+.zone-head-text {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+}
+
+.zone-head-today {
+  flex-direction: row;
+  align-items: flex-end;
+  gap: 12px;
+}
+
+.zone-head-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding-bottom: 2px;
+}
+
+.today-numeral {
+  font-family: var(--font-display);
+  font-size: 64px;
+  font-weight: 700;
+  line-height: 0.8;
+  letter-spacing: -0.04em;
+  color: var(--accent);
+}
+
+.zone-title {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: 19px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  line-height: 1.15;
+}
+
+.zone-today .zone-title { font-size: 22px; line-height: 1; }
+.zone-overdue .zone-title { color: var(--overdue-ink); }
+
+.zone-range {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--ink-secondary);
+}
+
+.zone-count {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 500;
+  min-width: 24px;
+  height: 24px;
+  padding: 0 6px;
+  border-radius: 12px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  background: var(--plain-count);
+  color: var(--ink);
+}
+
+.zone-overdue .zone-count { background: var(--overdue-count); color: #FFFFFF; }
+.zone-today .zone-count { background: var(--accent); color: #FFFFFF; }
+
+.zone-cards {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+/* Cards */
+
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-top: 4px solid var(--band);
+  border-radius: var(--radius-card);
+  padding: 13px 15px;
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  box-shadow: 0 1px 2px rgba(24, 25, 28, 0.06);
+}
+
+.card-category {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ink-secondary);
+}
+
+.card-title {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 600;
+  line-height: 1.3;
+  overflow-wrap: anywhere;
+}
+
+.card-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.card-date,
+.card-late {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--ink-date);
+}
+
+.card-late { color: var(--overdue-ink); }

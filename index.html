@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Horizon</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,700&amp;family=IBM+Plex+Mono:wght@400;500&amp;family=IBM+Plex+Sans:wght@400;500;600&amp;display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/horizon.css">
+  <script type="module" src="js/app.js"></script>
+</head>
+<body class="is-loading">
+
+  <!-- Shown when config.js still has placeholder values. -->
+  <main id="view-setup" class="center-view" hidden>
+    <div class="center-panel">
+      <div class="wordmark">Horizon</div>
+      <p>This copy of Horizon isn't connected to Firebase yet. Paste your Firebase web app settings into <code>config.js</code>, then reload.</p>
+    </div>
+  </main>
+
+  <main id="view-signin" class="center-view" hidden>
+    <div class="center-panel">
+      <div class="wordmark">Horizon</div>
+      <p>What you need to do, and when, at a glance.</p>
+      <button type="button" id="signin-button" class="button button-primary">Sign in with Google</button>
+      <p id="signin-error" class="signin-error" role="alert"></p>
+    </div>
+  </main>
+
+  <!-- Shown when someone signs in who isn't on the approved list. -->
+  <main id="view-notallowed" class="center-view" hidden>
+    <div class="center-panel">
+      <div class="wordmark">Horizon</div>
+      <p>This Horizon is private, and <strong id="notallowed-email"></strong> isn't on its approved list.</p>
+      <p>If this is your Horizon, add that email to the <code>allowlist</code> collection in Firestore, then sign in again.</p>
+      <button type="button" id="notallowed-signout" class="button">Sign out</button>
+    </div>
+  </main>
+
+  <div id="view-board" class="board-view" hidden>
+    <header class="site-header">
+      <div class="wordmark">Horizon</div>
+      <nav class="header-nav" aria-label="Account">
+        <button type="button" id="signout-button" class="button">Sign out</button>
+      </nav>
+    </header>
+
+    <div class="board-area">
+      <main class="horizon">
+        <p id="board-message" class="board-message" role="alert" hidden></p>
+        <div id="zones" class="zones"></div>
+      </main>
+    </div>
+  </div>
+
+</body>
+</html>

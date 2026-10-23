@@ -1,0 +1,42 @@
+rules_version = '2';
+
+// Paste this whole file into Firebase console > Firestore Database > Rules,
+// then click Publish. This file in the repo is the source of truth; the
+// console copy should always match it.
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Who may use this Horizon at all. The approved list is the "allowlist"
+    // collection: one document per person, named with their Google email in
+    // lowercase. You edit it in the Firebase console (the console ignores
+    // these rules); the app itself can never add anyone to it.
+    //
+    // email_verified makes sure the email really belongs to the account that
+    // signed in. Google accounts always have it.
+    function isApproved() {
+      return request.auth != null
+        && request.auth.token.email_verified == true
+        && exists(/databases/$(database)/documents/allowlist/$(request.auth.token.email));
+    }
+
+    // Each person may look up their own entry on the list, and only their
+    // own. This lets the app say "you're not on the list" clearly, without
+    // letting anyone browse who else is on it.
+    match /allowlist/{email} {
+      allow get: if request.auth != null && request.auth.token.email == email;
+    }
+
+    // Everything a person owns lives under users/{their user ID}: their
+    // profile, their cards (open, done, and let go), and later their
+    // projects and inbox drafts.
+    //
+    // You may read or write a document under users/X only if you are on the
+    // approved list AND your user ID is X. Nobody else can see your cards,
+    // including your Done record. No other paths are open, so any request
+    // outside these two is refused.
+    match /users/{uid}/{document=**} {
+      allow read, write: if isApproved() && request.auth.uid == uid;
+    }
+  }
+}
