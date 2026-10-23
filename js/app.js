@@ -42,6 +42,7 @@ let drawWaiting = false;
 const someday = setupSomeday({
   tab: document.getElementById('someday-tab'),
   panel: document.getElementById('someday-panel'),
+  closeButton: document.getElementById('someday-close'),
   counts: document.querySelectorAll('[data-someday-count]'),
 });
 

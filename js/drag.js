@@ -17,6 +17,7 @@ const HOLD_DELAY = 350; // milliseconds a finger rests before the card lifts
 const HOLD_SLOP = 10; // pixels a finger may wander while holding
 const EDGE = 56; // within this many pixels of an edge, things scroll by themselves
 const EDGE_SPEED = 16; // pixels per frame at the very edge
+const HOP_PAUSE = 700; // milliseconds between hops in a box that snaps zone to zone
 
 // scrollers() returns the boxes that should scroll by themselves when a card
 // is dragged near their edges. canDrop(place, cardId) says whether a card may
@@ -133,9 +134,14 @@ export function setupDrag({ root, scrollers, canDrop, onStart, onEnd, onDrop }) 
     ghost.style.width = `${rect.width}px`;
     document.body.append(ghost);
 
+    // The slot: an empty, card-sized gap that opens where the card will land.
+    // It starts in the card's own spot, and the card itself steps out of the
+    // way, so the board doesn't jump when the card lifts.
     const marker = document.createElement('div');
-    marker.className = 'drop-marker';
+    marker.className = 'drop-slot';
     marker.setAttribute('aria-hidden', 'true');
+    marker.style.height = `${rect.height}px`;
+    card.before(marker);
 
     drag = {
       pointerId,
@@ -149,6 +155,10 @@ export function setupDrag({ root, scrollers, canDrop, onStart, onEnd, onDrop }) 
       y,
       target: null,
       index: 0,
+      // Boxes that snap zone to zone (the board on a phone) hop one zone at
+      // a time near an edge; sliding smoothly would fight the snapping.
+      snaps: new Set(scrollers().filter((box) => box && getComputedStyle(box).scrollSnapType.startsWith('x'))),
+      lastHop: 0,
     };
     card.classList.add('is-lifted');
     document.body.classList.add('is-dragging');
@@ -166,7 +176,7 @@ export function setupDrag({ root, scrollers, canDrop, onStart, onEnd, onDrop }) 
   }
 
   // Works out which place is under the pointer and where in its list the card
-  // would land, and shows that with an outline and a line.
+  // would land, and shows that with an outline and the slot.
   function updateTarget() {
     const { x, y } = drag;
     const under = document.elementFromPoint(x, y);
@@ -217,24 +227,36 @@ export function setupDrag({ root, scrollers, canDrop, onStart, onEnd, onDrop }) 
   function autoScroll() {
     if (!drag) return;
     const { x, y } = drag;
-    let scrolled = false;
+    const boxes = scrollers().filter((box) => box && box.offsetParent);
 
-    for (const box of scrollers()) {
-      if (!box || !box.offsetParent) continue;
+    for (const box of boxes) {
       const r = box.getBoundingClientRect();
       if (x < r.left || x > r.right || y < r.top || y > r.bottom) continue;
-      const before = [box.scrollLeft, box.scrollTop];
-      if (box.scrollWidth > box.clientWidth) box.scrollLeft += speed(r.right - x) - speed(x - r.left);
+      if (box.scrollWidth > box.clientWidth) {
+        if (drag.snaps.has(box)) hop(box, r);
+        else box.scrollLeft += speed(r.right - x) - speed(x - r.left);
+      }
       if (box.scrollHeight > box.clientHeight) box.scrollTop += speed(r.bottom - y) - speed(y - r.top);
-      if (box.scrollLeft !== before[0] || box.scrollTop !== before[1]) scrolled = true;
     }
-
-    const pageY = window.scrollY;
     window.scrollBy(0, speed(window.innerHeight - y) - speed(y));
-    if (window.scrollY !== pageY) scrolled = true;
 
-    if (scrolled) updateTarget();
+    // Anything that moved since the last frame (including a hop that is
+    // still gliding) changes what is under the pointer.
+    const where = [window.scrollY, ...boxes.flatMap((box) => [box.scrollLeft, box.scrollTop])].join();
+    if (where !== drag.where) {
+      drag.where = where;
+      updateTarget();
+    }
     frame = requestAnimationFrame(autoScroll);
+  }
+
+  function hop(box, r) {
+    const direction = drag.x > r.right - EDGE ? 1 : drag.x < r.left + EDGE ? -1 : 0;
+    const now = performance.now();
+    if (!direction || now - drag.lastHop < HOP_PAUSE) return;
+    drag.lastHop = now;
+    // The snapping settles this on the next zone over.
+    box.scrollBy({ left: direction * box.clientWidth * 0.6, behavior: 'smooth' });
   }
 
   function speed(distanceFromEdge) {

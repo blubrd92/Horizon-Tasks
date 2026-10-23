@@ -72,6 +72,10 @@
             <div class="someday-head">
               <h2 id="someday-heading" class="zone-title">Someday</h2>
               <span class="zone-count" data-someday-count aria-label="0 cards">0</span>
+              <!-- Only shown on a phone, where the drawer covers the screen. -->
+              <button type="button" id="someday-close" class="icon-button someday-close" aria-label="Close Someday">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"></path></svg>
+              </button>
             </div>
             <p class="someday-note">No date yet. Drag a card onto the board to give it one.</p>
             <div id="someday-cards" class="zone-cards someday-cards" data-drop-list></div>

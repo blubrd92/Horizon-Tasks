@@ -358,9 +358,9 @@ code { font-family: var(--font-mono); font-size: 0.92em; }
   outline-offset: 2px;
 }
 
-/* Dragging (drag.js). A lifted card leaves a faded copy in its place while
-   a floating copy follows the pointer. A blue line shows where it will land,
-   and the zone it would land in gets a blue outline. */
+/* Dragging (drag.js). A floating copy of the card follows the pointer while
+   the card itself steps out of its column. A card-sized dashed slot opens
+   where it will land, and the zone it would land in gets a blue outline. */
 
 .card {
   -webkit-user-select: none;
@@ -368,7 +368,7 @@ code { font-family: var(--font-mono); font-size: 0.92em; }
   -webkit-touch-callout: none;
 }
 
-.card.is-lifted { opacity: 0.35; }
+.card.is-lifted { display: none; }
 
 .card-ghost {
   position: fixed;
@@ -385,10 +385,10 @@ body.is-dragging * { cursor: grabbing !important; }
 
 body.is-dragging .card:hover { border-color: var(--border); border-top-color: var(--band); }
 
-.drop-marker {
-  height: 4px;
-  border-radius: 2px;
-  background: var(--accent);
+.drop-slot {
+  border: 2px dashed var(--accent);
+  border-radius: var(--radius-card);
+  background: rgba(47, 91, 211, 0.06);
 }
 
 .is-drop-target { box-shadow: inset 0 0 0 2px var(--accent); }
@@ -467,10 +467,13 @@ body.is-dragging .card:hover { border-color: var(--border); border-top-color: va
 .someday-head {
   display: flex;
   align-items: center;
-  justify-content: space-between;
   gap: 8px;
   padding: 24px 16px 4px;
 }
+
+.someday-head .zone-title { margin-right: auto; }
+
+.someday-close { display: none; }
 
 .someday-note {
   margin: 0;
@@ -494,19 +497,97 @@ body.is-dragging .card:hover { border-color: var(--border); border-top-color: va
   color: var(--ink-secondary);
 }
 
-/* On a phone the open drawer covers the board, leaving the tab showing. */
+/* On a phone (and other narrow screens): the zones snap into view one at a
+   time with the next one peeking in, Someday is a pill at the bottom right,
+   and the open drawer is a full-screen sheet with its own close button. */
 @media (max-width: 760px) {
-  .board-area:has(.someday-panel:not([hidden])) { padding-right: 53px; }
+  .site-header { padding: 14px 16px 10px; }
+  .quickadd-bar { padding: 0 16px 14px; }
+  .quickadd-key { display: none; }
+
+  .board-area,
+  .board-area:has(.someday-panel:not([hidden])) { padding-right: 0; }
+
+  /* The bottom padding keeps the last card clear of the Someday pill. */
+  .horizon {
+    padding: 20px 0 96px 16px;
+    scroll-snap-type: x mandatory;
+    scroll-padding-left: 16px;
+  }
+
+  .zones {
+    grid-template-columns: repeat(5, min(calc(100vw - 72px), 420px));
+    width: max-content;
+    min-width: 0;
+    padding-right: 16px;
+  }
+
+  .zone { scroll-snap-align: start; }
+
+  .someday {
+    position: fixed;
+    top: auto;
+    right: 16px;
+    bottom: 16px;
+    z-index: 15;
+    border: none;
+    background: none;
+  }
+
+  .someday-inner {
+    position: static;
+    height: auto;
+    max-height: none;
+  }
+
+  .someday-tab {
+    width: auto;
+    min-height: 48px;
+    flex-direction: row;
+    gap: 10px;
+    padding: 0 12px 0 18px;
+    border: 1px solid var(--border);
+    border-radius: 24px;
+    background: var(--surface);
+    box-shadow: 0 6px 18px rgba(24, 25, 28, 0.16);
+  }
+
+  .someday-tab:hover { background: var(--surface-soft); }
+  .someday-tab svg { display: none; }
+
+  .someday-tab.is-drop-target {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 1px var(--accent), 0 6px 18px rgba(24, 25, 28, 0.16);
+  }
+
+  .someday-tab-label {
+    writing-mode: horizontal-tb;
+    transform: none;
+  }
+
+  .someday-tab-count {
+    min-width: 24px;
+    height: 24px;
+    padding: 0 6px;
+    border-radius: 12px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--plain-count);
+    color: var(--ink);
+    font-weight: 500;
+  }
 
   .someday-panel {
     position: fixed;
-    top: 0;
-    bottom: 0;
-    right: 52px;
-    z-index: 20;
-    width: min(340px, calc(100vw - 52px));
-    box-shadow: -12px 0 32px rgba(24, 25, 28, 0.18);
+    inset: 0;
+    z-index: 30;
+    width: auto;
+    border-right: none;
   }
+
+  .someday-head { padding: 16px 16px 4px; }
+  .someday-close { display: flex; }
 }
 
 /* The "Move to This Week" box (datepick.js). */

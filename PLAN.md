@@ -13,13 +13,87 @@ updates, and done cards disappearing all checked out.
 card, Ctrl+Enter adds to Someday, Shift+Enter adds to Today), the editing
 panel, Mark done, and the In progress pill.
 
-**Slice 1c: built, waiting for your test.** Drag to reschedule, reordering
-within zones, and the Someday drawer. Details and the test list are below.
+**Slice 1c: first test done, revisions built, waiting for your second
+test.** Drag to reschedule, reordering within zones, and the Someday drawer
+looked good to you. Your notes (a sliver of board beside the phone drawer,
+the phone generally, and hard-to-read reordering) are addressed in
+"Revisions after your first test" below. Pushed to
+`claude/modest-cannon-oehnrb` for testing, not yet confirmed.
 
 **Next, once you confirm 1c:** commit it, then start slice 1d in a fresh
 session.
 
 ## Slice 1c: drag to reschedule, reorder within zones, the Someday drawer
+
+### Revisions after your first test
+
+You said: the phone drawer shows a sliver of the board on its left; the
+phone needs more tuning in general; and while reordering it's hard to see
+where a card will land, partly because the dragged card hides the column.
+You picked "snap zone to zone" and "bottom pill" from the options I offered.
+
+**1. Clearer landing spot (phone and desktop).** The thin blue line becomes
+an empty slot the same height as the card you're dragging, with a dashed
+blue border. The cards around it visibly part to make room. The faded copy
+left behind at the card's old spot goes away, so there's only one gap on
+the board, and it is exactly where the card will land. Leaving a zone
+closes its gap.
+
+**2. Zones snap on a phone** (screens up to 760px wide, which is where the
+earlier phone styles already start). Each zone is nearly the full screen
+width, capped at 420px on bigger screens like a tablet, with the next zone
+peeking in at the right edge. A swipe settles on one whole zone instead of
+leaving one and a half cut off. This stays within SPEC: zones still scroll
+sideways inside their own container. While dragging, holding a card near
+the left or right edge hops one zone over, then pauses before hopping again,
+instead of sliding continuously (sliding fights the snapping). On desktop
+nothing changes.
+
+**3. Someday on a phone is a pill, not a side tab.** The 52px tab took about
+13% of the phone's width. On phones it becomes a small "Someday 3" pill
+floating at the bottom right. Tap it and the drawer opens as a full-screen
+sheet, edge to edge (so no sliver), with its own close button at the top.
+Dragging a card out of the sheet tucks it away as before, and you can drop a
+card on the pill to send it to Someday. The board gets extra room at the
+bottom so the pill never sits on top of the last card. Desktop keeps the
+mockup's tab.
+
+**4. Small phone tidying** that comes with the above: the header and board
+use 16px side margins instead of 32px, and the "Enter" key hint in quick add
+is hidden on phones, which have no physical Enter key to hint at.
+
+Files touched: `js/drag.js` (the slot, zone hopping), `js/someday.js` and
+`index.html` (the sheet's close button), `css/horizon.css` (everything
+visual). No data or Firebase changes.
+
+Test list for this round:
+- [ ] Desktop and phone: drag a card within a column. A card-sized dashed
+      gap opens where it will land, and nothing is left at its old spot.
+      Escape brings it back.
+- [ ] Phone: swipe the board; it settles on one zone, with the next one
+      peeking in.
+- [ ] Phone: hold a card and drag it to the right edge; the board hops one
+      zone, waits, then hops again if you keep holding there.
+- [ ] Phone: the "Someday" pill sits at the bottom right with the count.
+      Tap it: the drawer fills the screen with no board showing, and the X
+      closes it.
+- [ ] Phone: drag a card from the sheet onto a zone; drag a board card onto
+      the pill.
+- [ ] Phone: scroll to the bottom of a long zone; the last card clears the
+      pill.
+- [ ] Desktop: the side tab and drawer look and work as before.
+
+What I checked here, with the same pretend Firebase and simulated touch:
+the whole first-round list again plus this round's (80 checks, all
+passing, no console errors). Specifically: the slot matches the dragged
+card's height, there is only ever one slot, and Escape restores the card;
+a swipe settles with a zone lined up at the left edge; holding at the right
+edge hops one zone (330px on a 390px screen), pauses, then hops again, with
+the zone under the finger outlined; the pill sits at the bottom right; the
+sheet covers the full screen at both 390px and 430px wide (so no sliver),
+its X closes it, and it takes focus when it opens; dropping a card on the
+pill sends it to Someday. Not checked: a real phone in your hand, where
+swipe feel and hop timing are worth judging for yourself.
 
 ### What it does
 
