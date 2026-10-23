@@ -13,15 +13,30 @@ updates, and done cards disappearing all checked out.
 card, Ctrl+Enter adds to Someday, Shift+Enter adds to Today), the editing
 panel, Mark done, and the In progress pill.
 
-**Slice 1c: first test done, revisions built, waiting for your second
-test.** Drag to reschedule, reordering within zones, and the Someday drawer
-looked good to you. Your notes (a sliver of board beside the phone drawer,
-the phone generally, and hard-to-read reordering) are addressed in
-"Revisions after your first test" below. Pushed to
-`claude/modest-cannon-oehnrb` for testing, not yet confirmed.
+**Slice 1c: done and confirmed** (2026-10-23). Drag to reschedule,
+reordering within zones, the Someday drawer, then revisions after your first
+test: a card-sized landing slot, zones that snap one at a time on a phone, a
+Someday pill and full-screen sheet on phones, and a guard so a double-click
+on a panel's X can't sign you out.
 
-**Next, once you confirm 1c:** commit it, then start slice 1d in a fresh
-session.
+**Next: slice 1d** (hard and soft deadlines, morning triage, Let it go, the
+Since yesterday line, the 14-day header strip, and the `?today=` testing
+parameter). Start it in a fresh session: read this file, then the 1d parts of
+SPEC.md ("Cards", "Morning triage", "Since yesterday", "Visual design" for
+the hard-deadline chips and the header strip, and "Testing aids"), plus
+`design/Main.dc.html` and `design/horizon-board.png`. Things to settle there:
+- Triage buttons that change a date (Tomorrow, This week, Someday) must
+  clear the card's `order`, as the editor does (see order.js), and they need
+  `position: relative; z-index: 1` to sit above the card's stretched click
+  area. drag.js already leaves buttons inside cards alone.
+- The quick add confirmation ("Added to Someday. Edit") and the Since
+  yesterday line want the same spot. Probably the confirmation fades after a
+  few seconds and gives the spot back.
+- Where "the first time I open the board each day" and the last-visit time
+  are stored (SPEC says Firestore; the profile document is the natural home),
+  and what counts as a visit.
+- How the 14-day strip and the triage buttons fit on a phone, now that zones
+  snap one at a time there.
 
 ## Slice 1c: drag to reschedule, reorder within zones, the Someday drawer
 
