@@ -9,9 +9,152 @@ Working notes so any session can pick up where the last one stopped.
 `horizontasks-29d6c`. Sign-in, the approved list, zone placement, live
 updates, and done cards disappearing all checked out.
 
-**Next: slice 1b** (quick add with title only, card editing, marking done,
-in-progress status). Start it in a fresh session: read this file, then the
-1b parts of SPEC.md ("Cards", "Quick add" Phase 1).
+**Slice 1b: done and confirmed** (2026-10-23). Quick add (Enter opens a new
+card, Ctrl+Enter adds to Someday, Shift+Enter adds to Today), the editing
+panel, Mark done, and the In progress pill.
+
+**Next: slice 1c** (drag to reschedule, reordering within zones, the Someday
+drawer). Start it in a fresh session: read this file, then the 1c parts of
+SPEC.md ("Core concept: two layers", the Someday drawer paragraph). Two
+things from 1b to settle there: whether the "Added to Someday. Edit" line
+stays once the drawer exists, and where a card's manual order is stored
+(reordering needs a field the 1a/1b cards don't have yet).
+
+## Slice 1b: quick add, card editing, marking done, in progress
+
+### What it does
+
+A text field sits under the header, as in the mockup. Type a title, then:
+
+- **Enter** opens the editing panel as a "New card" with your title filled
+  in and the cursor in the date field. Nothing is saved until you press
+  **Add card**. Cancel or Escape saves nothing and puts your text back in the
+  field.
+- **Ctrl+Enter** (Cmd+Enter on a Mac) saves it at once with no date, which
+  means Someday.
+- **Shift+Enter** saves it at once in Today.
+
+(Changed after your first test: originally plain Enter was the instant
+Someday add. You expect to have a date more often than not, so Enter now
+opens the panel and the instant add moved to Ctrl+Enter.)
+
+A short line beside the field confirms where each new card went ("Added to
+Someday.", "Added for Fri, Oct 30.") with an **Edit** button, because a
+Someday card has nowhere to be seen until the drawer arrives in 1c.
+
+Click any card and an editing panel slides in from the right, styled like the
+mockup's Inbox panel. It has Title, Notes, Due date (with a "No date" button
+that sends the card to Someday), Category, and an "In progress" checkbox.
+Buttons: **Mark done**, **Cancel**, **Save**. Escape, the X, or a click on
+the dimmed board closes it without saving. Mark done also keeps any edits
+you made in the panel, then the card leaves the board (it stays in Firestore
+with status `done` and a `completedAt` time, ready for the Done view in 1f).
+
+In-progress cards show the mockup's small blue "In progress" pill.
+
+Deliberately not in 1b: deadline type (1d), repeat (1e), project (Phase 2),
+Let it go (1d), the Someday drawer and dragging (1c), and Haiku parsing of
+quick add text (3c).
+
+### Files touched
+
+```
+index.html         quick add bar; the editing panel (a <dialog>)
+css/horizon.css    quick add, clickable cards, pill, panel and form styles
+js/model.js        newCard(): the shape of a freshly added card
+js/firebase.js     addCard, updateCard, markDone
+js/board.js        cards become clickable; the In progress pill
+js/quickadd.js     NEW: the quick add field and its three keys; no Firebase
+js/editor.js       NEW: the editing panel; no Firebase
+js/app.js          wires the two new pieces to Firebase
+```
+
+The same split as 1a: the quick add and the editor only collect what you
+typed and hand it to `app.js`, which is the one place that decides what to
+save. Demo mode can later hand them a pretend save function.
+
+How a click reaches the editor: each card's title is a real button, and a
+CSS trick stretches its clickable area over the whole card. A screen reader
+hears "button, Finalize the display booklist"; a mouse can click anywhere on
+the card. When 1d adds triage buttons inside cards, they sit on top of that
+stretched area and still work.
+
+Saving only writes the fields you actually changed. That way, if a card is
+changed somewhere else (another tab, the console) while the panel is open,
+Save doesn't overwrite the parts you didn't touch.
+
+Saves show up on the board instantly, before Firestore confirms them. If
+Firestore later refuses a save, the board undoes it and a message says so.
+
+### Setup steps (yours)
+
+None. The 1a rules already let you write your own cards, and no new index is
+needed. Test on the live site once this branch is pushed (GitHub Pages
+redeploys within a minute or two), or locally with `python3 -m http.server`.
+
+### Defaults (you confirmed 1b with these in place; change any of them anytime)
+
+1. **Category for quick-added cards.** Quick add has no way to say a
+   category, so new cards start with none: a gray band reading "No category"
+   until you pick one in the editor. The alternative is a default category
+   (Admin, say) set in `config.js`. I went with none because a wrong
+   category looks right at a glance and a missing one doesn't.
+2. **The quick add placeholder.** The mockup says *Add anything: "flyer draft
+   for nov program fri"*, which promises that "fri" becomes a date. That's
+   Phase 3. Until then the placeholder reads *Add anything: "flyer draft for
+   the November program"* so the board doesn't promise what it can't do yet.
+3. **No delete.** SPEC has no delete, and I didn't add one. A typo card can be
+   fixed in the editor; an unwanted one can be marked done now, and let go
+   once 1d exists. Say if you want a real delete.
+
+### Proposals (not built; say yes and I'll add them)
+
+- **A one-click done on the card itself** (a small circle beside the title),
+  so finishing something doesn't take two clicks and a panel. The mockup
+  doesn't show one, which is why I held off.
+- **Undo after Mark done**: "Marked done. Undo" in the quick add status line
+  for a few seconds. Until 1f there is no other way to get a done card back
+  except the Firebase console.
+- **Field checks in the security rules** (status must be one of the four
+  words, title must be text, and so on). Today the rules check *who* writes,
+  not *what*. The app only writes valid cards, so this guards against bugs
+  rather than people. Cheap to add whenever you like.
+
+### How to test
+
+- [ ] Type a title, press Enter: the "New card" panel opens with the title
+      in it and the cursor in Due. No Mark done button. Pick a date and
+      category, press Add card: the card appears in its zone and the line
+      says "Added for ...".
+- [ ] Enter, then Escape: nothing saved, and the title is back in the field.
+- [ ] Ctrl+Enter (Cmd+Enter on a Mac): the field clears, "Added to Someday."
+      appears, and no card shows on the board. Edit opens that card.
+- [ ] Shift+Enter puts the new card in Today.
+- [ ] Enter on an empty or all-spaces field does nothing.
+- [ ] In the console, new cards have `source: "quick_add"`, `status: "open"`,
+      `category: null`, and `createdAt`/`updatedAt` times.
+- [ ] Click a card (anywhere on it): the panel opens with its values filled in.
+      Tab to a card and press Enter: same.
+- [ ] Change the title, notes, date, category; Save. The card updates and moves
+      zones if the date changed.
+- [ ] "No date" then Save: the card leaves the board (it's in Someday).
+- [ ] Check "In progress", Save: the pill appears. Uncheck, Save: it goes.
+- [ ] Mark done: the card disappears; in the console it has `status: "done"`
+      and a `completedAt` time.
+- [ ] Escape, X, Cancel, and clicking the dim area all close without saving.
+- [ ] Clearing the title and pressing Save asks for a title instead of saving.
+- [ ] Shrink to phone width: the panel fills the screen and nothing scrolls
+      sideways.
+
+What I checked here, in a real browser with a pretend Firebase standing in
+for Google's: every item above (52 checks, all passing, no console errors),
+plus that only changed fields are written, that focus returns to the card
+after the panel closes, that a refused quick add gives your text back, and
+that a title containing HTML shows as plain text. Screenshots of the board,
+the panel, and phone width looked right against the mockup. Not checked
+here: real Firestore saves and the rules, which need your live project.
+
+Confirmed by you on the live site and committed as one slice.
 
 ## Slice 1a: config, sign-in, rules, and the Horizon from Firestore
 

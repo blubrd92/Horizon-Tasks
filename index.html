@@ -47,6 +47,17 @@
       </nav>
     </header>
 
+    <div class="quickadd-bar">
+      <label class="quickadd">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"></path></svg>
+        <span class="visually-hidden">Add a card</span>
+        <input type="text" id="quickadd-input" class="quickadd-input" autocomplete="off" enterkeyhint="done" placeholder="Add anything: &ldquo;flyer draft for the November program&rdquo;" aria-describedby="quickadd-help" disabled>
+        <kbd class="quickadd-key" aria-hidden="true">Enter</kbd>
+      </label>
+      <span id="quickadd-help" class="visually-hidden">Enter opens it as a new card so you can add a date and details. Control and Enter adds it to Someday right away. Shift and Enter adds it to Today right away.</span>
+      <p id="quickadd-status" class="quickadd-status" role="status"></p>
+    </div>
+
     <div class="board-area">
       <main class="horizon">
         <p id="board-message" class="board-message" role="alert" hidden></p>
@@ -54,6 +65,59 @@
       </main>
     </div>
   </div>
+
+  <!-- The card editor. Opens from the right when a card is clicked. -->
+  <dialog id="editor" class="panel-dialog" aria-labelledby="editor-heading">
+    <form id="editor-form" class="panel" novalidate>
+      <div class="panel-head">
+        <h2 id="editor-heading" class="panel-title">Edit card</h2>
+        <button type="button" id="editor-close" class="icon-button" aria-label="Close without saving">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"></path></svg>
+        </button>
+      </div>
+
+      <div class="panel-body">
+        <label class="field">Title
+          <input type="text" id="editor-title" class="field-input field-title" required autocomplete="off">
+        </label>
+        <p id="editor-title-error" class="field-error" hidden>A card needs a title.</p>
+
+        <label class="field">Notes
+          <textarea id="editor-notes" class="field-input field-notes" rows="4"></textarea>
+        </label>
+
+        <div class="field-row">
+          <div class="field">
+            <label for="editor-due">Due</label>
+            <div class="field-due">
+              <input type="date" id="editor-due" class="field-input field-date">
+              <button type="button" id="editor-nodate" class="button button-small">No date</button>
+            </div>
+          </div>
+          <label class="field">Category
+            <select id="editor-category" class="field-input"></select>
+          </label>
+        </div>
+        <p id="editor-someday" class="field-note" hidden>No date: this card lives in Someday.</p>
+
+        <label class="check">
+          <input type="checkbox" id="editor-progress">
+          In progress
+        </label>
+      </div>
+
+      <div class="panel-foot">
+        <button type="button" id="editor-done" class="button">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"></path></svg>
+          Mark done
+        </button>
+        <div class="panel-foot-end">
+          <button type="button" id="editor-cancel" class="button">Cancel</button>
+          <button type="submit" id="editor-save" class="button button-primary">Save</button>
+        </div>
+      </div>
+    </form>
+  </dialog>
 
 </body>
 </html>

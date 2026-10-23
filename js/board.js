@@ -12,6 +12,7 @@ import {
   zoneFor,
   addDays,
 } from './dates.js';
+import { STATUS } from './model.js';
 
 const FALLBACK_COLOR = '#6B6F78';
 
@@ -86,13 +87,26 @@ function cardHTML(card, today, categoryById) {
   const late = card.dueDate < today ? daysBetween(card.dueDate, today) : 0;
   const lateText = late ? `<span class="card-late">${late} ${late === 1 ? 'day' : 'days'} late</span>` : '';
 
+  const progress =
+    card.status === STATUS.IN_PROGRESS
+      ? `<span class="card-progress">
+           <svg width="10" height="10" viewBox="0 0 10 10" aria-hidden="true"><circle cx="5" cy="5" r="4" fill="none" stroke="currentColor" stroke-width="1.5"></circle><path d="M5 1 A4 4 0 0 1 5 9 Z" fill="currentColor"></path></svg>
+           In progress
+         </span>`
+      : '';
+
+  // The title is a real button; CSS stretches its click area over the whole
+  // card. app.js finds the card by data-card-id.
   return `
     <article class="card" style="--band: ${escapeHTML(color)}">
       <span class="card-category">${escapeHTML(categoryName)}</span>
-      <h3 class="card-title">${escapeHTML(card.title)}</h3>
+      <h3 class="card-title">
+        <button type="button" class="card-open" data-card-id="${escapeHTML(card.id)}">${escapeHTML(card.title)}</button>
+      </h3>
       <div class="card-meta">
         <span class="card-date">${formatShort(card.dueDate)}</span>
         ${lateText}
+        ${progress}
       </div>
     </article>`;
 }

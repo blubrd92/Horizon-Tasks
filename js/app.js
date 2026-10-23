@@ -2,8 +2,11 @@
 // sync with Firestore.
 
 import { config } from '../config.js';
-import { todayISO } from './dates.js';
+import { formatShort, todayISO } from './dates.js';
 import { renderBoard } from './board.js';
+import { newCard } from './model.js';
+import { setupQuickAdd } from './quickadd.js';
+import { setupEditor } from './editor.js';
 
 const views = {
   setup: document.getElementById('view-setup'),
@@ -23,6 +26,8 @@ const notallowedSignout = document.getElementById('notallowed-signout');
 // redrawn when the date changes without asking Firestore again.
 let latest = null;
 let drawnForDay = null;
+// The signed-in, approved user's ID, or null. Every save goes under it.
+let uid = null;
 
 function show(name) {
   for (const [key, el] of Object.entries(views)) el.hidden = key !== name;
@@ -72,6 +77,55 @@ async function start() {
   signoutButton.addEventListener('click', () => fb.signOut());
   notallowedSignout.addEventListener('click', () => fb.signOut());
 
+  const quickAdd = setupQuickAdd({
+    input: document.getElementById('quickadd-input'),
+    status: document.getElementById('quickadd-status'),
+    onCompose: (title) => editor.open({ id: null, ...newCard({ title }) }, latest ? latest.categories : []),
+    onAdd: (title, toToday) => fb.addCard(uid, newCard({ title, dueDate: toToday ? todayISO() : null })),
+    onEdit: openCard,
+  });
+
+  const editor = setupEditor({
+    onSave: (cardId, changes) => fb.updateCard(uid, cardId, changes).catch(showSaveError),
+    onDone: (cardId, changes) => fb.markDone(uid, cardId, changes).catch(showSaveError),
+    onCreate: (values) => {
+      const { id, saved } = fb.addCard(uid, { ...newCard(values), ...values });
+      quickAdd.showAdded(addedText(values.dueDate), id);
+      saved.catch((err) => {
+        quickAdd.showText(`Couldn't save \u201c${values.title}\u201d (${err.code || err.message}).`);
+        quickAdd.giveBack(values.title);
+      });
+    },
+    onClose: (card, saved) => {
+      // A new card closed without saving: its title goes back into quick
+      // add, so nothing typed is lost. Focus is already back there.
+      if (!card.id) {
+        if (!saved) quickAdd.giveBack(card.title);
+        return;
+      }
+      // The board redraws whenever Firestore sends news, which replaces the
+      // card that opened the panel. Focus goes back to the new copy of it.
+      const button = zonesEl.querySelector(`[data-card-id="${CSS.escape(card.id)}"]`);
+      if (button) button.focus();
+    },
+  });
+
+  function addedText(dueDate) {
+    if (!dueDate) return 'Added to Someday.';
+    if (dueDate === todayISO()) return 'Added to Today.';
+    return `Added for ${formatShort(dueDate)}.`;
+  }
+
+  function openCard(cardId) {
+    const card = latest && latest.cards.find((c) => c.id === cardId);
+    if (card) editor.open(card, latest.categories);
+  }
+
+  zonesEl.addEventListener('click', (event) => {
+    const button = event.target.closest('[data-card-id]');
+    if (button) openCard(button.dataset.cardId);
+  });
+
   fb.watchAuth(async (user) => {
     const thisChange = ++authChange;
     if (stopWatching) {
@@ -79,7 +133,11 @@ async function start() {
       stopWatching = null;
     }
     latest = null;
+    uid = null;
     zonesEl.innerHTML = '';
+    editor.close();
+    quickAdd.clear();
+    quickAdd.setEnabled(false);
 
     if (!user) {
       show('signin');
@@ -98,6 +156,8 @@ async function start() {
       boardMessage.hidden = true;
       const categories = await fb.loadProfile(user.uid);
       if (thisChange !== authChange) return;
+      uid = user.uid;
+      quickAdd.setEnabled(true);
       stopWatching = fb.watchActiveCards(
         user.uid,
         (cards) => {
@@ -120,6 +180,13 @@ function showLoadError(err) {
     err.code === 'permission-denied'
       ? "Firestore refused to share your cards. Check that the rules in firestore.rules are published in the Firebase console."
       : `Couldn't load your cards (${err.code || err.message}).`;
+}
+
+// Saves appear on the board at once; if Firestore later refuses one, the board
+// puts the card back as it was and this says why.
+function showSaveError(err) {
+  boardMessage.hidden = false;
+  boardMessage.textContent = `A change didn't save, so the board shows the card as it was (${err.code || err.message}).`;
 }
 
 start();
