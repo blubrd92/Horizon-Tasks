@@ -3,6 +3,7 @@
 
 import {
   dayOfMonth,
+  fromISO,
   daysBetween,
   formatMonthDay,
   formatRange,
@@ -17,11 +18,19 @@ import { compareCards } from './order.js';
 
 const FALLBACK_COLOR = '#6B6F78';
 
-export function renderBoard(container, { cards, categories, today }) {
+// triage is true during morning triage: soft cards in Overdue then show
+// "Still on your plate?" and their buttons.
+export function renderBoard(container, { cards, categories, today, triage = false }) {
   const zones = buildZones(zoneBounds(today));
   const categoryById = new Map(categories.map((c) => [c.id, c]));
   for (const zone of zones) zone.cards = cardsIn(zone.key, cards, today);
-  container.innerHTML = zones.map((zone) => zoneHTML(zone, today, categoryById)).join('');
+  container.innerHTML = zones.map((zone) => zoneHTML(zone, today, categoryById, triage)).join('');
+}
+
+// True if a card gets triage buttons in the morning: soft and overdue.
+// Hard cards stay until you open them and decide.
+export function offersTriage(card, today) {
+  return card.deadlineType !== 'hard' && Boolean(card.dueDate) && card.dueDate < today;
 }
 
 // The Someday drawer's cards: every card without a date.
@@ -69,7 +78,7 @@ function buildZones(bounds) {
   ];
 }
 
-function zoneHTML(zone, today, categoryById) {
+function zoneHTML(zone, today, categoryById, triage) {
   const count = zone.cards.length;
   const countLabel = `${count} ${count === 1 ? 'card' : 'cards'}`;
   const heading =
@@ -94,12 +103,12 @@ function zoneHTML(zone, today, categoryById) {
         <span class="zone-count" aria-label="${countLabel}">${count}</span>
       </div>
       <div class="zone-cards" data-drop-list>
-        ${zone.cards.map((card) => cardHTML(card, today, categoryById)).join('')}
+        ${zone.cards.map((card) => cardHTML(card, today, categoryById, triage)).join('')}
       </div>
     </section>`;
 }
 
-function cardHTML(card, today, categoryById) {
+function cardHTML(card, today, categoryById, triage = false) {
   const category = categoryById.get(card.category);
   const color = category ? category.color : FALLBACK_COLOR;
   const categoryName = category ? category.name : card.category || 'No category';
@@ -114,9 +123,18 @@ function cardHTML(card, today, categoryById) {
          </span>`
       : '';
 
+  // Orange only when a hard deadline is due today or already past; further
+  // out (or undated), a quiet gray outline.
+  const hard =
+    card.deadlineType === 'hard'
+      ? `<span class="card-hard${card.dueDate && card.dueDate <= today ? ' is-due' : ''}">Hard deadline</span>`
+      : '';
+
   // Someday cards have no date to show.
   const date = card.dueDate ? `<span class="card-date">${formatShort(card.dueDate)}</span>` : '';
-  const meta = date || lateText || progress ? `<div class="card-meta">${date}${lateText}${progress}</div>` : '';
+  const meta =
+    date || lateText || hard || progress ? `<div class="card-meta">${date}${lateText}${hard}${progress}</div>` : '';
+  const triageSection = triage && offersTriage(card, today) ? triageHTML(card, today) : '';
 
   // The title is a real button; CSS stretches its click area over the whole
   // card. app.js finds the card by data-card-id; drag.js by data-drag-id.
@@ -127,7 +145,27 @@ function cardHTML(card, today, categoryById) {
         <button type="button" class="card-open" data-card-id="${escapeHTML(card.id)}">${escapeHTML(card.title)}</button>
       </h3>
       ${meta}
+      ${triageSection}
     </article>`;
+}
+
+// "Still on your plate?" and its buttons. app.js handles the clicks, by
+// data-triage (what to do) and data-triage-card (which card).
+function triageHTML(card, today) {
+  // On a Sunday This Week has no days left.
+  const weekLeft = fromISO(today).getDay() !== 0;
+  const button = (action, label, extra = '') =>
+    `<button type="button" class="triage-button${extra}" data-triage="${action}">${label}</button>`;
+  return `
+      <div class="card-triage" role="group" aria-label="Still on your plate? ${escapeHTML(card.title)}" data-triage-card="${escapeHTML(card.id)}">
+        <span class="triage-prompt">Still on your plate?</span>
+        <div class="triage-buttons">
+          ${button('tomorrow', 'Tomorrow')}
+          ${weekLeft ? button('week', 'This week') : ''}
+          ${button('someday', 'Someday')}
+          ${button('letgo', 'Let it go', ' triage-letgo')}
+        </div>
+      </div>`;
 }
 
 // Card text comes from Firestore, so it is escaped before going into HTML.

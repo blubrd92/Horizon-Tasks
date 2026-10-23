@@ -21,6 +21,11 @@
   --overdue-count: #A23B5E;
   --today-tint: #DCE4F7;
   --progress-tint: #E3E9FA;
+  --hard-ink: #9A3F06;
+  --hard-tint: #FDEBDD;
+  --hard-outline: #CFCBC1;
+  --triage-line: #DDBFCB;
+  --strip-day: #ECE9E1;
   --plain-count: #D6D3CA;
   --tab: #E3E0D8;
 
@@ -141,6 +146,93 @@ code { font-family: var(--font-mono); font-size: 0.92em; }
   justify-content: space-between;
   gap: 20px;
 }
+
+/* The wordmark and the 14-day strip, side by side. */
+.header-start {
+  display: flex;
+  align-items: center;
+  gap: 28px;
+  flex-wrap: wrap;
+  min-width: 0;
+}
+
+/* The 14-day strip (strip.js): weekday, date, and a dot per card due. */
+.strip {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.strip-day {
+  /* Keeps each tile's hidden label inside the strip, so on a phone it
+     scrolls with the strip instead of widening the page. */
+  position: relative;
+  width: 40px;
+  height: 56px;
+  border-radius: var(--radius-button);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  background: var(--strip-day);
+  color: var(--ink-date);
+}
+
+.strip-day.is-weekend {
+  background: transparent;
+  color: var(--ink-placeholder);
+  border: 1px solid var(--border-soft);
+}
+
+.strip-day.is-today {
+  background: var(--accent);
+  color: #FFFFFF;
+}
+
+.strip-dow {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.strip-num {
+  font-family: var(--font-display);
+  font-size: 17px;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.strip-dots {
+  display: flex;
+  gap: 2px;
+  height: 5px;
+}
+
+.strip-dot {
+  width: 5px;
+  height: 5px;
+  border-radius: 3px;
+  background: var(--accent);
+}
+
+.is-today .strip-dot { background: #FFFFFF; }
+
+/* Shown only with the ?today= testing parameter. */
+.pretend-bar {
+  margin: 0;
+  padding: 8px 32px;
+  background: var(--tab);
+  font-size: 13px;
+  line-height: 1.4;
+  color: var(--ink);
+}
+
+.pretend-bar a { color: var(--accent-dark); font-weight: 500; }
 
 .header-nav {
   display: flex;
@@ -322,6 +414,65 @@ code { font-family: var(--font-mono); font-size: 0.92em; }
 
 .card-late { color: var(--overdue-ink); }
 
+/* Hard deadlines: orange only when due today or already late, otherwise a
+   quiet gray outline. Nothing else on the board is orange. */
+.card-hard {
+  font-size: 12px;
+  color: var(--ink-secondary);
+  border: 1px solid var(--hard-outline);
+  padding: 1px 7px;
+  border-radius: 10px;
+}
+
+.card-hard.is-due {
+  font-weight: 600;
+  color: var(--hard-ink);
+  background: var(--hard-tint);
+  border-color: var(--hard-tint);
+}
+
+/* Morning triage: "Still on your plate?" and its buttons, on soft cards in
+   Overdue on the first open of the day. */
+.card-triage {
+  border-top: 1px dashed var(--triage-line);
+  padding-top: 10px;
+  margin-top: 2px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.triage-prompt {
+  font-size: 13px;
+  color: var(--ink-secondary);
+}
+
+.triage-buttons {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 6px;
+}
+
+/* Above the card's stretched click area (see .card-open below). */
+.triage-button {
+  position: relative;
+  z-index: 1;
+  min-height: 44px;
+  padding: 4px;
+  border: 1px solid var(--border);
+  background: var(--surface-soft);
+  border-radius: var(--radius-button);
+  font-size: 13px;
+  line-height: 1.2;
+  color: var(--ink);
+  cursor: pointer;
+}
+
+.triage-button:hover { background: var(--surface); border-color: #C9C5BA; }
+
+.triage-letgo { border-color: var(--triage-line); color: var(--overdue-ink); }
+.triage-letgo:hover { border-color: var(--overdue-ink); }
+
 .card-progress {
   display: inline-flex;
   align-items: center;
@@ -502,6 +653,30 @@ body.is-dragging .card:hover { border-color: var(--border); border-top-color: va
    and the open drawer is a full-screen sheet with its own close button. */
 @media (max-width: 760px) {
   .site-header { padding: 14px 16px 10px; }
+  .pretend-bar { padding: 8px 16px; }
+
+  /* The strip gets its own row under the wordmark and Sign out, and swipes
+     sideways inside itself; 14 tiles don't fit a phone. */
+  .site-header {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    row-gap: 12px;
+  }
+
+  .header-start { display: contents; }
+
+  .strip {
+    grid-column: 1 / -1;
+    grid-row: 2;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    margin: 0 -16px;
+    padding: 0 16px;
+    scrollbar-width: none;
+  }
+
+  .strip::-webkit-scrollbar { display: none; }
+  .strip-day { flex: none; }
   .quickadd-bar { padding: 0 16px 14px; }
   .quickadd-key { display: none; }
 
@@ -698,11 +873,33 @@ body.is-dragging .card:hover { border-color: var(--border); border-top-color: va
   padding: 3px 7px;
 }
 
-.quickadd-status {
+/* One spot, shared by the quick add confirmation and the Since yesterday
+   line (quickadd.js shows one at a time). */
+/* As tall as the confirmation's Edit button, so the bar doesn't jump when
+   the two swap. */
+.quickadd-line {
+  min-width: 0;
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+}
+
+.quickadd-status,
+.since-line {
   margin: 0;
   font-size: 14px;
+  line-height: 1.4;
   color: var(--ink-secondary);
 }
+
+.quickadd-status { transition: opacity 300ms ease-out; }
+.quickadd-status.is-fading { opacity: 0; }
+
+@media (prefers-reduced-motion: reduce) {
+  .quickadd-status { transition: none; }
+}
+
+.since-strong { color: var(--ink); font-weight: 500; }
 
 .link-button {
   min-height: 44px;
@@ -886,6 +1083,24 @@ body.is-dragging .card:hover { border-color: var(--border); border-top-color: va
 
 .field-error { color: var(--overdue-ink); }
 .field-note { color: var(--ink-secondary); }
+
+.checks {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.check-block {
+  display: flex;
+  flex-direction: column;
+}
+
+.check-note {
+  margin: -6px 0 0 28px;
+  font-size: 13px;
+  line-height: 1.4;
+  color: var(--ink-secondary);
+}
 
 .check {
   display: inline-flex;

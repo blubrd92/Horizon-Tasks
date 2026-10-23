@@ -20,6 +20,7 @@ export function setupEditor({ onSave, onDone, onCreate, onClose }) {
   const someday = document.getElementById('editor-someday');
   const category = document.getElementById('editor-category');
   const progress = document.getElementById('editor-progress');
+  const hard = document.getElementById('editor-hard');
   const heading = document.getElementById('editor-heading');
   const saveButton = document.getElementById('editor-save');
   const doneButton = document.getElementById('editor-done');
@@ -43,6 +44,7 @@ export function setupEditor({ onSave, onDone, onCreate, onClose }) {
     due.value = card.dueDate || '';
     fillCategories(categories);
     progress.checked = card.status === STATUS.IN_PROGRESS;
+    hard.checked = card.deadlineType === 'hard';
     updateSomedayNote();
     dialog.showModal();
     // A new card's title is already typed; the date is usually next.
@@ -90,6 +92,7 @@ export function setupEditor({ onSave, onDone, onCreate, onClose }) {
       dueDate: due.value || null,
       category: category.value || null,
       status: progress.checked ? STATUS.IN_PROGRESS : STATUS.OPEN,
+      deadlineType: hard.checked ? 'hard' : 'soft',
     };
   }
 

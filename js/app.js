@@ -2,8 +2,20 @@
 // sync with Firestore.
 
 import { config } from '../config.js';
-import { formatShort, todayISO, zoneBounds, zoneFor, zoneStart } from './dates.js';
-import { cardsIn, describeZone, placeOf, renderBoard, renderSomeday } from './board.js';
+import {
+  addDays,
+  formatShort,
+  ignoredToday,
+  pretendToday,
+  todayISO,
+  zoneBounds,
+  zoneFor,
+  zoneStart,
+} from './dates.js';
+import { cardsIn, describeZone, offersTriage, placeOf, renderBoard, renderSomeday } from './board.js';
+import { renderStrip } from './strip.js';
+import { sinceLine } from './since.js';
+import { planVisit } from './visits.js';
 import { newCard } from './model.js';
 import { planDrop } from './order.js';
 import { setupQuickAdd } from './quickadd.js';
@@ -21,6 +33,8 @@ const views = {
 const zonesEl = document.getElementById('zones');
 const horizonEl = document.getElementById('horizon');
 const somedayCardsEl = document.getElementById('someday-cards');
+const stripEl = document.getElementById('strip');
+const pretendBar = document.getElementById('pretend-bar');
 const boardMessage = document.getElementById('board-message');
 const signinButton = document.getElementById('signin-button');
 const signinError = document.getElementById('signin-error');
@@ -38,6 +52,26 @@ let uid = null;
 // pointer, so news from Firestore waits until the card is dropped.
 let dragging = false;
 let drawWaiting = false;
+
+// Firebase (loaded once the config is real) and the quick add field, set up
+// in start().
+let fb = null;
+let quickAdd = null;
+
+// Morning triage and the Since yesterday line (see visits.js).
+// claimedDay: the day this tab last counted as a visit.
+// triageDay: the day this tab shows triage buttons for.
+// since: { day, at } the line counts from, or null for no line.
+// finished: cards done since then; undefined while loading, null if they
+// couldn't be loaded.
+let claimedDay = null;
+let triageDay = null;
+let since = null;
+let finished;
+let stopFinished = null;
+// After a triage button pressed from the keyboard, focus goes to the next
+// overdue card's buttons once the board redraws.
+let focusTriageFor = null;
 
 // A panel's X sits right over the Sign out button, so a double-click on the
 // X would close the panel and then sign you out. For a moment after any
@@ -69,16 +103,147 @@ function draw() {
     return;
   }
   drawnForDay = todayISO();
-  const data = { ...latest, today: drawnForDay };
+  const data = { ...latest, today: drawnForDay, triage: triageDay === drawnForDay };
   renderBoard(zonesEl, data);
   someday.setCount(renderSomeday(somedayCardsEl, data));
+  renderStrip(stripEl, data);
+  drawSince();
+
+  if (focusTriageFor) {
+    const button = zonesEl.querySelector(`[data-triage-card="${CSS.escape(focusTriageFor)}"] button`);
+    focusTriageFor = null;
+    if (button) button.focus();
+  }
+}
+
+function drawSince() {
+  if (!quickAdd) return;
+  // Wait for the finished cards rather than showing a line that changes a
+  // moment later.
+  const ready = latest && since && !(since.at !== null && finished === undefined);
+  quickAdd.setSince(
+    ready ? sinceLine({ since, today: todayISO(), active: latest.cards, finished: since.at === null ? [] : finished }) : null,
+  );
 }
 
 // Cards drift left at midnight even if the page stays open: once a minute,
-// redraw if the date has changed since the last drawing.
+// redraw if the date has changed since the last drawing. A new day while
+// you're looking is also a new visit.
 setInterval(() => {
-  if (latest && todayISO() !== drawnForDay) draw();
+  if (latest && todayISO() !== drawnForDay) {
+    draw();
+    claimVisit();
+  }
 }, 60 * 1000);
+
+// Coming back to a tab or window that was already open is a visit too.
+document.addEventListener('visibilitychange', () => {
+  if (document.hidden) return;
+  if (latest && todayISO() !== drawnForDay) draw();
+  claimVisit();
+});
+
+// Counts this tab as today's visit, once a day, and only while the board is
+// on screen: a tab sitting unseen in the background must not use up the
+// morning's triage. `stored` is the visit record if it was just read;
+// otherwise it's read fresh.
+async function claimVisit(stored = null) {
+  const today = todayISO();
+  if (!uid || document.hidden || claimedDay === today) return;
+  claimedDay = today;
+  const forUid = uid;
+  let record = stored;
+  if (!record) {
+    try {
+      record = await fb.loadVisit(forUid);
+    } catch (err) {
+      console.warn('Could not read the visit record', err);
+      claimedDay = null;
+      return;
+    }
+  }
+  if (uid !== forUid || todayISO() !== today) return;
+
+  const plan = planVisit(record, today);
+  const testing = Boolean(pretendToday());
+  // Test mode always shows triage, and never writes the visit record, so
+  // testing can't spoil tomorrow morning's real one.
+  if (plan.firstOfDay || testing || triageRemembered(today)) {
+    triageDay = today;
+    if (!testing) rememberTriage(today);
+  }
+  if (plan.write && !testing) fb.saveVisit(forUid, plan.write).catch((err) => console.warn('Could not save the visit record', err));
+  watchSince(plan.since);
+  draw();
+}
+
+// The tab that got the day's triage keeps it through a reload (phones reload
+// background tabs on their own). sessionStorage belongs to this one tab.
+function triageKey() {
+  return `horizon.triageDay.${uid}`;
+}
+
+function triageRemembered(today) {
+  try {
+    return sessionStorage.getItem(triageKey()) === today;
+  } catch {
+    return false;
+  }
+}
+
+function rememberTriage(today) {
+  try {
+    sessionStorage.setItem(triageKey(), today);
+  } catch {
+    // Private browsing can refuse storage; triage still works until reload.
+  }
+}
+
+// Starts counting finished cards from `next.at` for the Since yesterday line.
+function watchSince(next) {
+  if (stopFinished) {
+    stopFinished();
+    stopFinished = null;
+  }
+  since = next;
+  finished = undefined;
+  if (since && since.at !== null && uid) {
+    stopFinished = fb.watchFinishedSince(
+      uid,
+      since.at,
+      (cards) => {
+        finished = cards;
+        drawSince();
+      },
+      (err) => {
+        console.warn('Could not load finished cards', err);
+        finished = null;
+        drawSince();
+      },
+    );
+  }
+  drawSince();
+}
+
+// The bar that says a ?today= test date is on (or was typed wrong).
+function showPretendBar() {
+  const date = pretendToday();
+  const ignored = ignoredToday();
+  if (!date && ignored === null) return;
+  const url = new URL(location.href);
+  url.searchParams.delete('today');
+  const link = document.createElement('a');
+  link.href = url.pathname + url.search + url.hash;
+  if (date) {
+    link.textContent = 'Back to the real today';
+    pretendBar.replaceChildren(`Testing: the board is treating ${formatShort(date)} as today. Changes you make still save. `, link);
+  } else {
+    link.textContent = 'Remove it';
+    pretendBar.replaceChildren(`Testing: \u201c?today=${ignored}\u201d isn't a real date, so the board is using the real today. `, link);
+  }
+  pretendBar.hidden = false;
+}
+showPretendBar();
 
 function configIsFilledIn() {
   return Object.values(config.firebase).every((v) => typeof v === 'string' && v && !v.includes('PASTE_'));
@@ -92,7 +257,7 @@ async function start() {
 
   // Firebase is loaded only once the config is real, so a blank config shows
   // the setup note instead of a confusing Firebase error.
-  const fb = await import('./firebase.js');
+  fb = await import('./firebase.js');
   let stopWatching = null;
   // Counts sign-ins and sign-outs, so a slow check left over from an earlier
   // one can tell it is out of date and stop.
@@ -114,9 +279,10 @@ async function start() {
   });
   notallowedSignout.addEventListener('click', () => fb.signOut());
 
-  const quickAdd = setupQuickAdd({
+  quickAdd = setupQuickAdd({
     input: document.getElementById('quickadd-input'),
     status: document.getElementById('quickadd-status'),
+    since: document.getElementById('since-line'),
     onCompose: (title) => editor.open({ id: null, ...newCard({ title }) }, latest ? latest.categories : []),
     onAdd: (title, toToday) => fb.addCard(uid, newCard({ title, dueDate: toToday ? todayISO() : null })),
     onEdit: openCard,
@@ -165,9 +331,45 @@ async function start() {
 
   for (const el of [zonesEl, somedayCardsEl]) {
     el.addEventListener('click', (event) => {
+      const triage = event.target.closest('[data-triage]');
+      if (triage) {
+        handleTriage(triage, event);
+        return;
+      }
       const button = event.target.closest('[data-card-id]');
       if (button) openCard(button.dataset.cardId);
     });
+  }
+
+  // A morning triage button. Tomorrow, This week, and Someday change the
+  // date, so the card's old place among its neighbors is cleared, the same
+  // as in the editor (see order.js). Let it go takes it off the board.
+  function handleTriage(button, event) {
+    const group = button.closest('[data-triage-card]');
+    const cardId = group && group.dataset.triageCard;
+    const card = findCard(cardId);
+    const today = todayISO();
+    if (!card || !uid || !offersTriage(card, today)) return;
+    const action = button.dataset.triage;
+    const weekEnd = zoneBounds(today).weekEnd;
+    if (action === 'week' && weekEnd <= today) return;
+
+    // From the keyboard (a click with no mouse behind it), focus moves on
+    // to the next overdue card, so you can work down the column.
+    if (event.detail === 0) {
+      const ids = [...zonesEl.querySelectorAll('[data-triage-card]')].map((g) => g.dataset.triageCard);
+      const at = ids.indexOf(cardId);
+      focusTriageFor = ids[at + 1] || ids[at - 1] || null;
+    }
+
+    let saved;
+    if (action === 'letgo') {
+      saved = fb.letGo(uid, cardId);
+    } else {
+      const dueDate = action === 'tomorrow' ? addDays(today, 1) : action === 'week' ? weekEnd : null;
+      saved = fb.updateCard(uid, cardId, { dueDate, order: null });
+    }
+    saved.catch(showSaveError);
   }
 
   const datePick = setupDatePick();
@@ -270,6 +472,11 @@ async function start() {
     uid = null;
     zonesEl.innerHTML = '';
     somedayCardsEl.innerHTML = '';
+    stripEl.innerHTML = '';
+    claimedDay = null;
+    triageDay = null;
+    focusTriageFor = null;
+    watchSince(null);
     someday.setCount(0);
     someday.close();
     datePick.cancel();
@@ -292,7 +499,7 @@ async function start() {
       }
       show('board');
       boardMessage.hidden = true;
-      const categories = await fb.loadProfile(user.uid);
+      const { categories, visit } = await fb.loadProfile(user.uid);
       if (thisChange !== authChange) return;
       uid = user.uid;
       quickAdd.setEnabled(true);
@@ -304,6 +511,9 @@ async function start() {
         },
         showLoadError,
       );
+      // The record just read is fresh unless the tab is out of sight, in
+      // which case the visit waits until you look, and reads it again then.
+      claimVisit(document.hidden ? null : visit);
     } catch (err) {
       if (thisChange !== authChange) return;
       show('board');

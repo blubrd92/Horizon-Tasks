@@ -40,8 +40,14 @@
   </main>
 
   <div id="view-board" class="board-view" hidden>
+    <!-- Only shown with the ?today= testing parameter in the address. -->
+    <p id="pretend-bar" class="pretend-bar" hidden></p>
+
     <header class="site-header">
-      <div class="wordmark">Horizon</div>
+      <div class="header-start">
+        <div class="wordmark">Horizon</div>
+        <ol id="strip" class="strip" aria-label="Cards due over the next two weeks"></ol>
+      </div>
       <nav class="header-nav" aria-label="Account">
         <button type="button" id="signout-button" class="button">Sign out</button>
       </nav>
@@ -55,7 +61,12 @@
         <kbd class="quickadd-key" aria-hidden="true">Enter</kbd>
       </label>
       <span id="quickadd-help" class="visually-hidden">Enter opens it as a new card so you can add a date and details. Control and Enter adds it to Someday right away. Shift and Enter adds it to Today right away.</span>
-      <p id="quickadd-status" class="quickadd-status" role="status"></p>
+      <!-- One spot, shared: the Since yesterday line normally, a quick add
+           confirmation for a few seconds after you add a card. -->
+      <div class="quickadd-line">
+        <p id="quickadd-status" class="quickadd-status" role="status"></p>
+        <p id="since-line" class="since-line" hidden></p>
+      </div>
     </div>
 
     <div class="board-area">
@@ -124,10 +135,19 @@
         </div>
         <p id="editor-someday" class="field-note" hidden>No date: this card lives in Someday.</p>
 
-        <label class="check">
-          <input type="checkbox" id="editor-progress">
-          In progress
-        </label>
+        <div class="checks">
+          <label class="check">
+            <input type="checkbox" id="editor-progress">
+            In progress
+          </label>
+          <div class="check-block">
+            <label class="check">
+              <input type="checkbox" id="editor-hard" aria-describedby="editor-hard-note">
+              Hard deadline
+            </label>
+            <p id="editor-hard-note" class="check-note">A real outside cutoff. It never gets a Let it go button.</p>
+          </div>
+        </div>
       </div>
 
       <div class="panel-foot">

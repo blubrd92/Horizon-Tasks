@@ -28,10 +28,32 @@ export function fromISO(iso) {
   return new Date(y, m - 1, d);
 }
 
-// The one place the app asks what day it is. Slice 1d adds the ?today=
-// testing parameter here.
+// The testing parameter: ?today=2026-10-22 in the address makes the whole
+// app treat that date as today. It only changes what the app shows and
+// works out; it never rewrites a stored date by itself.
+const pretend = readPretend();
+
+function readPretend() {
+  const value = typeof location === 'undefined' ? null : new URLSearchParams(location.search).get('today');
+  if (value === null) return { date: null, ignored: null };
+  // A real calendar date only: 2026-02-30 doesn't survive the round trip.
+  if (isISODate(value) && toISO(fromISO(value)) === value) return { date: value, ignored: null };
+  return { date: null, ignored: value };
+}
+
+// The test date, or null in normal use.
+export function pretendToday() {
+  return pretend.date;
+}
+
+// What was typed after ?today= if it wasn't a real date, or null.
+export function ignoredToday() {
+  return pretend.ignored;
+}
+
+// The one place the app asks what day it is.
 export function todayISO() {
-  return toISO(new Date());
+  return pretend.date || toISO(new Date());
 }
 
 export function addDays(iso, n) {
@@ -85,6 +107,32 @@ export function zoneFor(due, bounds) {
 export function formatShort(iso) {
   const date = fromISO(iso);
   return `${DOW_SHORT[date.getDay()]}, ${MONTHS[date.getMonth()]} ${date.getDate()}`;
+}
+
+// "Thursday, Oct 22"
+export function formatLong(iso) {
+  const date = fromISO(iso);
+  return `${DOW_LONG[date.getDay()]}, ${MONTHS[date.getMonth()]} ${date.getDate()}`;
+}
+
+// "Thursday"
+export function weekdayName(iso) {
+  return DOW_LONG[fromISO(iso).getDay()];
+}
+
+// "Th": the strip's tiles.
+export function weekdayLetters(iso) {
+  return DOW_SHORT[fromISO(iso).getDay()].slice(0, 2);
+}
+
+export function isWeekend(iso) {
+  const dow = fromISO(iso).getDay();
+  return dow === 0 || dow === 6;
+}
+
+// Local midnight at the start of a day, in milliseconds.
+export function startOfDay(iso) {
+  return fromISO(iso).getTime();
 }
 
 // "Nov 8"

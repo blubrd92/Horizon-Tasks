@@ -18,6 +18,7 @@ import {
   query,
   serverTimestamp,
   setDoc,
+  Timestamp,
   updateDoc,
   where,
   writeBatch,
@@ -56,16 +57,65 @@ export async function isApproved(user) {
 }
 
 // Reads the user's profile, creating it on first sign-in with the starter
-// categories from config.js. Returns the user's categories.
+// categories from config.js. Returns { categories, visit }, where visit is
+// the visit record (see visits.js) with times in milliseconds.
 export async function loadProfile(uid) {
   const ref = doc(db, 'users', uid);
   const snap = await getDoc(ref);
-  if (snap.exists() && Array.isArray(snap.data().categories)) {
-    return snap.data().categories;
-  }
+  const data = snap.exists() ? snap.data() : {};
+  const visit = readVisit(data);
+  if (Array.isArray(data.categories)) return { categories: data.categories, visit };
   const categories = config.starterCategories;
   await setDoc(ref, { createdAt: serverTimestamp(), categories }, { merge: true });
-  return categories;
+  return { categories, visit };
+}
+
+// Just the visit record, fresh: for when the date changes while the board
+// is open.
+export async function loadVisit(uid) {
+  const snap = await getDoc(doc(db, 'users', uid));
+  return readVisit(snap.exists() ? snap.data() : {});
+}
+
+function readVisit(data) {
+  const day = (value) => (typeof value === 'string' ? value : null);
+  const time = (value) => (value && typeof value.toMillis === 'function' ? value.toMillis() : null);
+  return {
+    lastVisitDay: day(data.lastVisitDay),
+    lastVisitAt: time(data.lastVisitAt),
+    sinceDay: day(data.sinceDay),
+    sinceAt: time(data.sinceAt),
+  };
+}
+
+// Records the first visit of a day: `fields` from visits.js, with
+// lastVisitAt stamped by the server's clock, the same clock that stamps
+// completedAt, so the two compare fairly.
+export function saveVisit(uid, { lastVisitDay, sinceDay, sinceAt }) {
+  return setDoc(
+    doc(db, 'users', uid),
+    {
+      lastVisitDay,
+      lastVisitAt: serverTimestamp(),
+      sinceDay,
+      sinceAt: sinceAt === null ? null : Timestamp.fromMillis(sinceAt),
+    },
+    { merge: true },
+  );
+}
+
+// Calls onChange with every card marked done at or after `since` (in
+// milliseconds), now and whenever that changes. Filtering on completedAt
+// alone needs no extra index. A card marked done and then reopened keeps
+// its completedAt, so the caller checks status. Returns a function that
+// stops listening.
+export function watchFinishedSince(uid, since, onChange, onError) {
+  const q = query(collection(db, 'users', uid, 'cards'), where('completedAt', '>=', Timestamp.fromMillis(since)));
+  return onSnapshot(
+    q,
+    (snapshot) => onChange(snapshot.docs.map((d) => normalizeCard(d.id, d.data({ serverTimestamps: 'estimate' })))),
+    onError,
+  );
 }
 
 // Calls onChange with the full list of open and in-progress cards now, and
@@ -108,6 +158,12 @@ export function saveCards(uid, updates) {
     batch.update(doc(db, 'users', uid, 'cards', id), { ...changes, updatedAt: serverTimestamp() });
   }
   return batch.commit();
+}
+
+// Lets a card go: it leaves the board, and stays in Firestore for the Done
+// record's "let go" section.
+export function letGo(uid, cardId) {
+  return updateCard(uid, cardId, { status: STATUS.LET_GO, letGoAt: serverTimestamp() });
 }
 
 // Marks a card done, along with any edits made at the same moment. The card

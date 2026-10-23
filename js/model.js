@@ -2,7 +2,7 @@
 //
 // Firestore layout (everything a person owns sits under their own user ID):
 //
-//   users/{uid}                  profile: createdAt, categories
+//   users/{uid}                  profile: createdAt, categories, visits
 //   users/{uid}/cards/{cardId}   one document per card, in every status
 //
 // Later slices add, under the same users/{uid}:
@@ -23,6 +23,12 @@
 //   order          number, or null: the card's place within its zone, set
 //                  when you drag it (see order.js). null means date order.
 //   createdAt, updatedAt, completedAt, letGoAt   Firestore timestamps
+//
+// The profile document also keeps the visit record that morning triage and
+// the Since yesterday line use (see visits.js):
+//   lastVisitDay, lastVisitAt   the most recent day you opened the board,
+//                               and when you first opened it that day
+//   sinceDay, sinceAt           the visit day before that one
 
 import { isISODate, toISO } from './dates.js';
 
@@ -71,6 +77,8 @@ export function normalizeCard(id, data) {
     order: typeof data.order === 'number' && Number.isFinite(data.order) ? data.order : null,
     createdAt: millis(data.createdAt),
     updatedAt: millis(data.updatedAt),
+    completedAt: millis(data.completedAt),
+    letGoAt: millis(data.letGoAt),
   };
 }
 

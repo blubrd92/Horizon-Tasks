@@ -19,24 +19,305 @@ test: a card-sized landing slot, zones that snap one at a time on a phone, a
 Someday pill and full-screen sheet on phones, and a guard so a double-click
 on a panel's X can't sign you out.
 
-**Next: slice 1d** (hard and soft deadlines, morning triage, Let it go, the
-Since yesterday line, the 14-day header strip, and the `?today=` testing
-parameter). Start it in a fresh session: read this file, then the 1d parts of
-SPEC.md ("Cards", "Morning triage", "Since yesterday", "Visual design" for
-the hard-deadline chips and the header strip, and "Testing aids"), plus
-`design/Main.dc.html` and `design/horizon-board.png`. Things to settle there:
-- Triage buttons that change a date (Tomorrow, This week, Someday) must
-  clear the card's `order`, as the editor does (see order.js), and they need
-  `position: relative; z-index: 1` to sit above the card's stretched click
-  area. drag.js already leaves buttons inside cards alone.
-- The quick add confirmation ("Added to Someday. Edit") and the Since
-  yesterday line want the same spot. Probably the confirmation fades after a
-  few seconds and gives the spot back.
-- Where "the first time I open the board each day" and the last-visit time
-  are stored (SPEC says Firestore; the profile document is the natural home),
-  and what counts as a visit.
-- How the 14-day strip and the triage buttons fit on a phone, now that zones
-  snap one at a time there.
+**Slice 1d: built, awaiting your test** (2026-10-23). Hard and soft
+deadlines, morning triage, Let it go, the Since yesterday line, the 14-day
+header strip, and the `?today=` testing parameter. The plan, the four open
+questions it settled, and the test list are in the 1d section below. Pushed
+to the branch as an "awaiting test" commit, the way 1c was, so you can try
+it; the confirming commit comes after you test.
+
+**Next: finish testing slice 1d**, then commit it. After that, slice 1e
+(repeating cards) starts in a fresh session.
+
+## Slice 1d: deadlines, morning triage, Let it go, Since yesterday, the 14-day strip, `?today=`
+
+### What it does
+
+**Hard and soft deadlines.** The editor gets a "Hard deadline" checkbox
+under "In progress", with the line "A real outside cutoff. It never gets a
+Let it go button." Every card is soft unless you check it; your existing
+cards already read as soft. On the board:
+- A hard card due today or overdue shows the orange "Hard deadline" chip
+  (`#9A3F06` on `#FDEBDD`), as in the mockup's Today column.
+- A hard card further out, or in Someday, shows the gray outlined chip, as
+  in the mockup's Later column.
+- Nothing else is orange.
+
+**Morning triage.** On the first open of the day (what that means is
+question 3 below), every soft card in Overdue gets the mockup's dashed
+section: "Still on your plate?" and four buttons.
+- **Tomorrow:** due tomorrow.
+- **This week:** due on the last day of This Week (Sunday, since weeks run
+  Monday to Sunday). "This week" reads as "by the end of the week", and it
+  gives the card the most room before it comes back to Overdue. On a
+  Sunday This Week has no days left (the zone already refuses drops then),
+  so the button isn't shown and the card gets three.
+- **Someday:** the date is cleared and the card goes to the drawer.
+- **Let it go:** the card's status becomes `let_go` with a `letGoAt` time,
+  and it leaves the board. It stays in Firestore for the Done view's
+  "let go" section in 1f.
+
+Hard cards never get triage buttons. SPEC says they "never offer Let it go;
+they stay until I act on them directly", and I read "directly" as: open the
+card and decide. A missed hard deadline shouldn't be one tap from being
+quietly pushed to tomorrow. They keep the orange chip and "N days late"
+until you do. (If you'd rather they get Tomorrow, This week, and Someday,
+that's a small change.)
+
+After you press a triage button, keyboard focus moves to the next overdue
+card's buttons, so a keyboard user can work down the column.
+
+**Since yesterday.** The line beside quick add, worded as in the mockup:
+"Since yesterday: **2 cards moved into Today**, and you finished 3."
+- *Moved into Today* counts the cards due today that already existed before
+  today began. Cards you add today don't count (they were added, not
+  moved). A Today card you finish keeps counting, so finishing things
+  doesn't shrink the number.
+- *Finished* counts cards marked done since your previous visit began. Let
+  go cards don't count: letting go isn't finishing.
+- It stays live: mark a card done and "you finished 3" becomes 4.
+- When your previous visit wasn't yesterday, the label says so: "Since
+  Friday:" after a weekend, "Since Oct 12:" after a longer gap. The mockup's
+  "Since yesterday" would be untrue on a Monday.
+- Zero cases read plainly: "Since yesterday: 2 cards moved into Today." (no
+  finished clause when nothing was finished), "Since Friday: nothing new in
+  Today, and you finished 2.", "Since yesterday: nothing new in Today."
+- With no earlier visit on record (your first day with 1d, including the
+  day you test this) the line doesn't show. `?today=` lets you see it right
+  away; see "How to test".
+
+**The 14-day strip.** In the header after the wordmark, as in the mockup:
+14 small tiles starting today, each with the weekday, the date, and one
+blue dot per open card due that day. Today is solid blue with white dots;
+Saturday and Sunday are lighter. The dots stop at 4, as in the mockup's
+source, because a fifth no longer fits a 40px tile; a screen reader hears
+the real number ("Thursday, Oct 22: 6 cards due"). Overdue cards don't
+show on the strip: it starts at today.
+
+**`?today=2026-10-22`.** Add it to the address and the whole app treats
+that date as today: zones, "days late", triage, Since yesterday, the strip,
+and the dates that drags and triage buttons pick. It never rewrites a
+stored date by itself. Two safety rules while it's on:
+- A thin bar at the top says "Testing: the board is treating Thu, Oct 22 as
+  today. Changes you make still save." with a link back to the real today.
+  Things you *do* in test mode are real saves: pressing Tomorrow under
+  `?today=2026-10-30` really sets Oct 31. The bar keeps that from being a
+  surprise, and keeps a forgotten test link from looking like a broken
+  board.
+- It never writes your visit record (question 3), so testing can't spoil
+  tomorrow morning's real triage or Since yesterday line. Triage is always
+  on in test mode, so you can see it whenever you like.
+
+A value that isn't a real date (`?today=2026-13-40`) is ignored, and the bar
+says so.
+
+### The four open questions, settled
+
+**1. Triage and `order`, and the click area.** Tomorrow, This week, and
+Someday save the new date with `order: null`, the same rule as the editor
+(see order.js), so the card falls into date order in its new zone. The
+buttons get `position: relative; z-index: 1` so they sit above the card's
+stretched click area; the gaps between them and the "Still on your plate?"
+text still open the editor, like the rest of the card. drag.js already
+ignores presses on buttons, so pressing a triage button never lifts the
+card.
+
+**2. Sharing the spot beside quick add.** The Since yesterday line is what
+normally sits there. A quick add confirmation ("Added to Someday. Edit")
+takes the spot, stays 6 seconds, then fades and gives it back. While your
+mouse is over it, or keyboard focus is on its Edit button, the clock waits,
+so the Edit button never vanishes from under you. An error ("Couldn't save
+...") doesn't fade: it stays until your next quick add, because an error
+you missed is worse than a line you have to look past.
+
+**3. What counts as a visit, and where it's stored.** A visit is the board
+on screen: it loads in a tab you're looking at, or you come back to a tab
+or window that was already open, or the date changes while you're looking
+at it. A tab sitting unseen in the background never counts, so a laptop tab
+you forgot about can't use up the morning's triage at midnight.
+
+It's stored on your profile document, `users/{uid}`, in four fields:
+
+```
+lastVisitDay   "2026-10-23"   the most recent day you opened the board
+lastVisitAt    timestamp      when you first opened it that day
+sinceDay       "2026-10-22"   the visit day before that one
+sinceAt        timestamp      when that visit began
+```
+
+The first visit of a new day moves `lastVisit...` into `since...` and
+writes today into `lastVisit...`. That's one write a day; every other visit
+that day writes nothing. "First open of the day" means `lastVisitDay` was
+before today. The Since yesterday line counts from `sinceAt`.
+
+Why the start of the previous visit, not its end: finishing cards only
+happens during a visit, so counting from when yesterday's visit began
+catches yesterday's work, which is what "you finished 3" in the morning
+means. Counting from the end of yesterday's visit would almost always say
+"you finished 0" at 8am. It also means nothing has to be written when you
+close a tab, which browsers don't reliably allow.
+
+Triage belongs to the tab where the day's first visit happened, and it
+stays there all day, even if that tab reloads (phones reload background
+tabs on their own). That memory lives in the tab itself (the browser's
+`sessionStorage`), not in Firestore. A second tab, or your other device,
+opened later that day shows no triage. That's SPEC read literally: "the
+first time I open the board each day". The catch: a quick glance at your
+phone in bed would use up the triage you meant to do at your desk. If that
+happens to you, the alternative is "the first open of the day on each
+device", which is a small change.
+
+**4. On a phone.** The strip moves to its own row under the wordmark, full
+width, and scrolls sideways inside itself (about 8 days show at once, the
+rest a swipe away), the same way the zones scroll inside their own box.
+Shrinking 14 tiles to fit 358px would make each one about 25px wide, too
+small to read. The page itself still never scrolls sideways. The triage
+buttons stay a 2 by 2 grid inside the Overdue card: a phone's Overdue zone
+is about 320px wide, so each button is about 130px by 44px, a comfortable
+target. Overdue is the first zone, the one a phone opens on, so the
+morning's triage is the first thing you see, with Today peeking in at the
+right. The Since yesterday line wraps under the quick add field.
+
+### Files touched
+
+```
+index.html         the strip in the header; the testing bar; the Since
+                   yesterday line beside the quick add status; the Hard
+                   deadline checkbox in the editor
+css/horizon.css    chips, triage section, strip (and its phone row),
+                   the shared spot's fade, the testing bar
+js/dates.js        todayISO() honors ?today=; pretendToday() says whether
+                   it's on
+js/model.js        cards carry completedAt and letGoAt when read
+js/board.js        the chips and the triage section on cards
+js/strip.js        NEW: draws the 14-day strip; no Firebase
+js/since.js        NEW: works out the Since yesterday line's words; no
+                   Firebase, no page
+js/visits.js       NEW: decides whether a visit is the day's first and
+                   what to write; no Firebase, no page
+js/quickadd.js     owns the shared spot: confirmation, fade, the line
+js/editor.js       the Hard deadline checkbox
+js/firebase.js     the visit record; letGo(); a watch on cards finished
+                   since a given time
+js/app.js          wires it together: claims the day's visit, handles
+                   triage buttons, keeps the line live
+```
+
+### Setup steps (yours)
+
+None. No new rules: the profile document is already yours to write. No new
+index: the "finished since" lookup filters on one field (`completedAt`),
+which Firestore indexes by itself. The status check happens in the browser.
+
+### Decisions I made that SPEC doesn't cover (change any of them)
+
+1. **Hard cards get no triage at all** (see above).
+2. **"This week" means the last day of This Week**, and it's hidden on
+   Sundays.
+3. **The Since yesterday label names the real day** when the last visit
+   wasn't yesterday.
+4. **"Moved into Today" leaves out cards added today** and keeps cards
+   finished today.
+5. **The strip's dots stop at 4**, as in the mockup source.
+6. **The testing bar**, and test mode never writing the visit record.
+7. **Triage is per account, not per device**, and survives a reload of
+   the tab that got it.
+
+### Proposals (not built; say yes and I'll add them)
+
+- **Undo for Let it go** (and Mark done): "Let go. Undo" in the shared spot
+  for its 6 seconds. Let it go is one tap on a phone, and until 1f the only
+  way back is the Firebase console.
+- **Let it go in the editor**, for soft cards anywhere on the board. Right
+  now it only exists in morning triage, so an unwanted card that isn't
+  overdue can only be marked done, which would put it in your Done record.
+- **Triage per device** instead of per account (see question 3).
+
+### How to test
+
+Hard and soft:
+- [ ] Open a card: a "Hard deadline" checkbox sits under "In progress".
+      Check it and save: a card due today or earlier shows the orange chip;
+      one due later shows the gray outlined chip. Uncheck: the chip goes.
+- [ ] In the console the card has `deadlineType: "hard"`, then `"soft"`.
+- [ ] A new card from Enter in quick add can be made hard before Add card.
+
+Triage (easiest with a test date; cards dated before it are overdue):
+- [ ] Open the board with `?today=` set a few days ahead. The testing bar
+      shows. Every soft card in Overdue has "Still on your plate?" and four
+      buttons. Hard overdue cards have the orange chip and no buttons.
+- [ ] Tomorrow: the card moves to the day after the test date. This week:
+      it moves to that week's Sunday. Someday: it goes into the drawer.
+      Let it go: it leaves the board; in the console it has
+      `status: "let_go"` and a `letGoAt` time.
+- [ ] Reorder a card by dragging, then triage it: in the console its
+      `order` is `null`.
+- [ ] Clicking the gap between buttons, or "Still on your plate?", opens
+      the editor. Pressing and dragging a button never lifts the card.
+- [ ] With a Sunday test date (`?today=2026-10-25`), cards show three
+      buttons, no This week.
+- [ ] Tab to a triage button and press Enter: focus lands on the next
+      overdue card's first button.
+- [ ] Without `?today=`, real time: the first time you open the board on
+      a new day, overdue soft cards show triage. Reload that tab: still
+      there. Open the board in a second tab: no triage.
+
+Since yesterday:
+- [ ] Today (your first day with 1d) the line doesn't show without a test
+      date. Open the board once normally first (that writes today's visit),
+      then with `?today=` set to tomorrow it reads "Since yesterday: ..."
+      and counts tomorrow's cards as moved into Today.
+- [ ] Mark a card done in test mode: "you finished" goes up by one.
+- [ ] `?today=` set three days ahead: the label names your real last
+      visit's weekday ("Since Friday:"). Eight days ahead: it names the date
+      ("Since Oct 23:").
+- [ ] Tomorrow, with no test date, the line appears for real.
+- [ ] Ctrl+Enter a card: "Added to Someday. Edit" takes the spot, then
+      fades after about 6 seconds and the Since line comes back. Hover the
+      confirmation: it waits until you move away.
+
+The strip:
+- [ ] 14 tiles from today, today in solid blue, weekends lighter, one dot
+      per card due (up to 4). With a test date, the strip starts there.
+- [ ] Phone width: the strip is its own row under the wordmark and swipes
+      sideways; the page doesn't.
+
+`?today=`:
+- [ ] The bar's link takes you back to the real today.
+- [ ] `?today=garbage` shows the bar saying it was ignored, and the board
+      uses the real date.
+- [ ] After testing, open the board normally: your real visit record (in
+      the console, on your `users` document) wasn't changed by the test
+      visits.
+
+What I checked here, in a real browser (Chromium) with a pretend Firebase
+and the clock set to Thursday, Oct 22, Pacific time: 76 checks plus a 1c
+drag regression, all passing, no console errors or warnings. Specifically:
+triage on every soft overdue card and none on hard ones; each button's
+saved date (Tomorrow Oct 23, This week Oct 25, Someday none) with `order`
+cleared; Let it go's status and time; three buttons on a Sunday; a click
+on the prompt opening the editor, a click on a button not; pressing a
+button and dragging never lifting the card, while the title still drags;
+keyboard focus moving to the next card; orange and gray chips in the
+right places, with the exact mockup colors; the Since line's wording and
+counts (a card added today left out, a card finished in another session
+counted, a card done then reopened not counted), live after Mark done, and
+its "Wednesday" and "Oct 21" labels; the confirmation leaving after 6
+seconds, waiting while hovered; the strip's 14 tiles, weekends, dot cap,
+and hidden labels; the visit record written once on the first open,
+nothing on a reload or a second tab, triage kept through a reload and
+absent in the second tab; a tab loaded out of sight waiting until it's
+looked at; the new day claimed at midnight in an open tab; test mode never
+writing the visit record; bad and impossible test dates ignored with the
+bar saying so; no line on the first day with no record; and at phone
+width, the strip in its own swiping row, 128 by 44px triage buttons, taps
+working, and no sideways page scroll (that check caught one real bug,
+fixed: the strip's hidden labels were widening the page). Screenshots at
+desktop and phone width looked right against the mockup.
+
+Not checked: real Firestore saves, a real phone in your hand, and a real
+overnight. The visit logic around midnight and returning to a tab is the
+part most worth living with for a few days.
 
 ## Slice 1c: drag to reschedule, reorder within zones, the Someday drawer
 
