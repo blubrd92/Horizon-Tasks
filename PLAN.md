@@ -19,20 +19,42 @@ test: a card-sized landing slot, zones that snap one at a time on a phone, a
 Someday pill and full-screen sheet on phones, and a guard so a double-click
 on a panel's X can't sign you out.
 
-**Slice 1d: built and working in your first test; revisions in progress**
-(2026-10-25). Hard and soft deadlines, morning triage, Let it go, the Since
-yesterday line, the 14-day header strip, and the `?today=` testing
-parameter all checked out. You asked for three revisions: the editor opens
-beside the card instead of at the far right, a card can be dropped on a
-strip day, and tapping a strip day highlights that day's cards. The plan
-for them is at the top of the 1d section below.
+**Slice 1d: done and confirmed** (2026-10-25). Hard and soft deadlines,
+morning triage, Let it go, the Since yesterday line, the 14-day header
+strip, and the `?today=` testing parameter, then eight revisions after your
+tests: the editor opens beside the card; drop a card on a strip day; tap a
+strip day to highlight its cards; 44px strip tiles; triage buttons that
+stack when the card is narrow; busy days show their number on the strip; a
+Settings box (the gear beside Sign out) with "Fold long zones", off by
+default; and lanes plus a "Move to ..." label that show where a dragged
+card will land, with the board holding its height mid-drag.
 
-**Next: test the 1d revisions**, then commit the slice. After that, slice
-1e (repeating cards) starts in a fresh session.
+Your board has 44 sample cards on it, each marked `sample: true` (some done
+and one let go, for 1f). The scripts that add and remove them were given in
+the chat and aren't in the repo; saving them as a `tools/` folder is an open
+proposal.
+
+**Next: slice 1e** (repeating cards). Start it in a fresh session: read this
+file, then SPEC.md "Cards" (the repeat rule and "Repeating cards create
+their next instance when marked done") and "Visual design", plus
+`design/Main.dc.html` and `design/horizon-board.png` (the repeat icon with
+"Weekly" or "Monthly" on a card). Things to settle there:
+- What date the next instance gets: the old due date plus a week or month,
+  or the day you marked it done plus one. And what happens when a
+  repeating card is marked done late, or several periods late.
+- Monthly on the 29th to 31st: what the next date is in a shorter month.
+- What letting go of a repeating card means: just this one, or the series.
+- Where the repeat rule is set (the editor), whether the new instance keeps
+  the old one's category, deadline type, notes, and manual order, and how
+  the two copies are linked for the Done record in 1f.
+- Open proposals carried over from 1d (none needed for 1e): Undo for Let it
+  go and Mark done, Let it go in the editor, triage per device instead of
+  per account, pinning zone headers on long columns, and saving the sample
+  card scripts in `tools/`.
 
 ## Slice 1d: deadlines, morning triage, Let it go, Since yesterday, the 14-day strip, `?today=`
 
-### Revisions after your first test
+### Revisions after your first test (confirmed)
 
 You said: opening a card on the left means a big head turn to the editor on
 the far right; and the strip shows busy days well but feels like it should
