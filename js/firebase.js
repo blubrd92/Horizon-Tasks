@@ -25,7 +25,7 @@ import {
 } from 'https://www.gstatic.com/firebasejs/12.19.0/firebase-firestore.js';
 
 import { config } from '../config.js';
-import { ACTIVE_STATUSES, STATUS, normalizeCard } from './model.js';
+import { ACTIVE_STATUSES, STATUS, normalizeCard, normalizeSettings } from './model.js';
 
 const app = initializeApp(config.firebase);
 const auth = getAuth(app);
@@ -57,17 +57,23 @@ export async function isApproved(user) {
 }
 
 // Reads the user's profile, creating it on first sign-in with the starter
-// categories from config.js. Returns { categories, visit }, where visit is
-// the visit record (see visits.js) with times in milliseconds.
+// categories from config.js. Returns { categories, visit, settings }, where
+// visit is the visit record (see visits.js) with times in milliseconds.
 export async function loadProfile(uid) {
   const ref = doc(db, 'users', uid);
   const snap = await getDoc(ref);
   const data = snap.exists() ? snap.data() : {};
   const visit = readVisit(data);
-  if (Array.isArray(data.categories)) return { categories: data.categories, visit };
+  const settings = normalizeSettings(data.settings);
+  if (Array.isArray(data.categories)) return { categories: data.categories, visit, settings };
   const categories = config.starterCategories;
   await setDoc(ref, { createdAt: serverTimestamp(), categories }, { merge: true });
-  return { categories, visit };
+  return { categories, visit, settings };
+}
+
+// Saves one setting, leaving the others alone.
+export function saveSetting(uid, name, value) {
+  return setDoc(doc(db, 'users', uid), { settings: { [name]: value } }, { merge: true });
 }
 
 // Just the visit record, fresh: for when the date changes while the board

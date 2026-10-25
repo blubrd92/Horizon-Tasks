@@ -116,12 +116,54 @@ The other ideas from that conversation stay proposals: pinning each zone's
 header while you scroll a long column, and (rejected) folding a long zone
 into "Show 12 more", which tidies the board by hiding what you need to see.
 
+**7. A setting to fold long zones** (you asked for it after seeing 21
+sample cards in Next Two Weeks). Off by default, so the board shows every
+card unless you choose otherwise.
+- **Where:** a new Settings button (a gear icon, labeled "Settings" for
+  screen readers) beside Sign out opens a small box with one checkbox,
+  "Fold long zones". It saves the moment you click it. Future settings
+  (editing your categories, which SPEC promises) can live in the same box.
+- **What it does when on:** This Week, Next Two Weeks, and Later show their
+  first 5 cards (the soonest, or your arranged order), then a "+16 more"
+  button. Click it and the zone opens fully, with "Show fewer" at the
+  bottom. A zone only folds when at least 2 cards would be hidden; a
+  "+1 more" button would take as much room as the card it hides.
+- **Overdue and Today never fold.** They're what you act on now, and
+  hiding overdue work is the one thing the board must not do.
+- The zone's count still shows the full number (21), and the strip is
+  unchanged, so a folded zone never hides how much is in it.
+- Tapping a strip day whose cards are folded away opens that zone so the
+  highlight has something to show.
+- An opened zone stays open until you fold it again or reload the page.
+- Dragging into a folded zone works as before: the card lands where the
+  gap shows, among the visible cards.
+- **Stored** on your profile document as `settings.foldLongZones`
+  (true/false), so it follows you to every device. Another device that's
+  already open picks up the change on its next reload.
+
+Checked here (33 checks, plus the earlier 148 still passing, no console
+errors): off by default with every card showing; the gear opens the box
+and the change saves at once; This Week, Next Two Weeks, and Later fold to
+their 5 soonest while Overdue, Today, and a 6-card Later don't; the count
+keeps the full number; "+16 more" opens the zone and puts keyboard focus
+on the first card that was hidden, "Show fewer" folds it and puts focus
+back on the button; an opened zone survives the board redrawing; a strip
+day hidden in the fold opens the zone and clearing it folds it back; a
+drag into a folded zone shows the gap after the 5 visible cards and saves;
+a refused save puts the checkbox and board back with a message; the
+setting applies on load when stored; Sign out ignores a click right after
+the box closes; on a phone the gear sits beside Sign out at 44px and the
+box fits the screen.
+
 Files touched: `js/place.js` (NEW: the beside-the-card math, no page),
 `js/editor.js` (opens beside an anchor, follows it), `js/strip.js` (tiles as
 buttons and drop targets, the pressed day), `js/board.js` (highlighted and
 dimmed cards), `js/quickadd.js` (a fading note for the shared spot),
 `js/drag.js` (the strip scrolls during a drag), `js/app.js` (wiring),
-`css/horizon.css`. No data, rules, or Firebase changes.
+`css/horizon.css`; for revision 7, also `js/settings.js` (NEW: the
+Settings box), `js/firebase.js` and `js/model.js` (the `settings` field on
+your profile), and `index.html` (the button and the box). No rule
+changes.
 
 Test list for this round:
 - [ ] Desktop: click a card in Overdue, Today, and This Week: the editor
@@ -145,6 +187,15 @@ Test list for this round:
       (or simply sits last, when stacked).
 - [ ] Put 5 or more cards on one day: its strip tile shows the number
       instead of dots. 4 cards: 4 dots. On today's tile the number is white.
+- [ ] Settings (the gear beside Sign out): "Fold long zones" is off. Turn
+      it on: a zone with 7 or more cards shows 5 and "+N more"; Overdue
+      and Today show everything. The zone count still shows the total.
+- [ ] "+N more" opens the zone; "Show fewer" folds it again.
+- [ ] Tap a strip day whose cards are folded away: the zone opens and
+      they're outlined.
+- [ ] Reload, and open the board on another device: the setting stuck. In
+      the console, your `users` document has `settings.foldLongZones`.
+- [ ] Turn it off: every card shows again.
 
 What I checked here, the same way as before (pretend Firebase, clock on
 Thursday, Oct 22): 56 new checks, plus the first round's 76 again, all

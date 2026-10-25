@@ -29,6 +29,8 @@
 //   lastVisitDay, lastVisitAt   the most recent day you opened the board,
 //                               and when you first opened it that day
 //   sinceDay, sinceAt           the visit day before that one
+// and your settings:
+//   settings.foldLongZones      true to fold long zones (see board.js)
 
 import { isISODate, toISO } from './dates.js';
 
@@ -57,6 +59,13 @@ export function newCard({ title, dueDate = null }) {
     source: 'quick_add',
     order: null,
   };
+}
+
+// Settings with their defaults filled in. Every setting is off until you
+// turn it on.
+export function normalizeSettings(data) {
+  const settings = data && typeof data === 'object' ? data : {};
+  return { foldLongZones: settings.foldLongZones === true };
 }
 
 // Turns a Firestore card document into a predictable object, filling in

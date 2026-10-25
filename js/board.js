@@ -18,15 +18,23 @@ import { compareCards } from './order.js';
 
 const FALLBACK_COLOR = '#6B6F78';
 
+// Folding long zones (a setting, off by default): these zones show their
+// first FOLD_SHOW cards and a button for the rest, but only when at least
+// two would be hidden. Overdue and Today never fold: they're what you act
+// on now.
+const FOLDABLE = ['week', 'twoWeeks', 'later'];
+const FOLD_SHOW = 5;
+
 // triage is true during morning triage: soft cards in Overdue then show
 // "Still on your plate?" and their buttons. highlight is a day tapped in the
-// strip: its cards are outlined and the rest dimmed. Returns how many cards
-// are highlighted.
-export function renderBoard(container, { cards, categories, today, triage = false, highlight = null }) {
+// strip: its cards are outlined and the rest dimmed. fold is null, or
+// { open } (a Set of zone keys you've opened) when long zones fold. Returns
+// how many cards are highlighted.
+export function renderBoard(container, { cards, categories, today, triage = false, highlight = null, fold = null }) {
   const zones = buildZones(zoneBounds(today));
   const categoryById = new Map(categories.map((c) => [c.id, c]));
   for (const zone of zones) zone.cards = cardsIn(zone.key, cards, today);
-  const options = { triage, highlight };
+  const options = { triage, highlight, fold };
   container.innerHTML = zones.map((zone) => zoneHTML(zone, today, categoryById, options)).join('');
   const matches = highlight ? cards.filter((card) => card.dueDate === highlight).length : 0;
   // An empty day dims nothing: a board of faded cards would look broken.
@@ -87,6 +95,7 @@ function buildZones(bounds) {
 
 function zoneHTML(zone, today, categoryById, options) {
   const count = zone.cards.length;
+  const { shown, foldButton } = foldZone(zone, options);
   const countLabel = `${count} ${count === 1 ? 'card' : 'cards'}`;
   const heading =
     zone.key === 'today'
@@ -110,10 +119,33 @@ function zoneHTML(zone, today, categoryById, options) {
         <span class="zone-count" aria-label="${countLabel}">${count}</span>
       </div>
       <div class="zone-cards" data-drop-list>
-        ${zone.cards.map((card) => cardHTML(card, today, categoryById, options)).join('')}
+        ${shown.map((card) => cardHTML(card, today, categoryById, options)).join('')}
       </div>
+      ${foldButton}
     </section>`;
 }
+
+// Which of a zone's cards show, and the "+16 more" or "Show fewer" button.
+// app.js handles the button by data-fold (the zone's key).
+function foldZone(zone, { fold, highlight }) {
+  const hidden = zone.cards.length - FOLD_SHOW;
+  if (!fold || !FOLDABLE.includes(zone.key) || hidden < 2) return { shown: zone.cards, foldButton: '' };
+  // A highlighted strip day with cards in the folded part opens the zone,
+  // so the highlight has something to show.
+  const highlighted = highlight && zone.cards.slice(FOLD_SHOW).some((card) => card.dueDate === highlight);
+  if (fold.open.has(zone.key) || highlighted) {
+    const button = highlighted
+      ? ''
+      : `<button type="button" class="zone-fold" data-fold="${zone.key}" aria-expanded="true" aria-label="Show fewer cards in ${zone.name}">Show fewer</button>`;
+    return { shown: zone.cards, foldButton: button };
+  }
+  return {
+    shown: zone.cards.slice(0, FOLD_SHOW),
+    foldButton: `<button type="button" class="zone-fold" data-fold="${zone.key}" aria-expanded="false" aria-label="Show ${hidden} more cards in ${zone.name}"><span class="zone-fold-count">+${hidden}</span> more</button>`,
+  };
+}
+
+export { FOLD_SHOW };
 
 function cardHTML(card, today, categoryById, { triage = false, highlight = null } = {}) {
   const category = categoryById.get(card.category);

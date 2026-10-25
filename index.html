@@ -49,6 +49,9 @@
         <ol id="strip" class="strip" aria-label="Cards due over the next two weeks"></ol>
       </div>
       <nav class="header-nav" aria-label="Account">
+        <button type="button" id="settings-button" class="icon-button header-icon" aria-label="Settings" disabled>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+        </button>
         <button type="button" id="signout-button" class="button">Sign out</button>
       </nav>
     </header>
@@ -161,6 +164,29 @@
         </div>
       </div>
     </form>
+  </dialog>
+
+  <!-- Settings, from the gear beside Sign out. Changes save at once. -->
+  <dialog id="settings" class="small-dialog" aria-labelledby="settings-heading">
+    <div class="small-panel">
+      <div class="settings-head">
+        <h2 id="settings-heading" class="panel-title">Settings</h2>
+        <button type="button" id="settings-close" class="icon-button" aria-label="Close settings">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"></path></svg>
+        </button>
+      </div>
+      <div class="check-block">
+        <label class="check">
+          <input type="checkbox" id="setting-fold" aria-describedby="setting-fold-note">
+          Fold long zones
+        </label>
+        <p id="setting-fold-note" class="check-note">This Week, Next Two Weeks, and Later show their first 5 cards, with a button for the rest. Overdue and Today always show everything.</p>
+      </div>
+      <p class="settings-note">Saved to your account, so it follows you to your other devices.</p>
+      <div class="small-foot">
+        <button type="button" id="settings-done" class="button button-primary">Done</button>
+      </div>
+    </div>
   </dialog>
 
   <!-- Opens when a card is dropped on This Week, Next Two Weeks, or Later. -->

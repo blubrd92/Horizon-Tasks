@@ -13,17 +13,18 @@ import {
   zoneFor,
   zoneStart,
 } from './dates.js';
-import { cardsIn, describeZone, offersTriage, placeOf, renderBoard, renderSomeday } from './board.js';
+import { FOLD_SHOW, cardsIn, describeZone, offersTriage, placeOf, renderBoard, renderSomeday } from './board.js';
 import { renderStrip } from './strip.js';
 import { sinceLine } from './since.js';
 import { planVisit } from './visits.js';
-import { newCard } from './model.js';
+import { newCard, normalizeSettings } from './model.js';
 import { planDrop } from './order.js';
 import { setupQuickAdd } from './quickadd.js';
 import { setupEditor } from './editor.js';
 import { setupDrag } from './drag.js';
 import { setupSomeday } from './someday.js';
 import { setupDatePick } from './datepick.js';
+import { setupSettings } from './settings.js';
 
 const views = {
   setup: document.getElementById('view-setup'),
@@ -41,6 +42,7 @@ const boardMessage = document.getElementById('board-message');
 const signinButton = document.getElementById('signin-button');
 const signinError = document.getElementById('signin-error');
 const signoutButton = document.getElementById('signout-button');
+const settingsButton = document.getElementById('settings-button');
 const notallowedEmail = document.getElementById('notallowed-email');
 const notallowedSignout = document.getElementById('notallowed-signout');
 
@@ -79,6 +81,13 @@ let focusTriageFor = null;
 let highlightDay = null;
 let revealDay = false;
 
+// Your settings (see model.js), and the folded zones you've opened on this
+// page. focusFold asks the next drawing to put keyboard focus back near a
+// zone's fold button: { zone, opened }.
+let settings = normalizeSettings(null);
+const openZones = new Set();
+let focusFold = null;
+
 // A panel's X sits right over the Sign out button, so a double-click on the
 // X would close the panel and then sign you out. For a moment after any
 // panel closes, Sign out ignores clicks.
@@ -87,7 +96,7 @@ let panelClosedAt = 0;
 function notePanelClosed() {
   panelClosedAt = performance.now();
 }
-for (const id of ['editor', 'datepick']) document.getElementById(id).addEventListener('close', notePanelClosed);
+for (const id of ['editor', 'datepick', 'settings']) document.getElementById(id).addEventListener('close', notePanelClosed);
 document.getElementById('someday-close').addEventListener('click', notePanelClosed);
 
 const someday = setupSomeday({
@@ -111,11 +120,26 @@ function draw() {
   // The strip moves on at midnight, and so does a highlighted day.
   if (drawnForDay && todayISO() !== drawnForDay) highlightDay = null;
   drawnForDay = todayISO();
-  const data = { ...latest, today: drawnForDay, triage: triageDay === drawnForDay, highlight: highlightDay };
+  const data = {
+    ...latest,
+    today: drawnForDay,
+    triage: triageDay === drawnForDay,
+    highlight: highlightDay,
+    fold: settings.foldLongZones ? { open: openZones } : null,
+  };
   renderBoard(zonesEl, data);
   someday.setCount(renderSomeday(somedayCardsEl, data));
   renderStrip(stripEl, data);
   drawSince();
+
+  if (focusFold) {
+    const { zone, opened } = focusFold;
+    focusFold = null;
+    const zoneEl = zonesEl.querySelector(`.zone-${zone}`);
+    // Opened: the first card that was hidden. Folded: the "+N more" button.
+    const target = zoneEl && (opened ? zoneEl.querySelectorAll('.card-open')[FOLD_SHOW] : zoneEl.querySelector('[data-fold]'));
+    if (target) target.focus();
+  }
 
   if (revealDay) {
     revealDay = false;
@@ -399,6 +423,16 @@ async function start() {
 
   for (const el of [zonesEl, somedayCardsEl]) {
     el.addEventListener('click', (event) => {
+      const foldButton = event.target.closest('[data-fold]');
+      if (foldButton) {
+        const zone = foldButton.dataset.fold;
+        const opened = !openZones.has(zone);
+        if (opened) openZones.add(zone);
+        else openZones.delete(zone);
+        focusFold = { zone, opened };
+        draw();
+        return;
+      }
       const triage = event.target.closest('[data-triage]');
       if (triage) {
         handleTriage(triage, event);
@@ -441,6 +475,24 @@ async function start() {
   }
 
   const datePick = setupDatePick();
+
+  const settingsBox = setupSettings({
+    onChange: (name, value) => {
+      if (!uid) return;
+      const before = settings;
+      settings = { ...settings, [name]: value };
+      draw();
+      fb.saveSetting(uid, name, value).catch((err) => {
+        // Refused: put the setting and the board back as they were.
+        settings = before;
+        settingsBox.show(settings);
+        draw();
+        boardMessage.hidden = false;
+        boardMessage.textContent = `The setting didn't save, so it's back as it was (${err.code || err.message}).`;
+      });
+    },
+  });
+  settingsButton.addEventListener('click', () => settingsBox.open(settings));
 
   setupDrag({
     root: views.board,
@@ -553,6 +605,10 @@ async function start() {
     triageDay = null;
     focusTriageFor = null;
     highlightDay = null;
+    settings = normalizeSettings(null);
+    openZones.clear();
+    settingsBox.close();
+    settingsButton.disabled = true;
     watchSince(null);
     someday.setCount(0);
     someday.close();
@@ -576,9 +632,12 @@ async function start() {
       }
       show('board');
       boardMessage.hidden = true;
-      const { categories, visit } = await fb.loadProfile(user.uid);
+      const profile = await fb.loadProfile(user.uid);
+      const { categories, visit } = profile;
       if (thisChange !== authChange) return;
       uid = user.uid;
+      settings = profile.settings;
+      settingsButton.disabled = false;
       quickAdd.setEnabled(true);
       stopWatching = fb.watchActiveCards(
         user.uid,

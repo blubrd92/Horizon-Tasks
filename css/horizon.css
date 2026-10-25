@@ -831,6 +831,46 @@ body.is-dragging .card:hover { border-color: var(--border); border-top-color: va
   .someday-close { display: flex; }
 }
 
+/* Folding long zones (a setting): the "+16 more" and "Show fewer" button
+   under a zone's cards. */
+.zone-fold {
+  margin-top: 10px;
+  min-height: 44px;
+  width: 100%;
+  border: 1px dashed var(--border);
+  border-radius: var(--radius-card);
+  background: transparent;
+  font-size: 14px;
+  color: var(--ink-secondary);
+  cursor: pointer;
+}
+
+.zone-fold:hover { background: var(--surface-soft); color: var(--ink); border-style: solid; }
+
+.zone-fold-count {
+  font-family: var(--font-mono);
+  font-weight: 500;
+  color: var(--ink);
+}
+
+/* The Settings box (settings.js). */
+.header-icon { border-color: var(--border); }
+.header-icon:hover { background: var(--surface-soft); }
+
+.settings-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.settings-note {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.4;
+  color: var(--ink-secondary);
+}
+
 /* The "Move to This Week" box (datepick.js). */
 
 .small-dialog {
