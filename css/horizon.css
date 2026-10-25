@@ -217,9 +217,22 @@ code { font-family: var(--font-mono); font-size: 0.92em; }
 
 .strip-dots {
   display: flex;
+  align-items: center;
   gap: 2px;
-  height: 5px;
+  /* Tall enough for a busy day's number; dots sit in the middle. */
+  height: 10px;
 }
+
+/* A busy day: 5 or more cards show as a number instead of dots. */
+.strip-count {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 600;
+  line-height: 1;
+  color: var(--accent);
+}
+
+.is-today .strip-count { color: #FFFFFF; }
 
 .strip-dot {
   width: 5px;

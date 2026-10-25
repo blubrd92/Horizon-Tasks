@@ -100,6 +100,22 @@ narrower than about 1,400px; at 1,440px and wider it keeps the mockup's 2 by 2.
 Separately, on a Sunday (three buttons) the last one spans the whole row
 instead of sitting alone beside an empty space. CSS only.
 
+**6. A busy day shows its number on the strip** (added after you asked
+what happens with a huge number of cards on one day). The dots stopped at
+4, so a day with 4 cards and a day with 25 looked the same: the strip went
+quiet exactly when a day got truly busy. Now 1 to 4 cards are still dots,
+as in the mockup. From 5 on, the dots give way to the count itself in IBM
+Plex Mono (SPEC's font for every count), in the strip's blue, or white on
+today's tile. 100 or more reads "99+" so it never outgrows the tile.
+Nothing else about the tile changes size. Checked at desktop and phone
+width: 1 and 4 cards as dots, 5 and 12 as numbers (white on today), 120 as
+"99+" inside its tile, the hidden label always exact, every tile still
+44 by 56, and the earlier 132 checks still passing.
+
+The other ideas from that conversation stay proposals: pinning each zone's
+header while you scroll a long column, and (rejected) folding a long zone
+into "Show 12 more", which tidies the board by hiding what you need to see.
+
 Files touched: `js/place.js` (NEW: the beside-the-card math, no page),
 `js/editor.js` (opens beside an anchor, follows it), `js/strip.js` (tiles as
 buttons and drop targets, the pressed day), `js/board.js` (highlighted and
@@ -127,6 +143,8 @@ Test list for this round:
       every word fits inside its button. Full screen: 2 by 2.
 - [ ] On a Sunday: Let it go spans the row under Tomorrow and Someday
       (or simply sits last, when stacked).
+- [ ] Put 5 or more cards on one day: its strip tile shows the number
+      instead of dots. 4 cards: 4 dots. On today's tile the number is white.
 
 What I checked here, the same way as before (pretend Firebase, clock on
 Thursday, Oct 22): 56 new checks, plus the first round's 76 again, all
@@ -207,9 +225,9 @@ card's buttons, so a keyboard user can work down the column.
 **The 14-day strip.** In the header after the wordmark, as in the mockup:
 14 small tiles starting today, each with the weekday, the date, and one
 blue dot per open card due that day. Today is solid blue with white dots;
-Saturday and Sunday are lighter. The dots stop at 4, as in the mockup's
-source, because a fifth no longer fits a 40px tile; a screen reader hears
-the real number ("Thursday, Oct 22: 6 cards due"). Overdue cards don't
+Saturday and Sunday are lighter. Up to 4 cards show as dots; 5 or more
+show the number instead (revision 6 below). A screen reader hears the real
+number either way ("Thursday, Oct 22: 6 cards due"). Overdue cards don't
 show on the strip: it starts at today.
 
 **`?today=2026-10-22`.** Add it to the address and the whole app treats
@@ -336,7 +354,8 @@ which Firestore indexes by itself. The status check happens in the browser.
    wasn't yesterday.
 4. **"Moved into Today" leaves out cards added today** and keeps cards
    finished today.
-5. **The strip's dots stop at 4**, as in the mockup source.
+5. **The strip's dots stop at 4**, as in the mockup source, and the number
+   takes over from 5 (revision 6).
 6. **The testing bar**, and test mode never writing the visit record.
 7. **Triage is per account, not per device**, and survives a reload of
    the tab that got it.
