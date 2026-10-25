@@ -19,17 +19,120 @@ test: a card-sized landing slot, zones that snap one at a time on a phone, a
 Someday pill and full-screen sheet on phones, and a guard so a double-click
 on a panel's X can't sign you out.
 
-**Slice 1d: built, awaiting your test** (2026-10-23). Hard and soft
-deadlines, morning triage, Let it go, the Since yesterday line, the 14-day
-header strip, and the `?today=` testing parameter. The plan, the four open
-questions it settled, and the test list are in the 1d section below. Pushed
-to the branch as an "awaiting test" commit, the way 1c was, so you can try
-it; the confirming commit comes after you test.
+**Slice 1d: built and working in your first test; revisions in progress**
+(2026-10-25). Hard and soft deadlines, morning triage, Let it go, the Since
+yesterday line, the 14-day header strip, and the `?today=` testing
+parameter all checked out. You asked for three revisions: the editor opens
+beside the card instead of at the far right, a card can be dropped on a
+strip day, and tapping a strip day highlights that day's cards. The plan
+for them is at the top of the 1d section below.
 
-**Next: finish testing slice 1d**, then commit it. After that, slice 1e
-(repeating cards) starts in a fresh session.
+**Next: test the 1d revisions**, then commit the slice. After that, slice
+1e (repeating cards) starts in a fresh session.
 
 ## Slice 1d: deadlines, morning triage, Let it go, Since yesterday, the 14-day strip, `?today=`
+
+### Revisions after your first test
+
+You said: opening a card on the left means a big head turn to the editor on
+the far right; and the strip shows busy days well but feels like it should
+do something. You picked the editor beside the card, made smart about which
+side, plus two strip features: drop a card on a day, and tap a day to
+highlight its cards.
+
+**1. The editor opens beside the card** (screens wider than 760px; phones
+keep the full-screen panel, since there's no room beside anything there).
+- It's the same form, 420px wide, as tall as its contents need, and never
+  taller than the window (the middle scrolls if it has to).
+- **Which side:** to the right of the card when there's room, otherwise to
+  the left. So Overdue, Today, and This Week cards open to their right;
+  Next Two Weeks, Later, and Someday drawer cards open to their left. On a
+  narrower window where neither side has room, it takes the side with more
+  room and slides over just enough to stay on screen.
+- **Up and down:** its top lines up with the card's top, then shifts up
+  if it would run off the bottom of the window. A card near the bottom
+  gets an editor that sits higher; it never hangs off screen.
+- It follows the card if the window is resized or the board scrolls while
+  it's open.
+- The card you're editing gets a blue outline, and the dimming behind the
+  editor is lighter (so the card stays easy to see beside it).
+- It slides in from the card's side, a short distance, instead of from the
+  far right edge.
+- **A new card** (Enter in quick add) has no card to sit beside yet, so its
+  editor opens just under the quick add field, lined up with it.
+- **"Edit" in the quick add confirmation** opens beside the new card if
+  it's on the board or in the open drawer; if it went to a closed Someday,
+  under the quick add field.
+
+**2. Drop a card on a strip day.** Drag any card onto a tile and it gets
+that exact date, with no date box. The tile under the card gets the same
+blue outline zones get. Since you picked an exact date, the card lands in
+date order in whatever zone that date belongs to (its `order` is cleared).
+Dropping on the card's own date does nothing. On a phone, hold the card,
+drag it up to the strip (the page scrolls up near the top edge), and
+dragging near the strip's left or right edge scrolls the strip.
+
+**3. Tap a day to highlight its cards.** Each tile becomes a button. Tap it
+and the board dims every card except the ones due that day, which get a
+blue outline (so it doesn't rely on color alone), and the board scrolls to
+the zone they're in (on a phone, it swipes over to that zone). The tile
+stays pressed. Tap it again, or press Escape, to clear; tap another day to
+switch. The shared spot beside quick add says what's showing ("Showing 4
+cards due Tue, Oct 27. Tap the day again or press Escape to clear.", with
+the Escape part left off on a phone, which has no Escape key) and
+fades like a confirmation, which also tells a screen reader what happened.
+An empty day says "Nothing due Tue, Oct 27." and doesn't dim anything. The
+highlight clears itself at midnight, since the strip moves on.
+
+**4. Tiles grow from 40 to 44px wide**, to meet SPEC's 44px touch target
+now that they're buttons. The strip becomes about 668px on a desktop, which
+still fits beside the wordmark at the mockup's width. On a phone it already
+scrolls sideways.
+
+Files touched: `js/place.js` (NEW: the beside-the-card math, no page),
+`js/editor.js` (opens beside an anchor, follows it), `js/strip.js` (tiles as
+buttons and drop targets, the pressed day), `js/board.js` (highlighted and
+dimmed cards), `js/quickadd.js` (a fading note for the shared spot),
+`js/drag.js` (the strip scrolls during a drag), `js/app.js` (wiring),
+`css/horizon.css`. No data, rules, or Firebase changes.
+
+Test list for this round:
+- [ ] Desktop: click a card in Overdue, Today, and This Week: the editor
+      opens to its right, top lined up with the card. Next Two Weeks,
+      Later, and a drawer card: to its left.
+- [ ] A card near the bottom of the window: the editor shifts up and fits.
+- [ ] Narrow the window (about 900px wide): it still opens fully on screen.
+- [ ] The edited card has a blue outline while the editor is open.
+- [ ] Enter in quick add: the new-card editor opens under the field.
+- [ ] Phone: the editor is still full screen.
+- [ ] Drag a card onto a strip day: it gets that date and moves to the
+      zone that date belongs to. Drop it on its own day: nothing changes.
+- [ ] Tap a day with cards: others dim, its cards are outlined, the board
+      scrolls to them, the note appears. Tap again or press Escape: back to
+      normal. Tap an empty day: "Nothing due ..." and no dimming.
+- [ ] Phone: tap a day whose cards are in a far zone: the board swipes to
+      that zone.
+
+What I checked here, the same way as before (pretend Firebase, clock on
+Thursday, Oct 22): 56 new checks, plus the first round's 76 again, all
+passing, no console errors. The editor opens to the right of Overdue,
+Today, and This Week cards and to the left of Next Two Weeks, Later, and
+drawer cards, 12px from the card, top lined up; a card low in the window
+gets an editor shifted up to fit; at 900px wide every card's editor stays
+fully on screen; it follows the page when you scroll; it turns full screen
+if the window shrinks to phone width while it's open, and back; the card
+outline comes and goes; clicking outside, saving, and Escape still work;
+the new card editor sits under quick add with the cursor in the date. On
+the strip: 44px tiles; tapping highlights, switches, and clears (tap again
+or Escape, but Escape inside the editor only closes the editor); the
+highlight survives the board redrawing; an empty day dims nothing; on a
+phone the board swipes to the right zone. Dropping on a day sets the date
+with `order` cleared and no picker; dropping on the card's own day writes
+nothing; a Someday card can be dropped on a day; with the page scrolled
+down, dragging to the top edge scrolls up until the strip is in reach;
+dropping on zones still works. Two things the screenshots caught, fixed:
+on a phone the pressed day's outline was clipped by the strip's scrolling
+box, and the note told phone users to press Escape.
 
 ### What it does
 

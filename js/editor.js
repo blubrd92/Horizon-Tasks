@@ -1,9 +1,13 @@
-// The card editor: a panel that slides in from the right when a card is
-// clicked, or when you press Enter in quick add to start a new card. This
-// file only fills in the form and collects what changed; app.js decides how
-// changes are saved.
+// The card editor: a panel that opens beside the card you clicked, or under
+// the quick add field when you press Enter there to start a new card. On a
+// phone it fills the screen instead. This file only fills in the form and
+// collects what changed; app.js decides how changes are saved.
 
 import { STATUS } from './model.js';
+import { placeBeside } from './place.js';
+
+// Matches the CSS: up to this width the editor fills the screen.
+const narrow = window.matchMedia('(max-width: 760px)');
 
 // onSave(cardId, changes) and onDone(cardId, changes) receive only the fields
 // that differ from the card as it was when the panel opened. onCreate(values)
@@ -27,10 +31,14 @@ export function setupEditor({ onSave, onDone, onCreate, onClose }) {
 
   let card = null;
   let saved = false;
+  // Where the editor sits: { cardId, fallback } beside that card (or under
+  // `fallback` if the card isn't showing), or { below } under an element.
+  let anchor = null;
+  let frame = 0;
 
   // A new card (one without an id) isn't saved until you press Add card, so
   // it has nothing to mark done yet.
-  function open(cardToEdit, categories) {
+  function open(cardToEdit, categories, where = null) {
     card = cardToEdit;
     saved = false;
     const isNew = !card.id;
@@ -46,9 +54,56 @@ export function setupEditor({ onSave, onDone, onCreate, onClose }) {
     progress.checked = card.status === STATUS.IN_PROGRESS;
     hard.checked = card.deadlineType === 'hard';
     updateSomedayNote();
+    anchor = where;
     dialog.showModal();
+    position();
+    window.addEventListener('resize', follow);
+    // Capture: scrolling the board's own sideways box counts too.
+    window.addEventListener('scroll', follow, { capture: true, passive: true });
     // A new card's title is already typed; the date is usually next.
     if (isNew) due.focus();
+  }
+
+  // The card the editor belongs to, if it's on screen. The board redraws
+  // whenever Firestore sends news, so it is looked up fresh each time.
+  function anchorCard() {
+    if (!anchor || !anchor.cardId) return null;
+    const el = document.querySelector(`[data-drag-id="${CSS.escape(anchor.cardId)}"]`);
+    return el && el.getClientRects().length ? el : null;
+  }
+
+  function position() {
+    for (const el of document.querySelectorAll('.card.is-editing')) el.classList.remove('is-editing');
+    const cardEl = anchorCard();
+    const below = cardEl ? null : anchor && (anchor.below || anchor.fallback);
+    if (narrow.matches || (!cardEl && !below)) {
+      dialog.classList.remove('is-beside');
+      dialog.style.left = '';
+      dialog.style.top = '';
+      delete dialog.dataset.side;
+      return;
+    }
+    if (cardEl) cardEl.classList.add('is-editing');
+    dialog.classList.add('is-beside');
+    const { left, top, side } = placeBeside(
+      (cardEl || below).getBoundingClientRect(),
+      { width: dialog.offsetWidth, height: dialog.offsetHeight },
+      { width: document.documentElement.clientWidth, height: window.innerHeight },
+      cardEl ? 'beside' : 'below',
+    );
+    dialog.style.left = `${Math.round(left)}px`;
+    dialog.style.top = `${Math.round(top)}px`;
+    dialog.dataset.side = side;
+  }
+
+  // Keeps the editor beside its card while the window resizes or the board
+  // scrolls underneath.
+  function follow() {
+    if (!dialog.open || frame) return;
+    frame = requestAnimationFrame(() => {
+      frame = 0;
+      if (dialog.open) position();
+    });
   }
 
   function fillCategories(categories) {
@@ -159,6 +214,10 @@ export function setupEditor({ onSave, onDone, onCreate, onClose }) {
   });
 
   dialog.addEventListener('close', () => {
+    window.removeEventListener('resize', follow);
+    window.removeEventListener('scroll', follow, { capture: true });
+    for (const el of document.querySelectorAll('.card.is-editing')) el.classList.remove('is-editing');
+    anchor = null;
     if (!card) return;
     const closed = card;
     card = null;

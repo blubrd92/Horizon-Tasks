@@ -63,6 +63,13 @@ export function setupQuickAdd({ input, status, since, onCompose, onAdd, onEdit }
     schedule();
   }
 
+  // A note that fades like a confirmation (a strip day you tapped).
+  function showNote(text) {
+    showMessage([text]);
+    deadline = performance.now() + CONFIRM_FOR;
+    schedule();
+  }
+
   // Errors stay until the next quick add.
   function showText(text) {
     showMessage([text]);
@@ -129,6 +136,11 @@ export function setupQuickAdd({ input, status, since, onCompose, onAdd, onEdit }
 
   return {
     showAdded,
+    showNote,
+    // Takes away a confirmation or note at once (an error stays).
+    dismissNote() {
+      if (deadline) clearMessage();
+    },
     showText,
     setSince,
     // Puts text back in the field, unless something new was typed meanwhile.

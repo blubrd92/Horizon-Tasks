@@ -6,6 +6,7 @@ import {
   addDays,
   formatShort,
   ignoredToday,
+  isISODate,
   pretendToday,
   todayISO,
   zoneBounds,
@@ -35,6 +36,7 @@ const horizonEl = document.getElementById('horizon');
 const somedayCardsEl = document.getElementById('someday-cards');
 const stripEl = document.getElementById('strip');
 const pretendBar = document.getElementById('pretend-bar');
+const quickAddField = document.querySelector('.quickadd');
 const boardMessage = document.getElementById('board-message');
 const signinButton = document.getElementById('signin-button');
 const signinError = document.getElementById('signin-error');
@@ -72,6 +74,10 @@ let stopFinished = null;
 // After a triage button pressed from the keyboard, focus goes to the next
 // overdue card's buttons once the board redraws.
 let focusTriageFor = null;
+// The strip day whose cards are highlighted, or null. revealDay asks the
+// next drawing to scroll them into view.
+let highlightDay = null;
+let revealDay = false;
 
 // A panel's X sits right over the Sign out button, so a double-click on the
 // X would close the panel and then sign you out. For a moment after any
@@ -102,12 +108,20 @@ function draw() {
     drawWaiting = true;
     return;
   }
+  // The strip moves on at midnight, and so does a highlighted day.
+  if (drawnForDay && todayISO() !== drawnForDay) highlightDay = null;
   drawnForDay = todayISO();
-  const data = { ...latest, today: drawnForDay, triage: triageDay === drawnForDay };
+  const data = { ...latest, today: drawnForDay, triage: triageDay === drawnForDay, highlight: highlightDay };
   renderBoard(zonesEl, data);
   someday.setCount(renderSomeday(somedayCardsEl, data));
   renderStrip(stripEl, data);
   drawSince();
+
+  if (revealDay) {
+    revealDay = false;
+    const first = zonesEl.querySelector('.card.is-match');
+    if (first) reveal(first);
+  }
 
   if (focusTriageFor) {
     const button = zonesEl.querySelector(`[data-triage-card="${CSS.escape(focusTriageFor)}"] button`);
@@ -115,6 +129,57 @@ function draw() {
     if (button) button.focus();
   }
 }
+
+// Brings a highlighted card into view: its zone sideways inside the board
+// (on a phone that swipes to it), then the card itself up or down.
+function reveal(cardEl) {
+  const behavior = window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth';
+  const box = horizonEl.getBoundingClientRect();
+  const zone = cardEl.closest('.zone').getBoundingClientRect();
+  if (zone.left < box.left || zone.right > box.right) {
+    horizonEl.scrollBy({ left: zone.left - box.left - 16, behavior });
+  }
+  const r = cardEl.getBoundingClientRect();
+  if (r.top < 0 || r.bottom > window.innerHeight) window.scrollBy({ top: r.top - 120, behavior });
+}
+
+// Tapping a strip day highlights its cards; tapping it again clears.
+function toggleDay(day) {
+  highlightDay = highlightDay === day ? null : day;
+  revealDay = Boolean(highlightDay);
+  draw();
+  if (!quickAdd) return;
+  if (!highlightDay) {
+    quickAdd.dismissNote();
+    return;
+  }
+  const n = latest ? latest.cards.filter((c) => c.dueDate === day).length : 0;
+  const when = day === todayISO() ? 'today' : formatShort(day);
+  quickAdd.showNote(
+    n
+      ? `Showing ${n} ${n === 1 ? 'card' : 'cards'} due ${when}. ${clearHint()}`
+      : `Nothing due ${when}.`,
+  );
+}
+
+// A phone has no Escape key to mention.
+function clearHint() {
+  return window.matchMedia('(any-pointer: fine)').matches
+    ? 'Tap the day again or press Escape to clear.'
+    : 'Tap the day again to clear.';
+}
+
+stripEl.addEventListener('click', (event) => {
+  const tile = event.target.closest('[data-strip-day]');
+  if (tile) toggleDay(tile.dataset.stripDay);
+});
+
+document.addEventListener('keydown', (event) => {
+  if (event.key !== 'Escape' || !highlightDay || event.defaultPrevented) return;
+  // Escape in an open panel closes the panel, not the highlight.
+  if (document.querySelector('dialog[open]')) return;
+  toggleDay(highlightDay);
+});
 
 function drawSince() {
   if (!quickAdd) return;
@@ -283,7 +348,8 @@ async function start() {
     input: document.getElementById('quickadd-input'),
     status: document.getElementById('quickadd-status'),
     since: document.getElementById('since-line'),
-    onCompose: (title) => editor.open({ id: null, ...newCard({ title }) }, latest ? latest.categories : []),
+    onCompose: (title) =>
+      editor.open({ id: null, ...newCard({ title }) }, latest ? latest.categories : [], { below: quickAddField }),
     onAdd: (title, toToday) => fb.addCard(uid, newCard({ title, dueDate: toToday ? todayISO() : null })),
     onEdit: openCard,
   });
@@ -326,7 +392,9 @@ async function start() {
 
   function openCard(cardId) {
     const card = latest && latest.cards.find((c) => c.id === cardId);
-    if (card) editor.open(card, latest.categories);
+    // Beside the card; a card in a closed Someday drawer has nothing to sit
+    // beside, so it opens under the quick add field.
+    if (card) editor.open(card, latest.categories, { cardId, fallback: quickAddField });
   }
 
   for (const el of [zonesEl, somedayCardsEl]) {
@@ -376,10 +444,12 @@ async function start() {
 
   setupDrag({
     root: views.board,
-    scrollers: () => [horizonEl, somedayCardsEl],
+    scrollers: () => [horizonEl, somedayCardsEl, stripEl],
     canDrop: (place, cardId) => {
       const card = findCard(cardId);
       if (!card || !uid) return false;
+      // A strip day: any of them (they start today).
+      if (isISODate(place)) return true;
       const bounds = zoneBounds(todayISO());
       // Rearranging where it already is is always fine.
       if (place === placeOf(card, bounds)) return true;
@@ -410,6 +480,12 @@ async function start() {
   async function handleDrop({ cardId, place, index }) {
     const card = findCard(cardId);
     if (!card || !uid) return;
+    // Dropped on a strip day: that exact date, so date order in whatever
+    // zone the date belongs to.
+    if (isISODate(place)) {
+      if (place !== card.dueDate) await fb.updateCard(uid, cardId, { dueDate: place, order: null });
+      return;
+    }
     const today = todayISO();
     const from = placeOf(card, zoneBounds(today));
     // The cards there now, in their shown order, without the dropped one.
@@ -476,6 +552,7 @@ async function start() {
     claimedDay = null;
     triageDay = null;
     focusTriageFor = null;
+    highlightDay = null;
     watchSince(null);
     someday.setCount(0);
     someday.close();

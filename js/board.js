@@ -19,12 +19,19 @@ import { compareCards } from './order.js';
 const FALLBACK_COLOR = '#6B6F78';
 
 // triage is true during morning triage: soft cards in Overdue then show
-// "Still on your plate?" and their buttons.
-export function renderBoard(container, { cards, categories, today, triage = false }) {
+// "Still on your plate?" and their buttons. highlight is a day tapped in the
+// strip: its cards are outlined and the rest dimmed. Returns how many cards
+// are highlighted.
+export function renderBoard(container, { cards, categories, today, triage = false, highlight = null }) {
   const zones = buildZones(zoneBounds(today));
   const categoryById = new Map(categories.map((c) => [c.id, c]));
   for (const zone of zones) zone.cards = cardsIn(zone.key, cards, today);
-  container.innerHTML = zones.map((zone) => zoneHTML(zone, today, categoryById, triage)).join('');
+  const options = { triage, highlight };
+  container.innerHTML = zones.map((zone) => zoneHTML(zone, today, categoryById, options)).join('');
+  const matches = highlight ? cards.filter((card) => card.dueDate === highlight).length : 0;
+  // An empty day dims nothing: a board of faded cards would look broken.
+  container.classList.toggle('is-highlighting', matches > 0);
+  return matches;
 }
 
 // True if a card gets triage buttons in the morning: soft and overdue.
@@ -78,7 +85,7 @@ function buildZones(bounds) {
   ];
 }
 
-function zoneHTML(zone, today, categoryById, triage) {
+function zoneHTML(zone, today, categoryById, options) {
   const count = zone.cards.length;
   const countLabel = `${count} ${count === 1 ? 'card' : 'cards'}`;
   const heading =
@@ -103,12 +110,12 @@ function zoneHTML(zone, today, categoryById, triage) {
         <span class="zone-count" aria-label="${countLabel}">${count}</span>
       </div>
       <div class="zone-cards" data-drop-list>
-        ${zone.cards.map((card) => cardHTML(card, today, categoryById, triage)).join('')}
+        ${zone.cards.map((card) => cardHTML(card, today, categoryById, options)).join('')}
       </div>
     </section>`;
 }
 
-function cardHTML(card, today, categoryById, triage = false) {
+function cardHTML(card, today, categoryById, { triage = false, highlight = null } = {}) {
   const category = categoryById.get(card.category);
   const color = category ? category.color : FALLBACK_COLOR;
   const categoryName = category ? category.name : card.category || 'No category';
@@ -139,7 +146,7 @@ function cardHTML(card, today, categoryById, triage = false) {
   // The title is a real button; CSS stretches its click area over the whole
   // card. app.js finds the card by data-card-id; drag.js by data-drag-id.
   return `
-    <article class="card" style="--band: ${escapeHTML(color)}" data-drag-id="${escapeHTML(card.id)}">
+    <article class="card${highlight && card.dueDate === highlight ? ' is-match' : ''}" style="--band: ${escapeHTML(color)}" data-drag-id="${escapeHTML(card.id)}">
       <span class="card-category">${escapeHTML(categoryName)}</span>
       <h3 class="card-title">
         <button type="button" class="card-open" data-card-id="${escapeHTML(card.id)}">${escapeHTML(card.title)}</button>
