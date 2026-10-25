@@ -75,7 +75,8 @@
     <div class="board-area">
       <main id="horizon" class="horizon">
         <p id="board-message" class="board-message" role="alert" hidden></p>
-        <div id="zones" class="zones"></div>
+        <!-- data-hold-height: keeps its height mid-drag (drag.js). -->
+        <div id="zones" class="zones" data-hold-height></div>
       </main>
 
       <!-- The Someday drawer: undated cards. The tab opens it; both the open

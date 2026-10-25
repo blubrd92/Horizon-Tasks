@@ -155,6 +155,44 @@ setting applies on load when stored; Sign out ignores a click right after
 the box closes; on a phone the gear sits beside Sign out at 44px and the
 box fits the screen.
 
+**8. A clear sign of where a dragged card will land** (your last note for
+this slice). Dragging from low in a long column over a short one worked,
+but showed nothing near the pointer: the short zone's blue outline wraps
+only its own box, and its landing gap sits under its last card, both far
+above and often off screen. Two fixes that work together:
+- **Columns become full-height lanes while you drag.** Every zone
+  stretches down to the bottom of the tallest one, so the zone under the
+  pointer lights up right there. Cards don't move and the page doesn't
+  grow (the tallest zone already sets the height); when you let go, the
+  zones go back to their own heights.
+- **A label rides on the dragged card** naming where it will land: "Move
+  to This Week", "Move to Tue, Oct 27" over a strip day, "Move to Today"
+  over today's tile or Today, "Move to Someday". It appears only when the
+  card would actually go somewhere new: reordering within its own zone,
+  or hovering its own strip day, shows nothing. It's on the card itself,
+  so it shows even when the lane is out of view, and on a phone. Over
+  Overdue (which refuses drops) there's no label and no outline, as now.
+  On a phone it slides sideways to stay on screen when the card hangs off
+  an edge under your finger.
+- **The board holds its height while you drag** (found while testing this,
+  and older than this round: it came with 1c). When a card leaves a long
+  column, that column gets a card shorter, and so did the page and every
+  lane beside it. Scrolled to the bottom, everything jumped by a card's
+  height, and the pointer ended up below the shortened lanes. Now the
+  board keeps the height it had when the card lifted, until you let go.
+
+Checked here (20 checks, plus every earlier set again, 201 checks in all,
+no console errors): low beside a 12-card Today, the 1-card This Week is
+the target, its lane reaches the pointer, the label reads "Move to This
+Week", and the page neither grows nor jumps; back over its own zone, no
+label; over Overdue, no outline and no label; the drop opens the date box
+and moves the card; the lanes shrink back after; over its own strip day,
+nothing; another day, "Move to Tue, Oct 27", still on screen at the top;
+today's tile, "Move to Today"; the Someday tab, "Move to Someday"; Escape
+puts it back. On a phone, after one hop the label says "Move to This
+Week" and stays fully on screen with the finger at the middle and at
+either edge.
+
 Files touched: `js/place.js` (NEW: the beside-the-card math, no page),
 `js/editor.js` (opens beside an anchor, follows it), `js/strip.js` (tiles as
 buttons and drop targets, the pressed day), `js/board.js` (highlighted and
@@ -196,6 +234,13 @@ Test list for this round:
 - [ ] Reload, and open the board on another device: the setting stuck. In
       the console, your `users` document has `settings.foldLongZones`.
 - [ ] Turn it off: every card shows again.
+- [ ] Scroll to the bottom of a long column and drag a card sideways over
+      a short column: that column's lane lights up beside the pointer, and
+      the card says "Move to ..." with the zone's name. Let go: it moves.
+- [ ] Drag within the card's own column: no label. Over a strip day: the
+      date. Over Someday: "Move to Someday". Over Overdue: nothing.
+- [ ] Scrolled to the very bottom, drag the last card of a long column
+      sideways: nothing jumps.
 
 What I checked here, the same way as before (pretend Firebase, clock on
 Thursday, Oct 22): 56 new checks, plus the first round's 76 again, all

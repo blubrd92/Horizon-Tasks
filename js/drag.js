@@ -11,6 +11,7 @@
 // Places a card can land are marked in the HTML with data-drop="<place>".
 // Inside one, data-drop-list holds its cards in order. data-drop-top means
 // "always the top of the list" (the Someday tab, which has no list showing).
+// data-hold-height marks a box that keeps its height while a card is dragged.
 
 const MOUSE_THRESHOLD = 5; // pixels a mouse moves before the card lifts
 const HOLD_DELAY = 350; // milliseconds a finger rests before the card lifts
@@ -21,10 +22,12 @@ const HOP_PAUSE = 700; // milliseconds between hops in a box that snaps zone to 
 
 // scrollers() returns the boxes that should scroll by themselves when a card
 // is dragged near their edges. canDrop(place, cardId) says whether a card may
-// land on a place. onStart(cardId, cardEl) runs when a card lifts; onEnd()
+// land on a place. labelFor(place, cardId) names where the card would land,
+// shown on the floating card ("Move to This Week"), or '' for nothing.
+// onStart(cardId, cardEl) runs when a card lifts; onEnd()
 // when the drag is over, dropped or not, just before onDrop({ cardId, place,
 // index }). index is the card's new position among the other cards there.
-export function setupDrag({ root, scrollers, canDrop, onStart, onEnd, onDrop }) {
+export function setupDrag({ root, scrollers, canDrop, labelFor, onStart, onEnd, onDrop }) {
   let pending = null;
   let drag = null;
   let frame = 0;
@@ -125,6 +128,13 @@ export function setupDrag({ root, scrollers, canDrop, onStart, onEnd, onDrop }) 
       pressed.releasePointerCapture(pointerId);
     }
 
+    // Once the card leaves its column, that column is a card shorter, and so
+    // are the page and every lane beside it: scrolled to the bottom,
+    // everything would jump, and the pointer would end up below the lanes.
+    // Boxes marked data-hold-height keep the height they had before the card
+    // lifted until the drag ends.
+    for (const box of root.querySelectorAll('[data-hold-height]')) box.style.minHeight = `${box.offsetHeight}px`;
+
     const rect = card.getBoundingClientRect();
     const ghost = card.cloneNode(true);
     ghost.classList.add('card-ghost');
@@ -132,6 +142,12 @@ export function setupDrag({ root, scrollers, canDrop, onStart, onEnd, onDrop }) 
     for (const el of ghost.querySelectorAll('[data-card-id]')) el.removeAttribute('data-card-id');
     ghost.setAttribute('aria-hidden', 'true');
     ghost.style.width = `${rect.width}px`;
+    // Where the card will land, in words, riding on the card itself so it
+    // shows even when the zone's outline is out of view.
+    const tag = document.createElement('span');
+    tag.className = 'ghost-label';
+    tag.hidden = true;
+    ghost.append(tag);
     document.body.append(ghost);
 
     // The slot: an empty, card-sized gap that opens where the card will land.
@@ -148,6 +164,8 @@ export function setupDrag({ root, scrollers, canDrop, onStart, onEnd, onDrop }) 
       card,
       id: card.dataset.dragId,
       ghost,
+      tag,
+      label: '',
       marker,
       offsetX: startX - rect.left,
       offsetY: startY - rect.top,
@@ -172,7 +190,18 @@ export function setupDrag({ root, scrollers, canDrop, onStart, onEnd, onDrop }) 
   }
 
   function moveGhost() {
-    drag.ghost.style.transform = `translate(${drag.x - drag.offsetX}px, ${drag.y - drag.offsetY}px) rotate(1.5deg)`;
+    const left = drag.x - drag.offsetX;
+    drag.ghost.style.transform = `translate(${left}px, ${drag.y - drag.offsetY}px) rotate(1.5deg)`;
+    placeTag(left);
+  }
+
+  // The label sits near the card's left edge, nudged sideways to stay on
+  // screen when the card hangs off an edge under a finger.
+  function placeTag(left = drag.x - drag.offsetX) {
+    if (drag.tag.hidden) return;
+    const width = drag.tag.offsetWidth;
+    const want = Math.min(Math.max(left + 10, 8), window.innerWidth - width - 8);
+    drag.tag.style.left = `${want - left}px`;
   }
 
   // Works out which place is under the pointer and where in its list the card
@@ -190,6 +219,14 @@ export function setupDrag({ root, scrollers, canDrop, onStart, onEnd, onDrop }) 
       if (drag.target) drag.target.classList.remove('is-drop-target');
       if (target) target.classList.add('is-drop-target');
       drag.target = target;
+    }
+
+    const label = target ? labelFor(target.dataset.drop, drag.id) : '';
+    if (label !== drag.label) {
+      drag.label = label;
+      drag.tag.textContent = label ? `Move to ${label}` : '';
+      drag.tag.hidden = !label;
+      placeTag();
     }
 
     const list = target && !target.hasAttribute('data-drop-top') ? target.querySelector('[data-drop-list]') : null;
@@ -272,6 +309,7 @@ export function setupDrag({ root, scrollers, canDrop, onStart, onEnd, onDrop }) 
     card.classList.remove('is-lifted');
     if (target) target.classList.remove('is-drop-target');
     document.body.classList.remove('is-dragging');
+    for (const box of root.querySelectorAll('[data-hold-height]')) box.style.minHeight = '';
     drag = null;
     swallowNextClick();
     onEnd();

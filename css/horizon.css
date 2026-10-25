@@ -600,6 +600,28 @@ body.is-dragging * { cursor: grabbing !important; }
 
 body.is-dragging .card:hover { border-color: var(--border); border-top-color: var(--band); }
 
+/* While dragging, every zone stretches to the bottom of the tallest one,
+   so the zone under the pointer lights up right where the pointer is, even
+   low beside a long column. Cards don't move; the page doesn't grow. */
+body.is-dragging .zones { align-items: stretch; }
+
+/* "Move to This Week" on the floating card, straddling its top edge so it
+   stays on screen even when the card is dragged up to the strip. drag.js
+   nudges it sideways to keep it on screen. */
+.ghost-label {
+  position: absolute;
+  top: -12px;
+  left: 10px;
+  padding: 4px 10px;
+  border-radius: 10px;
+  background: var(--accent);
+  color: #FFFFFF;
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+  box-shadow: 0 4px 10px rgba(24, 25, 28, 0.18);
+}
+
 .drop-slot {
   border: 2px dashed var(--accent);
   border-radius: var(--radius-card);

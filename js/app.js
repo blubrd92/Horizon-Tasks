@@ -511,6 +511,19 @@ async function start() {
       if (place === 'week' && bounds.weekEnd <= bounds.today) return false;
       return true;
     },
+    // Only when the card would go somewhere new: reordering in its own zone,
+    // or hovering its own strip day, says nothing.
+    labelFor: (place, cardId) => {
+      const card = findCard(cardId);
+      if (!card) return '';
+      const today = todayISO();
+      if (isISODate(place)) {
+        if (place === card.dueDate) return '';
+        return place === today ? 'Today' : formatShort(place);
+      }
+      if (place === placeOf(card, zoneBounds(today))) return '';
+      return place === 'someday' ? 'Someday' : describeZone(place, today).name;
+    },
     onStart: (cardId, cardEl) => {
       dragging = true;
       // On a phone the open drawer covers the board; get it out of the way
