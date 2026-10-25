@@ -89,6 +89,17 @@ now that they're buttons. The strip becomes about 668px on a desktop, which
 still fits beside the wordmark at the mockup's width. On a phone it already
 scrolls sideways.
 
+**5. Triage buttons that fit at any width** (added after your half-screen
+screenshot). Below about 1,300px of window the zones stop shrinking and
+scroll sideways instead, and Overdue settles at its narrowest: each
+button was 52px wide while "Tomorrow" needs 63px, so the word ran out of
+its button. Now the triage section watches its own width and, when it's
+under 145px, stacks the buttons in one column, full width, in the same
+order (Tomorrow, This week, Someday, Let it go). That's every window
+narrower than about 1,400px; at 1,440px and wider it keeps the mockup's 2 by 2.
+Separately, on a Sunday (three buttons) the last one spans the whole row
+instead of sitting alone beside an empty space. CSS only.
+
 Files touched: `js/place.js` (NEW: the beside-the-card math, no page),
 `js/editor.js` (opens beside an anchor, follows it), `js/strip.js` (tiles as
 buttons and drop targets, the pressed day), `js/board.js` (highlighted and
@@ -112,6 +123,10 @@ Test list for this round:
       normal. Tap an empty day: "Nothing due ..." and no dimming.
 - [ ] Phone: tap a day whose cards are in a far zone: the board swipes to
       that zone.
+- [ ] Half-screen window: overdue triage buttons stack in one column and
+      every word fits inside its button. Full screen: 2 by 2.
+- [ ] On a Sunday: Let it go spans the row under Tomorrow and Someday
+      (or simply sits last, when stacked).
 
 What I checked here, the same way as before (pretend Firebase, clock on
 Thursday, Oct 22): 56 new checks, plus the first round's 76 again, all

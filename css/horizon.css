@@ -470,8 +470,11 @@ code { font-family: var(--font-mono); font-size: 0.92em; }
 }
 
 /* Morning triage: "Still on your plate?" and its buttons, on soft cards in
-   Overdue on the first open of the day. */
+   Overdue on the first open of the day. The section watches its own width
+   (a container query) rather than the window's, so zooming or a narrow
+   Overdue zone are handled the same way. */
 .card-triage {
+  container-type: inline-size;
   border-top: 1px dashed var(--triage-line);
   padding-top: 10px;
   margin-top: 2px;
@@ -507,6 +510,16 @@ code { font-family: var(--font-mono); font-size: 0.92em; }
 }
 
 .triage-button:hover { background: var(--surface); border-color: #C9C5BA; }
+
+/* On a Sunday there are three buttons; the last one takes the whole row
+   instead of leaving a hole beside it. */
+.triage-button:last-child:nth-child(odd) { grid-column: 1 / -1; }
+
+/* Too narrow for two buttons side by side ("Tomorrow" needs about 63px of
+   text room each, plus a little air): one column, top to bottom. */
+@container (max-width: 145px) {
+  .triage-buttons { grid-template-columns: 1fr; }
+}
 
 .triage-letgo { border-color: var(--triage-line); color: var(--overdue-ink); }
 .triage-letgo:hover { border-color: var(--overdue-ink); }
