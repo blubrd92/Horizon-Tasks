@@ -143,9 +143,13 @@ export function watchActiveCards(uid, onChange, onError) {
 
 // Saves a new card. Returns its id at once (the board shows the card before
 // Firestore confirms), plus `saved`, which fails if Firestore refuses it.
+// A repeating card that starts a series is the first card in it, so its
+// own id becomes the series' id (see repeat.js).
 export function addCard(uid, fields) {
   const ref = doc(collection(db, 'users', uid, 'cards'));
-  const saved = setDoc(ref, { ...fields, createdAt: serverTimestamp(), updatedAt: serverTimestamp() });
+  const data = { ...fields, createdAt: serverTimestamp(), updatedAt: serverTimestamp() };
+  if ((data.repeat === 'weekly' || data.repeat === 'monthly') && !data.seriesId) data.seriesId = ref.id;
+  const saved = setDoc(ref, data);
   return { id: ref.id, saved };
 }
 
@@ -176,4 +180,23 @@ export function letGo(uid, cardId) {
 // stays in Firestore for the Done record; the board stops showing it.
 export function markDone(uid, cardId, changes = {}) {
   return updateCard(uid, cardId, { ...changes, status: STATUS.DONE, completedAt: serverTimestamp() });
+}
+
+// Finishes a repeating card and adds the next one in the series, in one
+// write: either both save or neither, so a refused save can't leave a done
+// card with no next one. `how` is "done" or "let_go"; `changes` are edits
+// made at the same moment; `next` is the new card's fields (repeat.js).
+// Returns the new card's id at once, plus `saved`, as addCard does.
+export function finishAndRepeat(uid, cardId, how, changes, next) {
+  const batch = writeBatch(db);
+  const stamp = how === STATUS.DONE ? 'completedAt' : 'letGoAt';
+  batch.update(doc(db, 'users', uid, 'cards', cardId), {
+    ...changes,
+    status: how,
+    [stamp]: serverTimestamp(),
+    updatedAt: serverTimestamp(),
+  });
+  const ref = doc(collection(db, 'users', uid, 'cards'));
+  batch.set(ref, { ...next, createdAt: serverTimestamp(), updatedAt: serverTimestamp() });
+  return { id: ref.id, saved: batch.commit() };
 }

@@ -139,6 +139,26 @@
         </div>
         <p id="editor-someday" class="field-note" hidden>No date: this card lives in Someday.</p>
 
+        <div class="field-row">
+          <label class="field">Repeats
+            <select id="editor-repeat" class="field-input" aria-describedby="editor-repeat-note">
+              <option value="none">Doesn't repeat</option>
+              <option value="weekly">Weekly</option>
+              <option value="monthly">Monthly</option>
+            </select>
+          </label>
+        </div>
+        <p id="editor-repeat-note" class="field-note" hidden></p>
+        <!-- Only when a repeating card's date is changed: this one, or the
+             whole series? -->
+        <div id="editor-move" class="check-block" hidden>
+          <label class="check">
+            <input type="checkbox" id="editor-move-series" aria-describedby="editor-move-note">
+            Move the series too
+          </label>
+          <p id="editor-move-note" class="check-note"></p>
+        </div>
+
         <div class="checks">
           <label class="check">
             <input type="checkbox" id="editor-progress">

@@ -34,23 +34,253 @@ and one let go, for 1f). The scripts that add and remove them were given in
 the chat and aren't in the repo; saving them as a `tools/` folder is an open
 proposal.
 
-**Next: slice 1e** (repeating cards). Start it in a fresh session: read this
-file, then SPEC.md "Cards" (the repeat rule and "Repeating cards create
-their next instance when marked done") and "Visual design", plus
-`design/Main.dc.html` and `design/horizon-board.png` (the repeat icon with
-"Weekly" or "Monthly" on a card). Things to settle there:
-- What date the next instance gets: the old due date plus a week or month,
-  or the day you marked it done plus one. And what happens when a
-  repeating card is marked done late, or several periods late.
-- Monthly on the 29th to 31st: what the next date is in a shorter month.
-- What letting go of a repeating card means: just this one, or the series.
-- Where the repeat rule is set (the editor), whether the new instance keeps
-  the old one's category, deadline type, notes, and manual order, and how
-  the two copies are linked for the Done record in 1f.
-- Open proposals carried over from 1d (none needed for 1e): Undo for Let it
-  go and Mark done, Let it go in the editor, triage per device instead of
-  per account, pinning zone headers on long columns, and saving the sample
-  card scripts in `tools/`.
+**Slice 1e: built, awaiting your test** (2026-10-25). Repeating cards.
+This branch started from 1c, since 1d was confirmed on
+`claude/wonderful-bell-ijpxxj` but never merged into `main`; 1e is built on
+top of 1d, so this branch carries both. Point GitHub Pages at this branch
+to test (Settings > Pages), or test locally.
+
+**Next, once 1e is confirmed: slice 1f** (the Done record view). The prompt
+for it comes at the end of the message that closes 1e.
+
+Open proposals carried over from 1d: Undo for Let it go and Mark done, Let
+it go in the editor, triage per device instead of per account, pinning zone
+headers on long columns, and saving the sample card scripts in `tools/`.
+
+## Slice 1e: repeating cards
+
+### What it does
+
+**Setting it.** The editor gets a "Repeats" menu under Due and Category:
+Doesn't repeat, Weekly, Monthly. Under it, one line says the rhythm in
+words, worked out from the date: "Every Thursday.", "The 5th of every
+month.", "The 31st of every month, or the last day of shorter months." It
+updates as you change the date or the menu. A new card from Enter in quick
+add can be made repeating before Add card.
+
+**On the board.** A repeating card shows the mockup's two-arrow icon and
+"Weekly" or "Monthly", after the date and any hard deadline chip, before
+In progress. A screen reader hears "Repeats weekly".
+
+**Marking it done.** The card goes to your Done record as always, and in
+the same save a new card appears with the next date. The spot beside quick
+add says "Done. The next one is due Thu, Oct 29." with an Edit button for
+the new card, then fades like any confirmation. Only one card of a series
+is ever on the board: the next one exists once you've finished this one.
+The strip doesn't show future repeats that don't exist yet.
+
+### The four open questions, settled
+
+**1. The next date follows the schedule, not the day you finished.**
+The rhythm is set by the card's planned date. The next one is the first
+date on that rhythm that is after both the planned date of the one you
+finished and today. With a weekly card planned for Thu, Oct 22:
+- Done on Oct 22: next is Oct 29.
+- Done early, on Tue, Oct 20: next is Oct 29. Finishing early doesn't make
+  next week's come sooner.
+- Done late, on Sat, Oct 24: next is Oct 29. The schedule holds.
+- Done on Thu, Oct 29, a full week late: next is Nov 5. Doing it today
+  covers today; you don't get a second copy due the same afternoon.
+- Done on Nov 10, nearly three weeks late: next is Nov 12. The missed
+  Oct 29 and Nov 5 are not created. No pile of overdue copies, which
+  would be a streak by another name.
+
+Why the schedule and not "done plus a week": the repeating work you'd put
+here (the Thursday order, the Saturday checklist, a monthly meeting) is
+pinned to the calendar. Counting from the day you finished would slide the
+Thursday order to Saturday the first time you were two days late, and it
+would stay there.
+
+A repeating card with no date (in Someday) has no schedule to follow, so
+its next one is due a week or a month after the day you mark it done.
+That's the one case that counts from the finish.
+
+**Moving one card doesn't move the series.** Each card remembers the date
+the rhythm planned for it (`seriesDate`, below). Triage buttons, dragging
+to a zone or a strip day, and the drawer change when this one is due, and
+leave the series alone. Triage the Thursday order to Friday, finish it on
+Friday, and the next one is still Thursday.
+
+The editor is where you'd change the series on purpose, so changing a
+repeating card's date there shows one more checkbox, off by default:
+"Move the series too", with a line saying what that means ("From now on:
+every Friday."). Unchecked, only this card's date changes. Checked, the
+rhythm follows the new date. This is the "this one or all of them"
+question calendars ask, asked only when it matters.
+
+**2. Monthly on the 29th to 31st: the last day of shorter months, then
+back.** A card on the 31st goes Jan 31, Feb 28 (29 in a leap year), Mar 31,
+Apr 30, May 31. It never drifts down to the 28th for good, because the
+series remembers the day it aims for (`seriesDay`). The rhythm line says so
+in the editor whenever the day is 29 or later.
+
+**3. Letting go of a repeating card means this one.** The series goes on:
+the card is let go (not done, so it stays out of your Done record and the
+"you finished" count) and the next one appears, exactly as with Mark done.
+The confirmation says "Let go. The next one is due Thu, Oct 29." Letting go
+of last week's missed order is the common case; ending the series is rare
+and deliberate. To end one: open the card, set Repeats to "Doesn't repeat",
+then Mark done (or Save, and let it go in tomorrow's triage). No next card
+is made.
+
+**4. What the next card keeps, and how they're linked.**
+- It keeps: title, notes, category, hard or soft, project (Phase 2), the
+  repeat rule, and where it came from (`source`). Notes come along because
+  for repeating work they're often the recipe.
+- It starts fresh: the new date, open (not In progress; you haven't
+  started the new one), no manual order (a new date means date order in its
+  zone, the same rule as every other date change), and its own created
+  time.
+- The finished card is never reused. It stays its own document with status
+  `done` (or `let_go`), so your Done record keeps one row per time you did
+  it: four weekly orders in a month are four rows, which is what an
+  evaluation wants to see.
+- Every card in a series carries the same `seriesId`: the id of the card
+  the series started with. That's the link 1f can use (a repeat icon on Done
+  rows, or "Weekly order, 4 times" when copying as text). Nothing in 1e
+  reads it yet.
+- The finished card and the new one are saved in one write: both or
+  neither, so a refused save can't leave you with a done card and no next
+  one, or two cards on the board.
+- Your sample cards: a next card made from a card marked `sample: true`
+  is marked `sample: true` too, so your clean-up script still finds it.
+
+### Data
+
+Three new card fields, only meaningful on repeating cards (null otherwise):
+
+```
+seriesId     string   the id of the first card in the series; shared by
+                      every card in it
+seriesDate   "YYYY-MM-DD"  the date the rhythm planned for this card.
+                      Dragging and triage change dueDate, not this.
+seriesDay    1 to 31  monthly only: the day of the month the series aims
+                      for (31 means the last day in shorter months)
+```
+
+A card typed by hand in the console with only `repeat: "weekly"` still
+works: a missing `seriesDate` is read as the card's due date, and a missing
+`seriesDay` as that date's day. Turning repeat off clears `seriesDate` and
+`seriesDay` and keeps `seriesId`, so the cards you already finished stay
+linked.
+
+### Files touched
+
+```
+index.html         the Repeats menu, its rhythm line, and the "Move the
+                   series too" checkbox in the editor
+css/horizon.css    the repeat label on cards
+js/repeat.js       NEW: the next date, the rhythm in words, what a save
+                   does to the series fields; no Firebase, no page
+js/model.js        the three new fields, read with defaults
+js/board.js        the repeat icon and label on cards
+js/editor.js       the Repeats menu, its line, the checkbox; re-places
+                   itself when a note makes it taller
+js/firebase.js     a new repeating card gets its own id as seriesId;
+                   finishing a card and adding the next in one write
+js/app.js          Mark done and Let it go make the next card; the
+                   confirmation; a drag or triage on a console-typed
+                   repeating card writes down its series date first
+```
+
+### Setup steps (yours)
+
+None. No rule changes (the rules check who writes, not which fields), no
+new index.
+
+### Decisions I made that the questions didn't cover (change any of them)
+
+1. **The confirmation after finishing a repeating card**, with Edit for the
+   new one. Without it, a card vanishes and another appears somewhere
+   else, silently.
+2. **"Move the series too" is off by default** when you change a repeating
+   card's date in the editor.
+3. **No ghost repeats** on the strip or the board: only real cards.
+4. **Undated repeating cards count from the day you finish.**
+
+### How to test
+
+The editor:
+- [ ] Open a card: "Repeats" sits under Due and Category, set to "Doesn't
+      repeat". Choose Weekly: the line says "Every Thursday." (whatever
+      the card's weekday is). Change the date: the line follows.
+- [ ] Monthly on a card dated the 31st (or 29th, 30th): the line mentions
+      the last day of shorter months. On the 5th it doesn't.
+- [ ] Save: the card shows the icon and "Weekly" or "Monthly".
+- [ ] In the console the card has `repeat`, `seriesId` (its own id),
+      `seriesDate` (its date), and for monthly `seriesDay`.
+- [ ] Enter in quick add, set Weekly and a date, Add card: same fields,
+      `seriesId` is the new card's own id.
+
+Marking done (try with `?today=` to stand on different days):
+- [ ] Mark a weekly card done on its day: it leaves, a copy appears a week
+      later, and the note says when. The copy has the same title, notes,
+      category, hard/soft, and is not In progress. Edit in the note opens it.
+- [ ] Mark one done early (test date before its due date): the next one is
+      a week after its planned date, not a week after today.
+- [ ] Mark one done three weeks late: only one new card, on the first
+      planned date after today.
+- [ ] Monthly on Jan 31 (or set one to Oct 31 and finish it): Nov 30, then
+      finishing that gives Dec 31.
+- [ ] A repeating card with no date: done gives a card due a week (or a
+      month) from today.
+- [ ] In the console, the old card is `done` with `completedAt`; the new
+      one is `open` and shares its `seriesId`. A sample card's copy has
+      `sample: true`.
+
+Moving one vs. the series:
+- [ ] Triage a weekly overdue card to Tomorrow, then mark it done: the next
+      one is on the original weekday.
+- [ ] Drag a repeating card to another day, mark it done: same.
+- [ ] In the editor, change a repeating card's date: "Move the series too"
+      appears, off. Save without it, mark done: next follows the old
+      rhythm. Again with it checked: next follows the new date.
+
+Letting go and stopping:
+- [ ] Let go of an overdue repeating card in triage: the next one appears,
+      and the note says "Let go." The old card is `let_go`, and "you
+      finished" didn't go up.
+- [ ] Set Repeats to "Doesn't repeat" and Mark done: no new card.
+
+Looks:
+- [ ] The card line reads like the mockup: "Thu, Oct 22 ⇄ Weekly", before
+      In progress and after a hard deadline chip.
+- [ ] Phone: the Repeats menu is full width, and the editor still fits.
+
+What I checked here, in a real browser (Chromium) with a pretend Firebase,
+Pacific time, test date Thu, Oct 22 (and Oct 27, Nov 10): 35 checks on the
+date math alone (on time, early, late, a week late, three weeks late, a
+card moved by triage, a card typed in the console, undated, Jan 31 to Feb
+28 to Mar 31, leap years, December into January, the daylight saving
+change), then 76 in the page, all passing, no console errors. In the page:
+the icon and label on weekly and monthly cards, in the mockup's order and
+color, with "Repeats weekly" for a screen reader; the editor's menu, rhythm
+line, and "Move the series too" appearing and hiding as the date changes;
+Mark done saving the old card and the new one in one write, with every
+kept and fresh field checked; Edit in the note opening the new card beside
+it; the series moved on purpose; a console card with only `repeat` (and
+`sample: true`) getting its series written down and its copy keeping
+`sample`; the 31st becoming Nov 30 and remembering 31; an undated card;
+stopping a series; turning repeat on for a plain card and for a new card;
+Let it go in triage making the next card, saying "Let go.", and not
+counting as finished; triage, a strip-day drop, and a zone drop each moving
+the card but not the series, then finishing on Oct 27 landing back on
+Thursday and Saturday; a refused save leaving the card untouched with no
+new card and the usual message; "you finished" going up and the strip
+gaining the next card; and at phone width, the 44px menu and checkbox with
+no sideways scroll.
+
+One bug the checks caught, fixed: the editor places itself when it opens,
+and "Move the series too" appearing afterward made it taller, pushing its
+buttons off the bottom of a shorter window. It now re-places itself
+whenever its notes change. That also fixes an older, smaller case of the
+same thing: the "No date: this card lives in Someday." line appearing
+after you clear the date.
+
+Not checked: real Firestore, a real phone, and the 1a to 1d checks from
+earlier sessions (their test setup wasn't saved in the repo, so I couldn't
+rerun them). I only touched the drag and triage code where it saves a date,
+so I'd still give dragging and triage a quick pass.
 
 ## Slice 1d: deadlines, morning triage, Let it go, Since yesterday, the 14-day strip, `?today=`
 

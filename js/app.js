@@ -17,7 +17,8 @@ import { FOLD_SHOW, cardsIn, describeZone, offersTriage, placeOf, renderBoard, r
 import { renderStrip } from './strip.js';
 import { sinceLine } from './since.js';
 import { planVisit } from './visits.js';
-import { newCard, normalizeSettings } from './model.js';
+import { STATUS, newCard, normalizeSettings } from './model.js';
+import { keepSeries, nextCard, repeats, seriesChanges } from './repeat.js';
 import { planDrop } from './order.js';
 import { setupQuickAdd } from './quickadd.js';
 import { setupEditor } from './editor.js';
@@ -379,15 +380,26 @@ async function start() {
   });
 
   const editor = setupEditor({
-    onSave: (cardId, changes) => {
+    onSave: (cardId, changes, { moveSeries }) => {
+      const card = findCard(cardId);
+      if (card) Object.assign(changes, seriesChanges(card, changes, moveSeries));
       // A new date means a new zone, where the card's old place among its
       // neighbors means nothing; it goes back to date order (see order.js).
       if ('dueDate' in changes) changes.order = null;
       fb.updateCard(uid, cardId, changes).catch(showSaveError);
     },
-    onDone: (cardId, changes) => fb.markDone(uid, cardId, changes).catch(showSaveError),
+    onDone: (cardId, changes, { moveSeries }) => {
+      const card = findCard(cardId);
+      if (card) Object.assign(changes, seriesChanges(card, changes, moveSeries));
+      if (card && repeats({ ...card, ...changes })) {
+        finishRepeating({ ...card, ...changes }, STATUS.DONE, changes);
+        return;
+      }
+      fb.markDone(uid, cardId, changes).catch(showSaveError);
+    },
     onCreate: (values) => {
-      const { id, saved } = fb.addCard(uid, { ...newCard(values), ...values });
+      const fresh = { id: null, ...newCard(values) };
+      const { id, saved } = fb.addCard(uid, { ...newCard(values), ...values, ...seriesChanges(fresh, values, false) });
       quickAdd.showAdded(addedText(values.dueDate), id);
       saved.catch((err) => {
         quickAdd.showText(`Couldn't save \u201c${values.title}\u201d (${err.code || err.message}).`);
@@ -407,6 +419,17 @@ async function start() {
       if (button) button.focus();
     },
   });
+
+  // Marking a repeating card done, or letting it go, brings the next one in
+  // the series (see repeat.js). `card` is the card with any edits made at
+  // the same moment, which are `changes`.
+  function finishRepeating(card, how, changes) {
+    const next = nextCard(card, todayISO());
+    const { id, saved } = fb.finishAndRepeat(uid, card.id, how, changes, next);
+    const what = how === STATUS.DONE ? 'Done' : 'Let go';
+    quickAdd.showAdded(`${what}. The next one is due ${formatShort(next.dueDate)}.`, id);
+    saved.catch(showSaveError);
+  }
 
   function addedText(dueDate) {
     if (!dueDate) return 'Added to Someday.';
@@ -464,12 +487,18 @@ async function start() {
       focusTriageFor = ids[at + 1] || ids[at - 1] || null;
     }
 
+    // Letting go of a repeating card skips this one; the series goes on.
+    if (action === 'letgo' && repeats(card)) {
+      finishRepeating(card, STATUS.LET_GO, {});
+      return;
+    }
+
     let saved;
     if (action === 'letgo') {
       saved = fb.letGo(uid, cardId);
     } else {
       const dueDate = action === 'tomorrow' ? addDays(today, 1) : action === 'week' ? weekEnd : null;
-      saved = fb.updateCard(uid, cardId, { dueDate, order: null });
+      saved = fb.updateCard(uid, cardId, { dueDate, order: null, ...keepSeries(card) });
     }
     saved.catch(showSaveError);
   }
@@ -548,7 +577,7 @@ async function start() {
     // Dropped on a strip day: that exact date, so date order in whatever
     // zone the date belongs to.
     if (isISODate(place)) {
-      if (place !== card.dueDate) await fb.updateCard(uid, cardId, { dueDate: place, order: null });
+      if (place !== card.dueDate) await fb.updateCard(uid, cardId, { dueDate: place, order: null, ...keepSeries(card) });
       return;
     }
     const today = todayISO();
@@ -581,13 +610,13 @@ async function start() {
     const moved = findCard(cardId);
     if (!moved || !uid) return;
     const updates = new Map();
-    if (dueDate !== moved.dueDate) updates.set(cardId, { dueDate });
+    if (dueDate !== moved.dueDate) updates.set(cardId, { dueDate, ...keepSeries(moved) });
 
     const lands = dueDate ? zoneFor(dueDate, zoneBounds(todayISO())) : 'someday';
     if (lands !== place) {
       // A date picked outside the zone it was dropped on: the card goes
       // where its date says, in date order.
-      updates.set(cardId, { dueDate, order: null });
+      updates.set(cardId, { ...updates.get(cardId), dueDate, order: null });
     } else {
       const list = neighborIds.map(findCard).filter(Boolean);
       const at = Math.min(index, list.length);

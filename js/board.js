@@ -15,6 +15,7 @@ import {
 } from './dates.js';
 import { STATUS } from './model.js';
 import { compareCards } from './order.js';
+import { REPEAT_NAMES, repeats } from './repeat.js';
 
 const FALLBACK_COLOR = '#6B6F78';
 
@@ -169,10 +170,21 @@ function cardHTML(card, today, categoryById, { triage = false, highlight = null 
       ? `<span class="card-hard${card.dueDate && card.dueDate <= today ? ' is-due' : ''}">Hard deadline</span>`
       : '';
 
+  // The mockup's two arrows, then "Weekly" or "Monthly".
+  const repeat = repeats(card)
+    ? `<span class="card-repeat">
+         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17 2l4 4-4 4"></path><path d="M3 11V9a3 3 0 0 1 3-3h15"></path><path d="M7 22l-4-4 4-4"></path><path d="M21 13v2a3 3 0 0 1-3 3H3"></path></svg>
+         <span class="visually-hidden">Repeats</span>
+         ${REPEAT_NAMES[card.repeat]}
+       </span>`
+    : '';
+
   // Someday cards have no date to show.
   const date = card.dueDate ? `<span class="card-date">${formatShort(card.dueDate)}</span>` : '';
   const meta =
-    date || lateText || hard || progress ? `<div class="card-meta">${date}${lateText}${hard}${progress}</div>` : '';
+    date || lateText || hard || repeat || progress
+      ? `<div class="card-meta">${date}${lateText}${hard}${repeat}${progress}</div>`
+      : '';
   const triageSection = triage && offersTriage(card, today) ? triageHTML(card, today) : '';
 
   // The title is a real button; CSS stretches its click area over the whole

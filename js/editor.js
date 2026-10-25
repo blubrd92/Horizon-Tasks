@@ -5,13 +5,16 @@
 
 import { STATUS } from './model.js';
 import { placeBeside } from './place.js';
+import { anchorOf, describeMove, describeRhythm, repeats } from './repeat.js';
 
 // Matches the CSS: up to this width the editor fills the screen.
 const narrow = window.matchMedia('(max-width: 760px)');
 
-// onSave(cardId, changes) and onDone(cardId, changes) receive only the fields
-// that differ from the card as it was when the panel opened. onCreate(values)
-// receives every field of a new card. onClose(card, saved) runs whenever the
+// onSave(cardId, changes, { moveSeries }) and onDone(cardId, changes,
+// { moveSeries }) receive only the fields that differ from the card as it
+// was when the panel opened; moveSeries is true when a repeating card's date
+// changed and "Move the series too" was checked. onCreate(values) receives
+// every field of a new card. onClose(card, saved) runs whenever the
 // panel closes; a new card has no id until it is saved.
 export function setupEditor({ onSave, onDone, onCreate, onClose }) {
   const dialog = document.getElementById('editor');
@@ -25,6 +28,11 @@ export function setupEditor({ onSave, onDone, onCreate, onClose }) {
   const category = document.getElementById('editor-category');
   const progress = document.getElementById('editor-progress');
   const hard = document.getElementById('editor-hard');
+  const repeat = document.getElementById('editor-repeat');
+  const repeatNote = document.getElementById('editor-repeat-note');
+  const moveBlock = document.getElementById('editor-move');
+  const moveSeries = document.getElementById('editor-move-series');
+  const moveNote = document.getElementById('editor-move-note');
   const heading = document.getElementById('editor-heading');
   const saveButton = document.getElementById('editor-save');
   const doneButton = document.getElementById('editor-done');
@@ -53,7 +61,10 @@ export function setupEditor({ onSave, onDone, onCreate, onClose }) {
     fillCategories(categories);
     progress.checked = card.status === STATUS.IN_PROGRESS;
     hard.checked = card.deadlineType === 'hard';
+    repeat.value = card.repeat;
+    moveSeries.checked = false;
     updateSomedayNote();
+    updateRepeatNotes();
     anchor = where;
     dialog.showModal();
     position();
@@ -130,6 +141,28 @@ export function setupEditor({ onSave, onDone, onCreate, onClose }) {
     someday.hidden = Boolean(due.value);
   }
 
+  // The rhythm in words under Repeats, and "Move the series too" when a
+  // repeating card's date has changed. A card that already repeats keeps
+  // its series' rhythm unless that box is checked (see repeat.js); one
+  // that's starting to repeat follows the date in the form.
+  function updateRepeatNotes() {
+    const rule = repeat.value;
+    const was = card && repeats(card);
+    const dateChanged = Boolean(card && card.id && was && rule !== 'none' && due.value && due.value !== (card.dueDate || ''));
+    moveBlock.hidden = !dateChanged;
+    if (dateChanged) moveNote.textContent = describeMove(rule, due.value);
+    const anchor = was ? anchorOf(card) : due.value || null;
+    const day = was && rule === 'monthly' ? card.seriesDay : null;
+    repeatNote.textContent = describeRhythm(rule, anchor, day);
+    repeatNote.hidden = !repeatNote.textContent;
+    // The editor may have grown or shrunk; keep it on screen.
+    follow();
+  }
+
+  function seriesOptions() {
+    return { moveSeries: !moveBlock.hidden && moveSeries.checked };
+  }
+
   // Every field as the form shows it. Returns null if the title is empty,
   // after pointing that out.
   function collectValues() {
@@ -148,6 +181,7 @@ export function setupEditor({ onSave, onDone, onCreate, onClose }) {
       category: category.value || null,
       status: progress.checked ? STATUS.IN_PROGRESS : STATUS.OPEN,
       deadlineType: hard.checked ? 'hard' : 'soft',
+      repeat: repeat.value,
     };
   }
 
@@ -175,7 +209,7 @@ export function setupEditor({ onSave, onDone, onCreate, onClose }) {
     } else {
       const changes = collectChanges();
       if (!changes) return;
-      if (Object.keys(changes).length) onSave(card.id, changes);
+      if (Object.keys(changes).length) onSave(card.id, changes, seriesOptions());
     }
     saved = true;
     close();
@@ -186,7 +220,7 @@ export function setupEditor({ onSave, onDone, onCreate, onClose }) {
     if (!changes) return;
     // Marking done sets the status itself.
     delete changes.status;
-    onDone(card.id, changes);
+    onDone(card.id, changes, seriesOptions());
     saved = true;
     close();
   });
@@ -203,9 +237,14 @@ export function setupEditor({ onSave, onDone, onCreate, onClose }) {
   noDate.addEventListener('click', () => {
     due.value = '';
     updateSomedayNote();
+    updateRepeatNotes();
     due.focus();
   });
-  due.addEventListener('input', updateSomedayNote);
+  due.addEventListener('input', () => {
+    updateSomedayNote();
+    updateRepeatNotes();
+  });
+  repeat.addEventListener('change', updateRepeatNotes);
 
   title.addEventListener('input', () => {
     if (titleError.hidden) return;

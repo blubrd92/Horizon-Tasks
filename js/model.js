@@ -19,6 +19,12 @@
 //   category       a category id from the profile, e.g. "programs"
 //   status         "open", "in_progress", "done", or "let_go"
 //   repeat         "none", "weekly", or "monthly"
+//   seriesId       string or null: on repeating cards, the id of the card
+//                  the series started with, shared by every card in it
+//   seriesDate     "YYYY-MM-DD" or null: the date the rhythm planned for
+//                  this card. Dragging and triage change dueDate, not this.
+//   seriesDay      1 to 31, or null: monthly only, the day of the month the
+//                  series aims for (see repeat.js)
 //   source         "manual", "quick_add", or "screenshot"
 //   order          number, or null: the card's place within its zone, set
 //                  when you drag it (see order.js). null means date order.
@@ -58,6 +64,9 @@ export function newCard({ title, dueDate = null }) {
     repeat: 'none',
     source: 'quick_add',
     order: null,
+    seriesId: null,
+    seriesDate: null,
+    seriesDay: null,
   };
 }
 
@@ -81,9 +90,14 @@ export function normalizeCard(id, data) {
     projectId: data.projectId || null,
     category: data.category || null,
     status: data.status || STATUS.OPEN,
-    repeat: data.repeat || 'none',
+    repeat: data.repeat === 'weekly' || data.repeat === 'monthly' ? data.repeat : 'none',
     source: data.source || 'manual',
     order: typeof data.order === 'number' && Number.isFinite(data.order) ? data.order : null,
+    seriesId: typeof data.seriesId === 'string' && data.seriesId ? data.seriesId : null,
+    seriesDate: isISODate(data.seriesDate) ? data.seriesDate : null,
+    seriesDay: Number.isInteger(data.seriesDay) && data.seriesDay >= 1 && data.seriesDay <= 31 ? data.seriesDay : null,
+    // The sample cards on your board (a repeating one's next card keeps it).
+    sample: data.sample === true,
     createdAt: millis(data.createdAt),
     updatedAt: millis(data.updatedAt),
     completedAt: millis(data.completedAt),
