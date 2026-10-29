@@ -53,13 +53,12 @@ pointed at a side branch, point it back at `main` (Settings > Pages).
 header button renamed, Custom dates, a year that can start in July, Year
 grouped by month, notes in Copy as text). **Phase 1 is complete.**
 
-**Branch:** 1f lives on `claude/friendly-brahmagupta-nnqtvp` and still
-needs merging into `main` (a fast-forward: `main` hasn't moved since 1f
-started, so nothing gets rewritten). After the merge, point GitHub Pages
-back at `main` if you switched it to test 1f.
+**Branch:** 1f was built on `claude/friendly-brahmagupta-nnqtvp` and
+merged into `main` on 2026-10-29 (a fast-forward: nothing was rewritten).
+`main` has all of Phase 1. If GitHub Pages was switched to the side branch
+for testing, point it back at `main` (Settings > Pages).
 
-**Next: Phase 2, Projects** (SPEC "Projects"), in a fresh session, once
-1f is merged into `main`. SPEC doesn't split Phase 2 into slices, so the
+**Next: Phase 2, Projects** (SPEC "Projects"), in a fresh session. SPEC doesn't split Phase 2 into slices, so the
 first job is proposing a split (for example 2a: projects, the Projects
 list, and assigning cards with the tag on the board; 2b: the project
 page with notes, links, and its cards) and building the first slice.
