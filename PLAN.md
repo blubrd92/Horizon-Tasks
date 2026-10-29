@@ -48,26 +48,52 @@ on 2026-10-29 (a fast-forward: `main` simply caught up, nothing was
 rewritten). `main` now has every confirmed slice. If GitHub Pages is still
 pointed at a side branch, point it back at `main` (Settings > Pages).
 
-**Slice 1f: built, awaiting your test** (2026-10-29). The Done record
-view, "What you did", plus one round of revisions after your first look
-(the header button renamed, Custom dates, a year that can start in July,
-Year grouped by month, notes in Copy as text). See the 1f section below.
-To test on the live site, point GitHub Pages at this slice's branch
-(`claude/friendly-brahmagupta-nnqtvp`) for now, then back to `main` once
-it's merged.
+**Slice 1f: done and confirmed** (2026-10-29). The Done record view,
+"What you did", plus one round of revisions after your first look (the
+header button renamed, Custom dates, a year that can start in July, Year
+grouped by month, notes in Copy as text). **Phase 1 is complete.**
 
-**Next:** your test of 1f. Once it's confirmed and committed, Phase 1 is
-done; Phase 2 (Projects) starts in a fresh session.
+**Branch:** 1f lives on `claude/friendly-brahmagupta-nnqtvp` and still
+needs merging into `main` (a fast-forward: `main` hasn't moved since 1f
+started, so nothing gets rewritten). After the merge, point GitHub Pages
+back at `main` if you switched it to test 1f.
 
-Open proposals carried over: Undo for Let it go and Mark done (1f covers
-the "get it back" half from the Done view; a 6-second Undo on the board is
-still open), Let it go in the editor, triage per device instead of per
-account, pinning zone headers on long columns, and saving the sample card
-scripts in `tools/`. New from 1f: see its Proposals.
+**Next: Phase 2, Projects** (SPEC "Projects"), in a fresh session, once
+1f is merged into `main`. SPEC doesn't split Phase 2 into slices, so the
+first job is proposing a split (for example 2a: projects, the Projects
+list, and assigning cards with the tag on the board; 2b: the project
+page with notes, links, and its cards) and building the first slice.
+There's no mockup for the Projects list or the project page; the board
+mockup (`design/Main.dc.html`, `design/horizon-board.png`) shows only the
+Projects button and the "↗ November display" tag on cards. Things to
+settle there:
+- Where projects live (`users/{uid}/projects`, as `js/model.js` already
+  plans) and how that leaves room for shared projects later (PLAN 1a:
+  a separate top-level `projects` collection with members).
+- What a project's color does, given cards already carry a category band.
+- What the end date does, and what happens to a project after it passes
+  (archive? hidden from the list?), and to its cards if a project goes.
+- The tag on cards: it must sit above the card's stretched click area,
+  like the triage buttons, and open the project page.
+- Choosing a project in the editor, and whether you can make a new
+  project from there.
+- The project page as its own view (like `#done`): which of its cards it
+  shows (open only, or finished too), and whether that query needs an
+  index.
+- Links: title and address, and refusing anything but http(s) addresses.
+- Repeating cards already pass `projectId` to their next card.
 
-## Slice 1f: the Done record, "What you did" (awaiting test)
+Open proposals carried over: Undo for Let it go and Mark done on the board
+(the Done view's "Put back on the board" covers getting a card back), Let
+it go in the editor, triage per device instead of per account, pinning
+zone headers on long columns, saving the sample card scripts in `tools/`,
+and a Settings gear on the What you did page (Year starts in is only
+reachable from the board). Still parked: Done privacy and the Firebase
+console, and one approved list for 3a.
 
-### Revisions after your first look (awaiting test)
+## Slice 1f: the Done record, "What you did" (confirmed)
+
+### Revisions after your first look (confirmed)
 
 You said "ranges" weren't findable, "Done" doesn't say where it goes, and
 you'd like a report over dates you choose. You picked "What you did" for
