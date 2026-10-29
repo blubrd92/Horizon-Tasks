@@ -26,12 +26,15 @@ import { setupDrag } from './drag.js';
 import { setupSomeday } from './someday.js';
 import { setupDatePick } from './datepick.js';
 import { setupSettings } from './settings.js';
+import { setupDone } from './done.js';
+import { copyText, putBackChanges, rangeFor, rangeTimes } from './record.js';
 
 const views = {
   setup: document.getElementById('view-setup'),
   signin: document.getElementById('view-signin'),
   notallowed: document.getElementById('view-notallowed'),
   board: document.getElementById('view-board'),
+  done: document.getElementById('view-done'),
 };
 const zonesEl = document.getElementById('zones');
 const horizonEl = document.getElementById('horizon');
@@ -89,6 +92,15 @@ let settings = normalizeSettings(null);
 const openZones = new Set();
 let focusFold = null;
 
+// Your categories, from your profile.
+let categories = [];
+
+// The Done record (set up in start()): refresh() redraws it for the day,
+// and doneDay is the day it was last worked out for, so it can move on at
+// midnight.
+let doneView = null;
+let doneDay = null;
+
 // A panel's X sits right over the Sign out button, so a double-click on the
 // X would close the panel and then sign you out. For a moment after any
 // panel closes, Sign out ignores clicks.
@@ -110,6 +122,14 @@ const someday = setupSomeday({
 function show(name) {
   for (const [key, el] of Object.entries(views)) el.hidden = key !== name;
   document.body.classList.remove('is-loading');
+  // The testing bar belongs to the board and the Done record.
+  pretendBar.hidden = !pretendBar.hasChildNodes() || (name !== 'board' && name !== 'done');
+  document.title = name === 'done' ? 'What you did \u00b7 Horizon' : 'Horizon';
+}
+
+// The board, or the Done record at #done.
+function routeView() {
+  return location.hash === '#done' ? 'done' : 'board';
 }
 
 function draw() {
@@ -200,7 +220,7 @@ stripEl.addEventListener('click', (event) => {
 });
 
 document.addEventListener('keydown', (event) => {
-  if (event.key !== 'Escape' || !highlightDay || event.defaultPrevented) return;
+  if (event.key !== 'Escape' || !highlightDay || event.defaultPrevented || views.board.hidden) return;
   // Escape in an open panel closes the panel, not the highlight.
   if (document.querySelector('dialog[open]')) return;
   toggleDay(highlightDay);
@@ -224,6 +244,8 @@ setInterval(() => {
     draw();
     claimVisit();
   }
+  // The Done record's "this week" moves on at midnight too.
+  if (doneView && doneDay && todayISO() !== doneDay) doneView.refresh();
 }, 60 * 1000);
 
 // Coming back to a tab or window that was already open is a visit too.
@@ -324,6 +346,10 @@ function showPretendBar() {
   url.searchParams.delete('today');
   const link = document.createElement('a');
   link.href = url.pathname + url.search + url.hash;
+  // Stay on whichever view you're on when you follow the link.
+  link.addEventListener('click', () => {
+    link.href = url.pathname + url.search + location.hash;
+  });
   if (date) {
     link.textContent = 'Back to the real today';
     pretendBar.replaceChildren(`Testing: the board is treating ${formatShort(date)} as today. Changes you make still save. `, link);
@@ -331,7 +357,6 @@ function showPretendBar() {
     link.textContent = 'Remove it';
     pretendBar.replaceChildren(`Testing: \u201c?today=${ignored}\u201d isn't a real date, so the board is using the real today. `, link);
   }
-  pretendBar.hidden = false;
 }
 showPretendBar();
 
@@ -523,6 +548,122 @@ async function start() {
   });
   settingsButton.addEventListener('click', () => settingsBox.open(settings));
 
+  // The Done record. Only the range on screen is downloaded: done cards by
+  // completedAt, let-go cards by letGoAt (see record.js and firebase.js).
+  // doneCards and letGoCards are undefined while loading.
+  let doneKind = 'month';
+  let doneOffset = 0;
+  let doneRange = null;
+  let doneCards;
+  let letGoCards;
+  let doneError = null;
+  let stopDone = [];
+
+  const doneScreen = setupDone({
+    // Week, Month, and Year always open the current one.
+    onRange: (kind) => setDoneRange(kind, 0),
+    onStep: (step) => setDoneRange(doneKind, Math.min(0, doneOffset + step)),
+    onCopy: copyDone,
+    onPutBack: putBack,
+  });
+  doneView = { refresh: refreshDone };
+
+  function setDoneRange(kind, offset) {
+    doneKind = kind;
+    doneOffset = offset;
+    doneScreen.showStatus('');
+    refreshDone();
+  }
+
+  function stopDoneQueries() {
+    for (const stop of stopDone) stop();
+    stopDone = [];
+    doneRange = null;
+  }
+
+  // Draws the record for the chosen range, starting new queries when the
+  // range has changed (a button, an arrow, or midnight).
+  function refreshDone() {
+    if (!uid || views.done.hidden) return;
+    doneDay = todayISO();
+    const range = rangeFor(doneKind, doneOffset, doneDay);
+    if (!doneRange || range.start !== doneRange.start || range.end !== doneRange.end) {
+      stopDoneQueries();
+      doneCards = undefined;
+      letGoCards = undefined;
+      doneError = null;
+      const { from, to } = rangeTimes(range);
+      stopDone = [
+        fb.watchStampedBetween(uid, 'completedAt', from, to, (cards) => {
+          doneCards = cards.filter((card) => card.status === STATUS.DONE);
+          drawDone();
+        }, showDoneError),
+        fb.watchStampedBetween(uid, 'letGoAt', from, to, (cards) => {
+          letGoCards = cards.filter((card) => card.status === STATUS.LET_GO);
+          drawDone();
+        }, showDoneError),
+      ];
+    }
+    doneRange = range;
+    drawDone();
+  }
+
+  function drawDone() {
+    if (!doneRange) return;
+    doneScreen.render({ range: doneRange, today: doneDay, categories, done: doneCards, letGo: letGoCards, error: doneError });
+  }
+
+  function showDoneError(err) {
+    doneError =
+      err.code === 'permission-denied'
+        ? 'Firestore refused to share your record. Check that the rules in firestore.rules are published in the Firebase console.'
+        : `Couldn't load what you did (${err.code || err.message}).`;
+    drawDone();
+  }
+
+  async function copyDone() {
+    if (!doneCards || !doneCards.length) return;
+    const n = doneCards.length;
+    const copied = await writeClipboard(copyText(doneCards, categories, doneRange, doneDay));
+    doneScreen.showStatus(
+      copied
+        ? `Copied ${n} ${n === 1 ? 'card' : 'cards'} as text, ready to paste.`
+        : "Couldn't copy: the browser kept the clipboard closed.",
+    );
+  }
+
+  // A done or let-go card back on the board, with its old due date. It
+  // leaves the record (see putBackChanges in record.js).
+  function putBack(card) {
+    if (!uid) return;
+    const where = !card.dueDate ? 'in Someday' : card.dueDate === todayISO() ? 'due today' : `due ${formatShort(card.dueDate)}`;
+    doneScreen.showStatus(`\u201c${card.title}\u201d is back on the board, ${where}.`);
+    fb.updateCard(uid, card.id, putBackChanges(card)).catch((err) => {
+      doneScreen.showStatus(`\u201c${card.title}\u201d didn't go back on the board (${err.code || err.message}).`);
+    });
+  }
+
+  // #done shows the record; anything else, the board. Before sign-in has
+  // finished, the sign-in code reads the address itself.
+  function route() {
+    if (!uid) return;
+    const view = routeView();
+    if (view === (views.done.hidden ? 'board' : 'done')) return;
+    show(view);
+    window.scrollTo(0, 0);
+    if (view === 'done') {
+      editor.close();
+      datePick.cancel();
+      settingsBox.close();
+      refreshDone();
+      doneScreen.focusHeading();
+    } else {
+      stopDoneQueries();
+      doneScreen.reset();
+    }
+  }
+  window.addEventListener('hashchange', route);
+
   setupDrag({
     root: views.board,
     scrollers: () => [horizonEl, somedayCardsEl, stripEl],
@@ -647,6 +788,9 @@ async function start() {
     triageDay = null;
     focusTriageFor = null;
     highlightDay = null;
+    stopDoneQueries();
+    doneScreen.reset();
+    categories = [];
     settings = normalizeSettings(null);
     openZones.clear();
     settingsBox.close();
@@ -672,12 +816,13 @@ async function start() {
         show('notallowed');
         return;
       }
-      show('board');
+      show(routeView());
       boardMessage.hidden = true;
       const profile = await fb.loadProfile(user.uid);
-      const { categories, visit } = profile;
+      const { visit } = profile;
       if (thisChange !== authChange) return;
       uid = user.uid;
+      categories = profile.categories;
       settings = profile.settings;
       settingsButton.disabled = false;
       quickAdd.setEnabled(true);
@@ -689,6 +834,7 @@ async function start() {
         },
         showLoadError,
       );
+      refreshDone();
       // The record just read is fresh unless the tab is out of sight, in
       // which case the visit waits until you look, and reads it again then.
       claimVisit(document.hidden ? null : visit);
@@ -698,6 +844,34 @@ async function start() {
       showLoadError(err);
     }
   });
+}
+
+// Copies text to the clipboard. Returns whether it worked.
+async function writeClipboard(text) {
+  try {
+    await navigator.clipboard.writeText(text);
+    return true;
+  } catch {
+    // Older browsers, or a clipboard the browser keeps closed: the old way,
+    // through a hidden text box.
+  }
+  const had = document.activeElement;
+  const area = document.createElement('textarea');
+  area.value = text;
+  area.setAttribute('readonly', '');
+  area.style.position = 'fixed';
+  area.style.opacity = '0';
+  document.body.append(area);
+  area.select();
+  let copied = false;
+  try {
+    copied = document.execCommand('copy');
+  } catch {
+    copied = false;
+  }
+  area.remove();
+  if (had && had.focus) had.focus();
+  return copied;
 }
 
 function showLoadError(err) {

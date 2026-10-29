@@ -48,33 +48,265 @@ on 2026-10-29 (a fast-forward: `main` simply caught up, nothing was
 rewritten). `main` now has every confirmed slice. If GitHub Pages is still
 pointed at a side branch, point it back at `main` (Settings > Pages).
 
-**Next: slice 1f** (the Done record view, the last slice of Phase 1).
-Start it in a fresh session: read this file, then SPEC.md "The Done record
-("What you did")", "Visual design", and "Security" plus the Done privacy
-line under "Future", and `design/Done.dc.html` and `design/horizon-done.png`.
-Things to settle there:
-- How finished cards are loaded without downloading years of history:
-  only the range on screen (Week, Month, Year), by `completedAt`, and
-  whether that needs a Firestore index.
-- What counts as a week, month, and year (weeks run Monday to Sunday
-  here), and whether the range buttons step back through earlier ones.
-- Repeating cards: each finished card is its own row; whether rows show
-  the repeat icon, and whether "Copy as text" groups a series using
-  `seriesId`.
-- Let-go cards: the collapsed section at the bottom of the range, by
-  `letGoAt`; and whether a done or let-go card can be brought back to the
-  board from here (the Undo proposals below), including what that means
-  for a repeating card whose next card already exists.
-- Cards with no category, or a category id not on your profile, in the
-  per-category tiles.
-- The sample cards (`sample: true`, some done and one let go) are there to
-  test this view with.
-- The parked question about Done privacy and the Firebase console (see
-  "Parked for later"), which matters only once colleagues join.
+**Slice 1f: built, awaiting your test** (2026-10-29). The Done record
+view, "What you did". See the 1f section below for what it does, the five
+questions settled, and the test list.
 
-Open proposals carried over: Undo for Let it go and Mark done, Let it go
-in the editor, triage per device instead of per account, pinning zone
-headers on long columns, and saving the sample card scripts in `tools/`.
+**Next:** your test of 1f. Once it's confirmed and committed, Phase 1 is
+done; Phase 2 (Projects) starts in a fresh session.
+
+Open proposals carried over: Undo for Let it go and Mark done (1f covers
+the "get it back" half from the Done view; a 6-second Undo on the board is
+still open), Let it go in the editor, triage per device instead of per
+account, pinning zone headers on long columns, and saving the sample card
+scripts in `tools/`. New from 1f: see its Proposals.
+
+## Slice 1f: the Done record, "What you did" (awaiting test)
+
+### What it does
+
+**Getting there.** A "Done" button joins the header, before the gear and
+Sign out (where the mockup puts it; Projects and Inbox join it in later
+phases). It opens "What you did", laid out like `design/Done.dc.html`: the
+wordmark and "Back to the board" on top; the big heading and a line naming
+the range ("October so far. Every card you finished, kept."); Week, Month,
+Year; Copy as text; the dark total tile and one tile per category; the
+finished cards grouped by week, newest first; and the dashed let-go box at
+the bottom. The address becomes `#done`, so the browser's Back button
+returns to the board, a reload stays on the record, and `?today=` keeps
+working there (the testing bar shows on both views).
+
+**Rows.** Each row: a blue check, the title, the category with its swatch,
+and the day it was finished ("Wed, Oct 21"). Each row is a button: click it
+and a small box shows the card (category, when it was finished, when it
+had been due, its notes) with "Put back on the board". The mockup's rows
+stay as clean as they look; the way back is one click deeper.
+
+### The five open questions, settled
+
+**1. Only the range on screen is downloaded.** Two live queries, both
+"between the start of the range and the start of the next one": done
+cards by `completedAt`, let-go cards by `letGoAt`. A Month view reads
+that month's cards and nothing older; years of history stay on the
+server. Each query filters on one field only, so Firestore's automatic
+single-field indexes answer it: **no index to create** (the same kind of
+query 1d's "you finished" count already runs on your live project). The
+status check (done vs. let go) happens in the browser, which also drops a
+card that was finished and then put back. Cost on the free plan: one read
+per card in the range when you open it, so a Year view with 600 cards is
+600 of the 50,000 free daily reads. The queries are live, so a card you
+finish in another tab appears without a reload. Leaving the view stops
+them.
+
+**2. Weeks run Monday to Sunday, months and years are the calendar's,
+and you can step back.**
+- Week is the Monday-to-Sunday week holding today; Month is the calendar
+  month; Year is the calendar year. Ranges use your own time zone's
+  midnights, so a card finished at 11:58 pm counts on that day.
+- Two arrow buttons beside Week, Month, Year step to the previous or next
+  one: last week, September, 2025. Without them, January 2 would show a
+  Year of two days, and "Every card you finished, kept" would quietly stop
+  being true for anything older than the current year. Next stops at the
+  current one (there's no future to show). Pressing Week, Month, or Year
+  always jumps to the current one, so you're never more than one click
+  from now.
+- The line under the heading names what's showing: "October so far.",
+  "September.", "September 2025." (a past year gets its year), "This week
+  so far.", "Oct 12 to 18.", "2026 so far.", "2025."
+- Month opens first, as in the mockup. The range you pick stays while the
+  page is open (board and back again); a reload starts at Month.
+- Grouped by week in every range, as SPEC says. A week that crosses the
+  range's edge is labeled with the part inside it ("Oct 1 to 4" in an
+  October that starts on a Thursday). The current week reads "This week",
+  as in the mockup; others read by their dates ("Oct 12 to 18").
+- A week with nothing finished is left out rather than shown empty. This
+  is a record of what you did, not a ledger of what you didn't.
+- An empty range shows one quiet line ("Nothing finished in September.")
+  instead of a big dark zero, and Copy as text is off.
+
+**3. Repeating cards: one row per time, an icon, and grouped when
+copied.**
+- Each finished card is its own row: four weekly orders in a month are four
+  rows, and count as four.
+- Rows show the board's two-arrow repeat icon after the title (a screen
+  reader hears "Repeats"), so four rows of the same title read as a
+  rhythm, not a duplicate. The icon shows on any card that belongs to a
+  series: it repeats, or it was a later card in one (so the last card of a
+  series you ended still gets it). A card you set to Weekly and then back
+  to "Doesn't repeat" before it ever repeated doesn't.
+- **Copy as text groups a series** by `seriesId` and title together:
+  "Thu, Oct 15 · Weekly order: 300s nonfiction, 2 times (Oct 8, Oct 15)
+  · Collection Development", placed at its latest date. Same series but a
+  changed title ("600s" then "300s") stays separate lines, since grouping
+  would hide the change. More than five times reads "12 times, Jan 8 to
+  Oct 22" instead of listing every date. On screen nothing is grouped.
+
+**4. Let-go cards, and putting cards back.**
+- The dashed box at the bottom counts cards let go in the same range, by
+  `letGoAt`: "You let 1 card go this month. It's kept here too, quietly."
+  ("this week", "this year", "that week", "in September", "in 2025"). Show
+  opens the list inside the box (newest first, a gray dash icon instead of
+  the check, the day it was let go); Hide closes it. When nothing was let
+  go, the box isn't shown. Let-go cards are never in the total, the tiles,
+  or Copy as text: letting go isn't finishing.
+- **Yes, a done or let-go card can go back on the board**, from its box:
+  "Put back on the board". It returns as an open card with its old due
+  date (so possibly in Overdue, or Someday if it had none), in date order,
+  and leaves the record: its `completedAt` or `letGoAt` is cleared, so
+  nothing still counts it as finished. A line at the top says "'Kanopy
+  usage check' is back on the board, due Tue, Oct 13."
+- **A repeating card comes back as a one-off.** Finishing it already made
+  the next card in the series, so putting the old one back as repeating
+  would put two of the series on the board, and finishing either would
+  spawn yet another. So it returns with Repeats set to "Doesn't repeat",
+  still linked to the series by `seriesId`, and the series carries on
+  with the card that already exists. The box says so before you press the
+  button: "Part of a weekly series. It comes back on its own, as a one-off;
+  the series already has its next card." Finishing the one-off later
+  makes no new card.
+
+**5. Cards with no category, or a category not on your profile.** Tiles
+follow your profile's category order (so they don't shuffle between
+ranges), showing only categories with at least one card. After them, each
+unknown category id gets its own gray tile with the raw id as its name,
+the same way the board shows it; last comes a gray "No category" tile.
+Rows use the same names. The color is never the only clue: every tile and
+row has the name.
+
+**Carried over: Done privacy and the Firebase console.** Still parked, and
+nothing in 1f changes it: the Done view reads only under your own
+`users/{uid}`, and the rules already refuse everyone else. 1f did teach one
+thing worth writing down for that decision. The range queries need
+`completedAt` and `letGoAt` readable by the database, so encrypting Done
+records in the browser could hide titles, notes, and categories from a
+project owner, but never *when* someone finished things. The other honest
+route is the one SPEC already plans for people elsewhere: each colleague
+runs their own copy, so there's no shared owner at all. Decide before
+colleagues join.
+
+### Data
+
+No new fields. Putting a card back writes `status: "open"`, clears its
+`completedAt` (or `letGoAt`) to null and its `order`, and for a repeating
+card sets `repeat: "none"` with `seriesDate` and `seriesDay` null,
+keeping `seriesId`.
+
+### Files touched
+
+```
+index.html         the Done button; the testing bar moves up so both views
+                   share it; the Done view; the box for one finished card
+css/horizon.css    the Done view, laid out from the mockup, and its phone
+                   layout
+js/dates.js        weekStartOf(): the Monday of a date's week
+js/record.js       NEW: ranges, weeks, tallies, wording, and the copied
+                   text; no Firebase, no page
+js/done.js         NEW: draws the Done view and its card box, reports
+                   clicks; no Firebase
+js/firebase.js     watchStampedBetween(): the range queries
+js/app.js          #done and the board, the range, the queries, Copy as
+                   text, putting a card back
+```
+
+### Setup steps (yours)
+
+None. No rule changes (reading your own cards is already allowed), no
+index.
+
+### Decisions I made that the questions didn't cover (change any of them)
+
+1. **Rows open a small box** with "Put back on the board", instead of a
+   button on every row.
+2. **Month first**, as in the mockup; the choice lasts until a reload.
+3. **Empty weeks are left out; an empty range shows a line, not a zero.**
+4. **Put back means open, not In progress**, with its old due date.
+5. **Copy as text** starts with a heading and the counts, newest first,
+   in your own voice, ready for an evaluation:
+   ```
+   What I did, Oct 1 to 29, 2026
+   11 cards finished: Collection Development 5, Programs 2, ...
+
+   Wed, Oct 21 · Booklist descriptions for the November display · Programs
+   ```
+
+### Proposals (not built; say yes and I'll add them)
+
+- **A fiscal year range.** Library evaluations often run July to June, not
+  January to December. A "starts in" setting for Year would make Copy as
+  text match your evaluation period in one click.
+- **Group the Year view by month** instead of week. SPEC says by week, and
+  that's what's built, but a year is up to 52 headings.
+- **Notes in Copy as text**, as an option, for evaluations that want the
+  detail.
+
+### How to test
+
+Open the board and click Done (use `?today=` if you like; the testing bar
+follows you there).
+- [ ] The page matches the mockup: heading, range line, Week/Month/Year
+      with Month pressed, Copy as text, the dark total, category tiles,
+      weeks newest first with "This week" on top, the dashed box last.
+- [ ] Your sample cards that are done show up, each on the day it was
+      finished. The total equals the rows; each tile equals its rows.
+- [ ] Week and Year switch the range; the line under the heading follows.
+- [ ] The left arrow steps back (last week, September, 2025); the right
+      arrow steps forward and is off on the current one. Pressing Month
+      from September jumps back to this month.
+- [ ] A range with nothing in it: one quiet line, Copy as text off.
+- [ ] A card with no category: a gray "No category" tile and row label.
+- [ ] A repeating card's finished rows show the repeat icon.
+- [ ] Copy as text, then paste into a document: heading, counts, one line
+      per card, a repeating series on one line with "N times".
+- [ ] The let-go box counts your let-go sample card. Show lists it; Hide
+      folds it.
+- [ ] Click a done row: the box shows its details. Put back on the board:
+      the row leaves, the line at the top says where it went, and Back to
+      the board shows it there. In the console it's `open` with
+      `completedAt: null`.
+- [ ] Put back a let-go card: same, from the let-go list.
+- [ ] Put back a repeating card whose next card is on the board: it comes
+      back without the repeat icon, the next card is still there, and
+      marking the old one done makes no new card.
+- [ ] The browser's Back button returns to the board; reload on `#done`
+      stays on the record.
+- [ ] Phone width: everything fits, nothing scrolls sideways, buttons are
+      44px.
+
+What I checked here, in a real browser (Chromium) with a pretend Firebase,
+Pacific time, the clock on Thu, Oct 22, 2026, and the mockup's October as
+sample data plus edge cases: 109 checks, all passing, no console errors.
+The Done button and `#done`; the heading taking focus; both queries
+running from Oct 1 to Nov 1 at Pacific midnights, one on each field; the
+total and tiles (profile order, then `outreach`, an id not on the
+profile, then "No category"); weeks newest first with "This week" and
+the first week clipped to "Oct 1 to 4"; a card finished at 11:58 pm on a
+Sunday staying in that week; a reopened card, a September card, and a
+let-go card kept out of the rows, total, and copy; a title with HTML in it
+shown as plain text; the repeat icon on series cards, on the last card of
+an ended series, and not on a card toggled on and off; the let-go box,
+Show and Hide, with keyboard focus kept; Copy as text (heading, counts,
+two series grouped, a changed title kept separate); Week, Year, the
+arrows, last week, 2025, September (its last week clipped to "Sep 28 to
+30"), an empty August with Copy off, October 2025 getting its year, and
+Month jumping back to now; the old queries stopping on every change and
+when you leave the view; the box's details, notes, Escape back to the row;
+putting back a plain card, a repeating card (one-off, `seriesId` kept),
+and a let-go card, each landing in Overdue on the board; marking the
+one-off done making no new card; a refused put-back leaving the row with a
+message; a Firestore refusal on load; the browser's Back and a reload on
+`#done`; the testing bar on both views with `?today=` kept; and at phone
+width (390px), no sideways scroll and every button 44px or taller.
+Screenshots at 1440px and 390px looked right against the mockup.
+
+One thing you'll see on the board: the Done button makes the header's
+buttons wrap under the strip about 80px sooner than before. They stay on
+one row from about 1,180px wide up, so a full laptop screen is unchanged.
+
+Not checked: real Firestore (the range query is the one new kind of
+read), a real phone, and the 1a to 1e checks from earlier sessions (their
+test setup wasn't saved). On the board I changed only the header, the
+testing bar's spot, and Escape (which now ignores the Done view), so a
+quick look at the board is enough.
 
 ## Slice 1e: repeating cards (confirmed)
 

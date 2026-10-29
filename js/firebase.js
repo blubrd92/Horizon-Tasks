@@ -124,6 +124,26 @@ export function watchFinishedSince(uid, since, onChange, onError) {
   );
 }
 
+// The Done record's range: calls onChange with every card whose `field`
+// ("completedAt" or "letGoAt") falls from `from` up to, not including,
+// `to` (both in milliseconds), now and whenever that changes. Nothing
+// outside the range is downloaded. Two bounds on one field need no extra
+// index. A card put back on the board has that field cleared, and one
+// reopened some other way keeps it, so the caller checks status. Returns a
+// function that stops listening.
+export function watchStampedBetween(uid, field, from, to, onChange, onError) {
+  const q = query(
+    collection(db, 'users', uid, 'cards'),
+    where(field, '>=', Timestamp.fromMillis(from)),
+    where(field, '<', Timestamp.fromMillis(to)),
+  );
+  return onSnapshot(
+    q,
+    (snapshot) => onChange(snapshot.docs.map((d) => normalizeCard(d.id, d.data({ serverTimestamps: 'estimate' })))),
+    onError,
+  );
+}
+
 // Calls onChange with the full list of open and in-progress cards now, and
 // again every time one of them changes. Done and let-go cards are never
 // downloaded for the board. Returns a function that stops listening.

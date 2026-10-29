@@ -69,6 +69,11 @@ export function daysBetween(a, b) {
   return Math.round((Date.UTC(by, bm - 1, bd) - Date.UTC(ay, am - 1, ad)) / 86400000);
 }
 
+// The Monday of the week a date falls in.
+export function weekStartOf(iso) {
+  return addDays(iso, -((fromISO(iso).getDay() + 6) % 7));
+}
+
 // A date as a count of days since Jan 1, 1970. Cards sort on this scale
 // within a zone (see order.js).
 export function dayNumber(iso) {

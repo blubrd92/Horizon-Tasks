@@ -220,7 +220,7 @@ function triageHTML(card, today) {
 }
 
 // Card text comes from Firestore, so it is escaped before going into HTML.
-function escapeHTML(text) {
+export function escapeHTML(text) {
   return String(text)
     .replace(/&/g, '&amp;')
     .replace(/</g, '&lt;')
