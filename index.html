@@ -40,7 +40,7 @@
   </main>
 
   <!-- Only shown with the ?today= testing parameter in the address, on the
-       board and the Done record. -->
+       board, the Done record, and project pages. -->
   <p id="pretend-bar" class="pretend-bar" hidden></p>
 
   <div id="view-board" class="board-view" hidden>
@@ -50,6 +50,10 @@
         <ol id="strip" class="strip" aria-label="Cards due over the next two weeks"></ol>
       </div>
       <nav class="header-nav" aria-label="Views and account">
+        <button type="button" id="projects-button" class="button button-link" data-open-projects disabled>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path></svg>
+          Projects
+        </button>
         <!-- SPEC's "Done" button: it opens the Done record at #done. -->
         <a href="#done" class="button button-link">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"></circle><path d="M8 12.5l2.8 2.8L16 10"></path></svg>
@@ -167,6 +171,107 @@
     </main>
   </div>
 
+  <!-- A project's page (projectpage.js), at #project/<id>. The header's
+       bottom edge takes the project's color. -->
+  <div id="view-project" class="done-view project-view" hidden>
+    <header id="project-header" class="done-header project-header">
+      <div class="wordmark">Horizon</div>
+      <nav class="header-nav" aria-label="Views">
+        <button type="button" class="button button-link" data-open-projects>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path></svg>
+          Projects
+        </button>
+        <a href="#" class="button button-link">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 18l-6-6 6-6"></path></svg>
+          Back to the board
+        </a>
+      </nav>
+    </header>
+
+    <main class="done-main project-main">
+      <div class="done-top">
+        <div class="done-titles">
+          <h1 id="project-heading" class="done-heading project-heading" tabindex="-1"></h1>
+          <p id="project-line" class="done-range"></p>
+        </div>
+        <div class="done-controls">
+          <button type="button" id="project-edit-button" class="done-copy" hidden>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20h4L19 9l-4-4L4 16z"></path><path d="M13.5 6.5l4 4"></path></svg>
+            Edit project
+          </button>
+        </div>
+      </div>
+      <p id="project-status" class="done-status" role="status"></p>
+      <div id="project-body" class="done-body project-body"></div>
+    </main>
+  </div>
+
+  <!-- The Projects list, from the Projects button (projectlist.js). -->
+  <dialog id="projects" class="small-dialog projects-dialog" aria-labelledby="projects-heading">
+    <div class="small-panel">
+      <div class="settings-head">
+        <h2 id="projects-heading" class="panel-title">Projects</h2>
+        <button type="button" id="projects-close" class="icon-button" aria-label="Close projects">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"></path></svg>
+        </button>
+      </div>
+      <p id="projects-status" class="projects-status" role="status"></p>
+      <div id="projects-body" class="projects-body"></div>
+      <div class="small-foot">
+        <button type="button" id="projects-new" class="button button-primary">New project</button>
+      </div>
+    </div>
+  </dialog>
+
+  <!-- Making a project, or changing one (projectlist.js). -->
+  <dialog id="project-edit" class="small-dialog project-edit-dialog" aria-labelledby="project-edit-heading">
+    <form id="project-edit-form" class="small-panel" novalidate>
+      <div class="settings-head">
+        <h2 id="project-edit-heading" class="panel-title">New project</h2>
+        <button type="button" id="project-edit-x" class="icon-button" aria-label="Close without saving">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"></path></svg>
+        </button>
+      </div>
+      <label class="field">Name
+        <input type="text" id="project-name" class="field-input field-title" maxlength="80" required autocomplete="off">
+      </label>
+      <p id="project-name-error" class="field-error" hidden></p>
+      <fieldset class="field swatch-field">
+        <legend>Color</legend>
+        <div id="project-colors" class="swatch-choices"></div>
+      </fieldset>
+      <div class="field">
+        <label for="project-end">Ends</label>
+        <div class="field-due">
+          <input type="date" id="project-end" class="field-input field-date" aria-describedby="project-end-note">
+          <button type="button" id="project-noend" class="button button-small">No end date</button>
+        </div>
+      </div>
+      <p id="project-end-note" class="field-note">Optional. Shown on the list and the project's page; nothing moves when it passes.</p>
+
+      <!-- Only for a project that already exists. -->
+      <div id="project-manage" class="project-manage">
+        <button type="button" id="project-archive" class="button">Archive project</button>
+        <button type="button" id="project-delete" class="button button-danger">Delete project</button>
+      </div>
+      <p id="project-archive-note" class="field-note project-manage-note"></p>
+
+      <!-- Delete asks first, in place of the buttons. -->
+      <div id="project-confirm" class="project-confirm" hidden>
+        <p id="project-confirm-text" class="project-confirm-text"></p>
+        <div class="small-foot">
+          <button type="button" id="project-confirm-keep" class="button">Keep it</button>
+          <button type="button" id="project-confirm-delete" class="button button-danger-solid">Delete</button>
+        </div>
+      </div>
+
+      <div id="project-edit-foot" class="small-foot">
+        <button type="button" id="project-edit-cancel" class="button">Cancel</button>
+        <button type="submit" id="project-edit-save" class="button button-primary">Save</button>
+      </div>
+    </form>
+  </dialog>
+
   <!-- One card from the Done record: its details, and the way back to the
        board. -->
   <dialog id="record-card" class="small-dialog" aria-labelledby="record-title">
@@ -230,8 +335,19 @@
               <option value="monthly">Monthly</option>
             </select>
           </label>
+          <label class="field">Project
+            <select id="editor-project" class="field-input"></select>
+          </label>
         </div>
         <p id="editor-repeat-note" class="field-note" hidden></p>
+        <!-- Only when "New project..." is chosen: its name. Saving the card
+             makes the project. -->
+        <div id="editor-newproject" class="field-new" hidden>
+          <label class="field">Name the new project
+            <input type="text" id="editor-project-name" class="field-input" maxlength="80" autocomplete="off">
+          </label>
+          <p id="editor-project-error" class="field-error" hidden>Give the new project a name, or pick another.</p>
+        </div>
         <!-- Only when a repeating card's date is changed: this one, or the
              whole series? -->
         <div id="editor-move" class="check-block" hidden>

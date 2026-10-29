@@ -12,8 +12,10 @@ import {
 import {
   getFirestore,
   collection,
+  deleteDoc,
   doc,
   getDoc,
+  getDocs,
   onSnapshot,
   query,
   serverTimestamp,
@@ -25,7 +27,7 @@ import {
 } from 'https://www.gstatic.com/firebasejs/12.19.0/firebase-firestore.js';
 
 import { config } from '../config.js';
-import { ACTIVE_STATUSES, STATUS, normalizeCard, normalizeSettings } from './model.js';
+import { ACTIVE_STATUSES, PROJECT_STATUS, STATUS, normalizeCard, normalizeProject, normalizeSettings } from './model.js';
 
 const app = initializeApp(config.firebase);
 const auth = getAuth(app);
@@ -219,4 +221,71 @@ export function finishAndRepeat(uid, cardId, how, changes, next) {
   const ref = doc(collection(db, 'users', uid, 'cards'));
   batch.set(ref, { ...next, createdAt: serverTimestamp(), updatedAt: serverTimestamp() });
   return { id: ref.id, saved: batch.commit() };
+}
+
+// Calls onChange with every project, active and archived, now and whenever
+// one changes. A handful of small documents, so all of them are read.
+// Returns a function that stops listening.
+export function watchProjects(uid, onChange, onError) {
+  return onSnapshot(
+    collection(db, 'users', uid, 'projects'),
+    (snapshot) => onChange(snapshot.docs.map((d) => normalizeProject(d.id, d.data({ serverTimestamps: 'estimate' })))),
+    onError,
+  );
+}
+
+// Every card in one project, in any status, now and whenever that changes.
+// One filter on one field, so Firestore's automatic index answers it.
+// Returns a function that stops listening.
+export function watchProjectCards(uid, projectId, onChange, onError) {
+  const q = query(collection(db, 'users', uid, 'cards'), where('projectId', '==', projectId));
+  return onSnapshot(
+    q,
+    (snapshot) => onChange(snapshot.docs.map((d) => normalizeCard(d.id, d.data({ serverTimestamps: 'estimate' })))),
+    onError,
+  );
+}
+
+// Saves a new project. Returns its id at once, plus `saved`, as addCard
+// does. `fields` is { name, color, endDate }.
+export function addProject(uid, fields) {
+  const ref = doc(collection(db, 'users', uid, 'projects'));
+  const saved = setDoc(ref, {
+    endDate: null,
+    ...fields,
+    status: PROJECT_STATUS.ACTIVE,
+    archivedAt: null,
+    createdAt: serverTimestamp(),
+    updatedAt: serverTimestamp(),
+  });
+  return { id: ref.id, saved };
+}
+
+// Writes only the fields in `changes`.
+export function updateProject(uid, projectId, changes) {
+  return updateDoc(doc(db, 'users', uid, 'projects', projectId), { ...changes, updatedAt: serverTimestamp() });
+}
+
+export function archiveProject(uid, projectId, archived) {
+  return updateProject(uid, projectId, {
+    status: archived ? PROJECT_STATUS.ARCHIVED : PROJECT_STATUS.ACTIVE,
+    archivedAt: archived ? serverTimestamp() : null,
+  });
+}
+
+// Deletes a project and takes it off every card that points at it, open
+// or finished. The cards themselves stay. The cards are cleared first and
+// the project goes last, so if something fails partway the
+// project is still there and you can try again.
+export async function deleteProject(uid, projectId) {
+  const snap = await getDocs(query(collection(db, 'users', uid, 'cards'), where('projectId', '==', projectId)));
+  // A single write holds at most 500 changes.
+  const LIMIT = 450;
+  const refs = snap.docs.map((d) => d.ref);
+  for (let i = 0; i < refs.length; i += LIMIT) {
+    const batch = writeBatch(db);
+    for (const ref of refs.slice(i, i + LIMIT)) batch.update(ref, { projectId: null, updatedAt: serverTimestamp() });
+    await batch.commit();
+  }
+  await deleteDoc(doc(db, 'users', uid, 'projects', projectId));
 }

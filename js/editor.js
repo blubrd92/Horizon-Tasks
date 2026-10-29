@@ -3,7 +3,8 @@
 // phone it fills the screen instead. This file only fills in the form and
 // collects what changed; app.js decides how changes are saved.
 
-import { STATUS } from './model.js';
+import { PROJECT_STATUS, STATUS } from './model.js';
+import { NEW_PROJECT, nameOrder } from './projects.js';
 import { placeBeside } from './place.js';
 import { anchorOf, describeMove, describeRhythm, repeats } from './repeat.js';
 
@@ -13,9 +14,12 @@ const narrow = window.matchMedia('(max-width: 760px)');
 // onSave(cardId, changes, { moveSeries }) and onDone(cardId, changes,
 // { moveSeries }) receive only the fields that differ from the card as it
 // was when the panel opened; moveSeries is true when a repeating card's date
-// changed and "Move the series too" was checked. onCreate(values) receives
-// every field of a new card. onClose(card, saved) runs whenever the
-// panel closes; a new card has no id until it is saved.
+// changed and "Move the series too" was checked. onCreate(values, {
+// newProject }) receives every field of a new card. When "New project..."
+// is chosen, projectId is NEW_PROJECT and newProject is the name typed for
+// it (onSave and onDone get it too); app.js makes the project. onClose(card,
+// saved) runs whenever the panel closes; a new card has no id until it is
+// saved.
 export function setupEditor({ onSave, onDone, onCreate, onClose }) {
   const dialog = document.getElementById('editor');
   const form = document.getElementById('editor-form');
@@ -33,6 +37,10 @@ export function setupEditor({ onSave, onDone, onCreate, onClose }) {
   const moveBlock = document.getElementById('editor-move');
   const moveSeries = document.getElementById('editor-move-series');
   const moveNote = document.getElementById('editor-move-note');
+  const project = document.getElementById('editor-project');
+  const newProjectBlock = document.getElementById('editor-newproject');
+  const newProjectName = document.getElementById('editor-project-name');
+  const newProjectError = document.getElementById('editor-project-error');
   const heading = document.getElementById('editor-heading');
   const saveButton = document.getElementById('editor-save');
   const doneButton = document.getElementById('editor-done');
@@ -45,8 +53,9 @@ export function setupEditor({ onSave, onDone, onCreate, onClose }) {
   let frame = 0;
 
   // A new card (one without an id) isn't saved until you press Add card, so
-  // it has nothing to mark done yet.
-  function open(cardToEdit, categories, where = null) {
+  // it has nothing to mark done yet. categories and projects are yours,
+  // for the menus.
+  function open(cardToEdit, { categories, projects }, where = null) {
     card = cardToEdit;
     saved = false;
     const isNew = !card.id;
@@ -59,6 +68,7 @@ export function setupEditor({ onSave, onDone, onCreate, onClose }) {
     notes.value = card.notes;
     due.value = card.dueDate || '';
     fillCategories(categories);
+    fillProjects(projects);
     progress.checked = card.status === STATUS.IN_PROGRESS;
     hard.checked = card.deadlineType === 'hard';
     repeat.value = card.repeat;
@@ -76,11 +86,12 @@ export function setupEditor({ onSave, onDone, onCreate, onClose }) {
   }
 
   // The card the editor belongs to, if it's on screen. The board redraws
-  // whenever Firestore sends news, so it is looked up fresh each time.
+  // whenever Firestore sends news, so it is looked up fresh each time. The
+  // board and a project page can both have a copy; only one is showing.
   function anchorCard() {
     if (!anchor || !anchor.cardId) return null;
-    const el = document.querySelector(`[data-drag-id="${CSS.escape(anchor.cardId)}"]`);
-    return el && el.getClientRects().length ? el : null;
+    const copies = document.querySelectorAll(`[data-drag-id="${CSS.escape(anchor.cardId)}"]`);
+    return [...copies].find((el) => el.getClientRects().length) || null;
   }
 
   function position() {
@@ -137,6 +148,43 @@ export function setupEditor({ onSave, onDone, onCreate, onClose }) {
     category.value = card.category || '';
   }
 
+  // No project, your active projects by name, then "New project...". A card
+  // in an archived project, or one that's gone, keeps it as an option, so
+  // opening the card doesn't change it.
+  function fillProjects(projects) {
+    const options = [{ value: '', label: 'No project' }];
+    for (const p of nameOrder(projects.filter((p) => p.status === PROJECT_STATUS.ACTIVE))) {
+      options.push({ value: p.id, label: p.name });
+    }
+    if (card.projectId && !options.some((o) => o.value === card.projectId)) {
+      const own = projects.find((p) => p.id === card.projectId);
+      options.splice(1, 0, { value: card.projectId, label: own ? `${own.name} (archived)` : 'A project that was deleted' });
+    }
+    options.push({ value: NEW_PROJECT, label: 'New project\u2026' });
+    project.replaceChildren(
+      ...options.map(({ value, label }) => {
+        const option = document.createElement('option');
+        option.value = value;
+        option.textContent = label;
+        return option;
+      }),
+    );
+    project.value = card.projectId || '';
+    newProjectName.value = '';
+    updateNewProject();
+  }
+
+  function updateNewProject() {
+    newProjectBlock.hidden = project.value !== NEW_PROJECT;
+    hideNewProjectError();
+    follow();
+  }
+
+  function hideNewProjectError() {
+    newProjectError.hidden = true;
+    newProjectName.removeAttribute('aria-invalid');
+  }
+
   function updateSomedayNote() {
     someday.hidden = Boolean(due.value);
   }
@@ -159,8 +207,13 @@ export function setupEditor({ onSave, onDone, onCreate, onClose }) {
     follow();
   }
 
-  function seriesOptions() {
-    return { moveSeries: !moveBlock.hidden && moveSeries.checked };
+  // What app.js needs beside the fields: whether the series moves, and the
+  // name of a project to make.
+  function extras() {
+    return {
+      moveSeries: !moveBlock.hidden && moveSeries.checked,
+      newProject: project.value === NEW_PROJECT ? newProjectName.value.trim() : null,
+    };
   }
 
   // Every field as the form shows it. Returns null if the title is empty,
@@ -174,6 +227,13 @@ export function setupEditor({ onSave, onDone, onCreate, onClose }) {
       title.focus();
       return null;
     }
+    if (project.value === NEW_PROJECT && !newProjectName.value.trim()) {
+      newProjectError.hidden = false;
+      newProjectName.setAttribute('aria-invalid', 'true');
+      newProjectName.setAttribute('aria-describedby', 'editor-project-error');
+      newProjectName.focus();
+      return null;
+    }
     return {
       title: newTitle,
       notes: notes.value,
@@ -182,6 +242,7 @@ export function setupEditor({ onSave, onDone, onCreate, onClose }) {
       status: progress.checked ? STATUS.IN_PROGRESS : STATUS.OPEN,
       deadlineType: hard.checked ? 'hard' : 'soft',
       repeat: repeat.value,
+      projectId: project.value || null,
     };
   }
 
@@ -205,11 +266,11 @@ export function setupEditor({ onSave, onDone, onCreate, onClose }) {
     if (!card.id) {
       const values = collectValues();
       if (!values) return;
-      onCreate(values);
+      onCreate(values, extras());
     } else {
       const changes = collectChanges();
       if (!changes) return;
-      if (Object.keys(changes).length) onSave(card.id, changes, seriesOptions());
+      if (Object.keys(changes).length) onSave(card.id, changes, extras());
     }
     saved = true;
     close();
@@ -220,7 +281,7 @@ export function setupEditor({ onSave, onDone, onCreate, onClose }) {
     if (!changes) return;
     // Marking done sets the status itself.
     delete changes.status;
-    onDone(card.id, changes, seriesOptions());
+    onDone(card.id, changes, extras());
     saved = true;
     close();
   });
@@ -245,6 +306,13 @@ export function setupEditor({ onSave, onDone, onCreate, onClose }) {
     updateRepeatNotes();
   });
   repeat.addEventListener('change', updateRepeatNotes);
+  project.addEventListener('change', () => {
+    updateNewProject();
+    if (project.value === NEW_PROJECT) newProjectName.focus();
+  });
+  newProjectName.addEventListener('input', () => {
+    if (!newProjectError.hidden) hideNewProjectError();
+  });
 
   title.addEventListener('input', () => {
     if (titleError.hidden) return;

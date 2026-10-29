@@ -16,6 +16,7 @@ import {
 import { STATUS } from './model.js';
 import { compareCards } from './order.js';
 import { REPEAT_NAMES, repeats } from './repeat.js';
+import { projectHref } from './projects.js';
 
 const FALLBACK_COLOR = '#6B6F78';
 
@@ -29,13 +30,14 @@ const FOLD_SHOW = 5;
 // triage is true during morning triage: soft cards in Overdue then show
 // "Still on your plate?" and their buttons. highlight is a day tapped in the
 // strip: its cards are outlined and the rest dimmed. fold is null, or
-// { open } (a Set of zone keys you've opened) when long zones fold. Returns
-// how many cards are highlighted.
-export function renderBoard(container, { cards, categories, today, triage = false, highlight = null, fold = null }) {
+// { open } (a Set of zone keys you've opened) when long zones fold.
+// projects is every project, for the tags on cards. Returns how many cards
+// are highlighted.
+export function renderBoard(container, { cards, categories, projects = [], today, triage = false, highlight = null, fold = null }) {
   const zones = buildZones(zoneBounds(today));
   const categoryById = new Map(categories.map((c) => [c.id, c]));
   for (const zone of zones) zone.cards = cardsIn(zone.key, cards, today);
-  const options = { triage, highlight, fold };
+  const options = { triage, highlight, fold, projectById: new Map(projects.map((p) => [p.id, p])) };
   container.innerHTML = zones.map((zone) => zoneHTML(zone, today, categoryById, options)).join('');
   const matches = highlight ? cards.filter((card) => card.dueDate === highlight).length : 0;
   // An empty day dims nothing: a board of faded cards would look broken.
@@ -50,11 +52,12 @@ export function offersTriage(card, today) {
 }
 
 // The Someday drawer's cards: every card without a date.
-export function renderSomeday(container, { cards, categories, today }) {
+export function renderSomeday(container, { cards, categories, projects = [], today }) {
   const categoryById = new Map(categories.map((c) => [c.id, c]));
+  const options = { projectById: new Map(projects.map((p) => [p.id, p])) };
   const someday = cardsIn('someday', cards, today);
   container.innerHTML = someday.length
-    ? someday.map((card) => cardHTML(card, today, categoryById)).join('')
+    ? someday.map((card) => cardHTML(card, today, categoryById, options)).join('')
     : '<p class="someday-empty">Nothing here. Cards without a date land in Someday.</p>';
   return someday.length;
 }
@@ -148,7 +151,14 @@ function foldZone(zone, { fold, highlight }) {
 
 export { FOLD_SHOW };
 
-function cardHTML(card, today, categoryById, { triage = false, highlight = null } = {}) {
+// Cards drawn exactly as on the board, for the project page. They carry no
+// project tag there: the page is the project.
+export function cardsHTML(cards, { categories, today }) {
+  const categoryById = new Map(categories.map((c) => [c.id, c]));
+  return cards.map((card) => cardHTML(card, today, categoryById)).join('');
+}
+
+function cardHTML(card, today, categoryById, { triage = false, highlight = null, projectById = null } = {}) {
   const category = categoryById.get(card.category);
   const color = category ? category.color : FALLBACK_COLOR;
   const categoryName = category ? category.name : card.category || 'No category';
@@ -185,6 +195,8 @@ function cardHTML(card, today, categoryById, { triage = false, highlight = null 
     date || lateText || hard || repeat || progress
       ? `<div class="card-meta">${date}${lateText}${hard}${repeat}${progress}</div>`
       : '';
+  const project = projectById && card.projectId ? projectById.get(card.projectId) : null;
+  const projectTag = project ? projectTagHTML(project) : '';
   const triageSection = triage && offersTriage(card, today) ? triageHTML(card, today) : '';
 
   // The title is a real button; CSS stretches its click area over the whole
@@ -196,8 +208,17 @@ function cardHTML(card, today, categoryById, { triage = false, highlight = null 
         <button type="button" class="card-open" data-card-id="${escapeHTML(card.id)}">${escapeHTML(card.title)}</button>
       </h3>
       ${meta}
+      ${projectTag}
       ${triageSection}
     </article>`;
+}
+
+// The mockup's "↗ November display": a link to the project's page,
+// above the card's stretched click area, with the arrow in the project's
+// color. A card whose project is gone gets no tag.
+function projectTagHTML(project) {
+  return `
+      <a class="card-project" href="${projectHref(project.id)}" style="--project: ${escapeHTML(project.color)}"><span class="card-project-arrow" aria-hidden="true">\u2197</span><span class="visually-hidden">Project: </span>${escapeHTML(project.name)}</a>`;
 }
 
 // "Still on your plate?" and its buttons. app.js handles the clicks, by

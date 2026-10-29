@@ -58,37 +58,327 @@ merged into `main` on 2026-10-29 (a fast-forward: nothing was rewritten).
 `main` has all of Phase 1. If GitHub Pages was switched to the side branch
 for testing, point it back at `main` (Settings > Pages).
 
-**Next: Phase 2, Projects** (SPEC "Projects"), in a fresh session. SPEC doesn't split Phase 2 into slices, so the
-first job is proposing a split (for example 2a: projects, the Projects
-list, and assigning cards with the tag on the board; 2b: the project
-page with notes, links, and its cards) and building the first slice.
-There's no mockup for the Projects list or the project page; the board
-mockup (`design/Main.dc.html`, `design/horizon-board.png`) shows only the
-Projects button and the "↗ November display" tag on cards. Things to
-settle there:
-- Where projects live (`users/{uid}/projects`, as `js/model.js` already
-  plans) and how that leaves room for shared projects later (PLAN 1a:
-  a separate top-level `projects` collection with members).
-- What a project's color does, given cards already carry a category band.
-- What the end date does, and what happens to a project after it passes
-  (archive? hidden from the list?), and to its cards if a project goes.
-- The tag on cards: it must sit above the card's stretched click area,
-  like the triage buttons, and open the project page.
-- Choosing a project in the editor, and whether you can make a new
-  project from there.
-- The project page as its own view (like `#done`): which of its cards it
-  shows (open only, or finished too), and whether that query needs an
-  index.
-- Links: title and address, and refusing anything but http(s) addresses.
-- Repeating cards already pass `projectId` to their next card.
+**Phase 2, Projects: slice 2a built, awaiting your test** (2026-10-29),
+on `claude/nifty-thompson-4doyfu`. Projects, the Projects list, a project
+for each card in the editor (with "New project" right there), the
+"↗ November display" tag on cards, and the project page with its open and
+finished cards. See "Slice 2a" below for the plan, the decisions, and the
+test list.
+
+**Next:** test 2a. Once it's confirmed, committed, and merged, slice 2b
+(the project page's notes and links) starts in a fresh session.
 
 Open proposals carried over: Undo for Let it go and Mark done on the board
 (the Done view's "Put back on the board" covers getting a card back), Let
 it go in the editor, triage per device instead of per account, pinning
 zone headers on long columns, saving the sample card scripts in `tools/`,
 and a Settings gear on the What you did page (Year starts in is only
-reachable from the board). Still parked: Done privacy and the Firebase
-console, and one approved list for 3a.
+reachable from the board). New in 2a: see "Slice 2a > Proposals". Still
+parked: Done privacy and the Firebase console, and one approved list for
+3a.
+
+## Phase 2: Projects, split into two slices
+
+SPEC gives Phase 2 one line, so here is the split:
+
+- **2a: projects and the way to them.** A project (name, color, end
+  date), the Projects list from the header, choosing a project in the
+  card editor (and making one there), the "↗ November display" tag on
+  cards, and the project page showing its cards, open and finished.
+- **2b: what a project holds.** The project page's free-text notes and
+  its links (a title and an http(s) address each).
+
+Why the page's cards go in 2a and not 2b: the tag on a card has to open
+the project page. Without a page in 2a, the tag would need a stand-in
+destination that 2b throws away. The cards are also the risky part (the
+query, keeping them in sync with the board); notes and links are plain
+writing on one document, so they make a clean, small 2b.
+
+## Slice 2a: projects, the Projects list, the tag, the project page (awaiting test)
+
+### What it does
+
+**The Projects button** joins the header first, where the mockup puts it:
+Projects, What you did, the gear, Sign out. It opens the Projects list, a
+box like Settings but wider. Each project is a row: its color, its name,
+and a line ("Ends Fri, Nov 20 · 3 open cards"). Rows are links to the
+project's page. Under them, "New project". Archived projects fold into a
+"2 archived · Show" line at the bottom, the way let-go cards fold in What
+you did.
+
+**Making a project.** "New project" opens a small form: Name, Color (eight
+swatches), and Ends (a date, or "No end date"). Save, and you're back on
+the list with the new project in it.
+
+**The editor gets a Project menu**, beside Repeats: "No project", your
+active projects by name, and "New project..." at the end. Choosing New
+project shows one box, "Name it", and Save makes the project and puts the
+card in it in the same moment. If you type the name of a project you
+already have, the card joins that one instead of making a twin. Color
+starts as the first swatch no active project uses; change it on the
+project page.
+
+**The tag.** A card in a project shows "↗ November display" under its date
+line, as in the mockup: blue text, and the arrow in the project's color.
+It's a real link that sits above the card's stretched click area (like the
+triage buttons), so clicking the tag opens the project page and clicking
+anywhere else on the card still opens the editor. Dragging still works by
+the rest of the card. It shows on the board and in the Someday drawer.
+
+**The project page**, at `#project/<id>`, laid out like What you did: the
+wordmark, Projects, and Back to the board on top, with the header's bottom
+edge drawn in the project's color (the page's version of a card's band).
+Then the name as the big heading, a line ("Ends Friday, Nov 20. 3 open
+cards, 5 finished."), and Edit project. Then its open cards, grouped the
+way the board places them (Overdue, Today, This Week, Next Two Weeks,
+Later, Someday) and laid out side by side, left to right, with the board's
+own zone headings, counts, and tints: a small Horizon of just this
+project. Empty groups are left out. The cards are drawn exactly as on the
+board (minus the tag; the page is the project). Click one and the same
+editor opens beside it; Mark done there and it moves down to the finished
+part. Last, a dashed box like the let-go box: "5 cards finished, 1 let
+go." with Show, which lists them together, newest first, each with its
+check or let-go dash.
+
+**Edit project** opens the same form with Archive and Delete under it.
+
+### The seven questions, settled
+
+**1. Projects live at `users/{uid}/projects/{projectId}`**, beside your
+cards, as `js/model.js` planned in 1a. The rule you already published
+covers everything under `users/{uid}`, so **no rule change and no setup
+step.** A project document:
+
+```
+name        string
+color       "#RRGGBB"
+endDate     "YYYY-MM-DD" or null (text, like dueDate, so it can't slide)
+status      "active" or "archived"
+archivedAt  timestamp or null
+createdAt, updatedAt
+notes, links            2b
+```
+
+Cards keep pointing at a project by `projectId`, which they already carry
+(repeating cards already pass it to their next card).
+
+*How this leaves room for shared projects.* PLAN 1a put shared projects in
+a separate top-level `projects/{id}` collection with a members list, and
+cards staying on each person's own board. That still works, with no
+migration: Firestore ids are random and never collide, so the app can look
+a card's `projectId` up in both places. Sharing one of your projects later
+means copying its document to the top-level collection under the same id
+and removing the private copy; every card that points at it still points
+at it. One promise to write down now: a shared project's page will only
+ever show *your* cards, open or finished, because the rules never let
+anyone read anyone else's cards. A teammate finishing something would
+reach you the same way a sent card does in SPEC (a linked copy you're
+told about), never by reading their Done record.
+
+**2. Color marks the project; the band stays the category's.** A card's
+top band and small-caps name are its category, as SPEC says, and two bands
+would make the card unreadable. So a project's color appears in three
+quiet places: the arrow in the card's tag, the swatch in the Projects
+list, and the project page's header edge. The name is always beside the
+color, so color is never the only clue. Eight colors to pick from, chosen
+away from the category colors, the overdue rose, and the orange that's
+reserved for hard deadlines: Moss, Teal, Indigo, Berry, Cocoa, Steel,
+Olive, Charcoal. Each passes 4.4:1 against the ground and 4.9:1 against
+white, so they'd even pass as text.
+
+**3. The end date informs; it never moves anything.** It shows on the list
+and the page ("Ends Fri, Nov 20", "Ended Thu, Oct 15"), and the list puts
+the soonest-ending projects first, undated ones last, because position
+means time. When the date passes, nothing happens by itself: the project
+stays on the list saying "Ended", and its open cards stay on the board.
+Hiding a project with open work because a date went by would make the
+board dishonest. When you're finished with it, **Archive** it (Edit
+project > Archive): it folds into the list's archived line, its tag still
+shows on any cards left, and Unarchive brings it back.
+
+**Delete** is for mistakes and test projects. It asks first, naming what
+happens: "Delete "November display"? Its 6 cards (2 open, 4 done or let
+go) stay where they are, without a project. This can't be undone." The cards
+are never deleted (the Done record is kept, always). Deleting finds every
+card pointing at the project, in any status, clears their `projectId`, and
+then removes the project, so nothing is left pointing at a project that's
+gone.
+
+**4. The tag** is an `<a href="#project/<id>">` with `position: relative;
+z-index: 1`, the same trick as the triage buttons. Drawn at the mockup's
+size (24px tall), with an invisible extension that makes the tap target
+44px tall, as SPEC asks, without making cards taller. A screen reader
+hears "Project: November display, link". A card whose project was deleted
+somewhere else shows no tag.
+
+**5. In the editor:** the Project menu above, with "New project..." making
+one from there. Only the name is asked for; color gets the next free one,
+and the end date waits for the project page. An archived project shows in
+the menu only on cards already in it ("November display (archived)"), so
+opening an old card doesn't quietly change it.
+
+**6. The project page is its own view, like `#done`.** The browser's Back
+returns to wherever you came from, a reload stays on the page, `?today=`
+works there.
+- **Open cards** come from what the board already downloads (every open
+  and in-progress card), so they cost nothing extra and stay in sync with
+  the board by themselves.
+- **Finished cards: yes, shown, folded.** A project page that forgets what
+  got done is half a page. One query, "every card with this `projectId`",
+  filters on a single field, so Firestore's automatic index answers it:
+  **no index to create**. The page keeps the done and let-go ones from it
+  (the open ones are already on screen). One read per card in the project
+  when you open the page; live while you're on it, stopped when you leave.
+- A project id that isn't there (deleted, or a mistyped address) says so,
+  with the way back.
+
+**7. Links** are 2b. The plan for them: each is a title and an address;
+the app accepts only addresses that start with `http://` or `https://`
+(checked with the browser's own address reader, not by eye), refuses
+anything else with a note, and checks again when drawing, so a
+`javascript:` address typed into the console still never becomes a
+clickable link. They open in a new tab.
+
+### Decisions I made that the questions didn't cover (change any of them)
+
+1. **The Projects list is a box over the page**, not a page of its own:
+   it's a short list on the way to somewhere, like Settings. It opens from
+   the project page too.
+2. **Making a project from the list returns you to the list**, with the
+   new one in it, rather than whisking you off the board.
+3. **Project names are unique** (ignoring capitals), archived ones
+   included, so the editor's menu never shows two of the same name.
+4. **Open counts on the list count open and in-progress cards.**
+5. **Finished rows on the project page are plain rows** (check, title,
+   category, date), not buttons. See Proposals.
+6. **After Delete you land on the board**, with a line saying the cards
+   are still there.
+
+### Proposals (not built; say yes and I'll add them)
+
+1. **Add a card from the project page**: a small quick add on the page
+   that puts the new card in this project.
+2. **Finished rows open their box**, the same one What you did uses, with
+   "Put back on the board".
+3. **What you did names the project** on each row and in Copy as text
+   ("· November display"), useful for evaluations.
+
+### Data
+
+New: `users/{uid}/projects/{projectId}` (above). Cards: no new fields;
+`projectId` is now set by the editor and cleared when a project is
+deleted.
+
+### Files touched
+
+```
+index.html         the Projects button; the project page view; the
+                   Projects list box; the project form; the editor's
+                   Project menu
+css/horizon.css    the tag, the list, the form's swatches, the project page
+js/model.js        the project document, written down; normalizeProject
+js/projects.js     NEW: the palette, sorting, wording, grouping; no
+                   Firebase, no page
+js/projectlist.js  NEW: the Projects list box and the project form
+js/projectpage.js  NEW: draws the project page; no Firebase
+js/board.js        the tag on cards; drawing cards for the project page
+js/editor.js       the Project menu and "New project..."
+js/firebase.js     watching, adding, changing, and deleting projects; a
+                   project's cards
+js/app.js          #project/<id>, the projects, wiring it together
+```
+
+### Setup steps (yours)
+
+None. No rule changes (the rule for `users/{uid}` already covers
+`projects`), no index.
+
+### How to test
+
+Nothing to set up: no rules, no index. Open the board (with `?today=` if
+you like). Your board has no projects yet, so start by making two.
+- [ ] The header reads Projects, What you did, the gear, Sign out.
+- [ ] Projects opens the list: "No projects yet." and New project.
+- [ ] New project: Name, eight colors (one already chosen), Ends, No end
+      date. Save with no name: "A project needs a name." Save with a
+      name: back on the list, "Made "...".", the project in it.
+- [ ] Make a second with an end date. The list puts the sooner end date
+      first, with "Ends Fri, Nov 20 · No open cards".
+- [ ] A third with the same name as the first (different capitals):
+      refused, "You already have a project called ...".
+- [ ] Open a card. The editor has Project beside Repeats: No project,
+      your projects by name, New project... Choose one, Save: the card
+      shows "↗ Name" under its date, the arrow in the project's color.
+- [ ] Open another card, choose New project..., type a name, Save: the
+      project now exists (check the list) and the card is in it. Choosing
+      New project... and saving with no name says so and stays open.
+- [ ] Quick add a card with Enter, pick a project in the editor, Add card:
+      it lands with its tag.
+- [ ] Click a tag: the project's page, not the editor. Click the rest of
+      the card: the editor, as always. Drag the card by its body: still
+      drags. Tab to the tag and press Enter: the page.
+- [ ] The page: the header's bottom edge in the project's color, the name,
+      "Ends ... N open cards.", Edit project, the open cards grouped left
+      to right like the board.
+- [ ] Click a card on the page: the editor opens beside it. Mark done:
+      the card leaves its group, the dashed box says "1 card finished."
+      and Show lists it. Choose No project and Save: it leaves the page.
+- [ ] Edit project: rename it, change the color, clear the end date. The
+      page, the list, and the tags on the board follow.
+- [ ] Archive project: the page says "Archived.", the list folds it into
+      "1 archived · Show", its tags stay on the board, the editor's menu
+      only shows it on cards already in it ("(archived)"). Unarchive puts
+      it back.
+- [ ] Delete project: it asks first, with the card counts. Keep it goes
+      back. Delete: you're on the board, "Deleted ... Its cards are still
+      here, without a project.", the tags are gone, and its finished cards
+      are still in What you did. In the console, no card has its
+      `projectId` any more, and the project document is gone.
+- [ ] Browser Back from a project page returns to the board; Forward (or
+      a reload on `#project/...`) shows the page again. A made-up
+      `#project/nonsense` says the project isn't here.
+- [ ] A repeating card in a project: Mark done; the next card has the tag.
+- [ ] Phone width: the list, the form (colors in two rows of four), the
+      page (groups stacked), no sideways scroll.
+
+What I checked here, in Chromium with a pretend Firebase, Pacific time,
+`?today=2026-10-22`, the mockup's projects ("November display" and
+friends) plus edge cases: 116 checks, all passing, no console errors. The
+tag on board and Someday cards with the right address; a project name and
+color with HTML in them shown as text and as gray; the tag's tap area 44px
+tall, 10px past it on each side opening the page and 12px past it the
+card; triage buttons still clickable beside a tag; Tab and Enter on the
+tag; dragging by the body still working and a press on the tag never
+starting a drag. The editor's menu (order, archived hidden, archived and
+deleted projects kept on their own cards without changing them on Save);
+Save writing only `projectId`; New project... refusing an empty name,
+trimming the name, taking the first unused color, joining an existing
+project for a twin name, and working from quick add's new card; a
+repeating card's next card keeping its project. The list's order and
+lines, the archived fold, keyboard focus kept through Show, New project
+and Escape returning to the list, the name checks (empty, twin, archived
+twin), the "Made" line, a row closing the list and opening the page. The
+page: title, focus on the heading, one query started and stopped on
+leaving, switching from project to project, the header edge color, Mark
+done moving a card to the finished box live, a card leaving when its
+project changes, Edit (only changed fields saved), Archive and Unarchive,
+Delete's question and Keep it, Delete clearing every card's `projectId`
+and landing on the board, a missing project, reload, the back link,
+browser Back, and What you did still working. Refused saves (a new project
+from the editor, from the list, and an edit on the page) each say so. At
+390px: no sideways scroll on the board or the page, every form target 44px
+or taller, the editor full screen and focus returning to the page's card.
+
+One thing you'll see on the board: the Projects button makes the header's
+buttons wrap under the strip about 100px sooner. They stay on one row from
+about 1,260px wide up (measured with fallback fonts; the real ones may
+shift it a little).
+
+Not checked: real Firestore (the one new kind of read is "cards where
+`projectId` is X", a single-field filter like the ones already running),
+a real phone, and the earlier slices' full test lists (their setups
+weren't saved). The board changed only in the header, the tag, and the
+editor's new menu.
 
 ## Slice 1f: the Done record, "What you did" (confirmed)
 

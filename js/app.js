@@ -28,6 +28,9 @@ import { setupDatePick } from './datepick.js';
 import { setupSettings } from './settings.js';
 import { setupDone } from './done.js';
 import { copyText, putBackChanges, rangeFor, rangeTimes } from './record.js';
+import { NEW_PROJECT, findByName, finishedOf, nextColor, openCounts, projectIdFromHash } from './projects.js';
+import { setupProjectList } from './projectlist.js';
+import { setupProjectPage } from './projectpage.js';
 
 const views = {
   setup: document.getElementById('view-setup'),
@@ -35,6 +38,7 @@ const views = {
   notallowed: document.getElementById('view-notallowed'),
   board: document.getElementById('view-board'),
   done: document.getElementById('view-done'),
+  project: document.getElementById('view-project'),
 };
 const zonesEl = document.getElementById('zones');
 const horizonEl = document.getElementById('horizon');
@@ -47,6 +51,8 @@ const signinButton = document.getElementById('signin-button');
 const signinError = document.getElementById('signin-error');
 const signoutButton = document.getElementById('signout-button');
 const settingsButton = document.getElementById('settings-button');
+const projectsButton = document.getElementById('projects-button');
+const projectHeading = document.getElementById('project-heading');
 const notallowedEmail = document.getElementById('notallowed-email');
 const notallowedSignout = document.getElementById('notallowed-signout');
 
@@ -95,11 +101,20 @@ let focusFold = null;
 // Your categories, from your profile.
 let categories = [];
 
+// Your projects, active and archived, kept live (see projects.js).
+// projectsLoaded is false until Firestore has sent them once, so a project
+// page can tell "loading" from "no such project".
+let projects = [];
+let projectsLoaded = false;
+
 // The Done record (set up in start()): refresh() redraws it for the day,
 // and doneDay is the day it was last worked out for, so it can move on at
 // midnight.
 let doneView = null;
 let doneDay = null;
+// The project page and the Projects list (set up in start()): refresh()
+// redraws them from the latest cards and projects.
+let projectView = null;
 
 // A panel's X sits right over the Sign out button, so a double-click on the
 // X would close the panel and then sign you out. For a moment after any
@@ -109,7 +124,7 @@ let panelClosedAt = 0;
 function notePanelClosed() {
   panelClosedAt = performance.now();
 }
-for (const id of ['editor', 'datepick', 'settings']) document.getElementById(id).addEventListener('close', notePanelClosed);
+for (const id of ['editor', 'datepick', 'settings', 'projects', 'project-edit']) document.getElementById(id).addEventListener('close', notePanelClosed);
 document.getElementById('someday-close').addEventListener('click', notePanelClosed);
 
 const someday = setupSomeday({
@@ -122,14 +137,22 @@ const someday = setupSomeday({
 function show(name) {
   for (const [key, el] of Object.entries(views)) el.hidden = key !== name;
   document.body.classList.remove('is-loading');
-  // The testing bar belongs to the board and the Done record.
-  pretendBar.hidden = !pretendBar.hasChildNodes() || (name !== 'board' && name !== 'done');
+  // The testing bar belongs to the board, the Done record, and project
+  // pages.
+  pretendBar.hidden = !pretendBar.hasChildNodes() || !['board', 'done', 'project'].includes(name);
   document.title = name === 'done' ? 'What you did \u00b7 Horizon' : 'Horizon';
 }
 
-// The board, or the Done record at #done.
+// The board, the Done record at #done, or a project's page at
+// #project/<id>.
 function routeView() {
-  return location.hash === '#done' ? 'done' : 'board';
+  if (location.hash === '#done') return 'done';
+  if (projectIdFromHash(location.hash)) return 'project';
+  return 'board';
+}
+
+function shownView() {
+  return Object.keys(views).find((key) => !views[key].hidden);
 }
 
 function draw() {
@@ -143,6 +166,7 @@ function draw() {
   drawnForDay = todayISO();
   const data = {
     ...latest,
+    projects,
     today: drawnForDay,
     triage: triageDay === drawnForDay,
     highlight: highlightDay,
@@ -152,6 +176,7 @@ function draw() {
   someday.setCount(renderSomeday(somedayCardsEl, data));
   renderStrip(stripEl, data);
   drawSince();
+  if (projectView) projectView.refresh();
 
   if (focusFold) {
     const { zone, opened } = focusFold;
@@ -244,7 +269,8 @@ setInterval(() => {
     draw();
     claimVisit();
   }
-  // The Done record's "this week" moves on at midnight too.
+  // The Done record's "this week" moves on at midnight too. (A project
+  // page's groups move with the board, in draw().)
   if (doneView && doneDay && todayISO() !== doneDay) doneView.refresh();
 }, 60 * 1000);
 
@@ -374,6 +400,7 @@ async function start() {
   // the setup note instead of a confusing Firebase error.
   fb = await import('./firebase.js');
   let stopWatching = null;
+  let stopProjects = null;
   // Counts sign-ins and sign-outs, so a slow check left over from an earlier
   // one can tell it is out of date and stop.
   let authChange = 0;
@@ -399,13 +426,14 @@ async function start() {
     status: document.getElementById('quickadd-status'),
     since: document.getElementById('since-line'),
     onCompose: (title) =>
-      editor.open({ id: null, ...newCard({ title }) }, latest ? latest.categories : [], { below: quickAddField }),
+      editor.open({ id: null, ...newCard({ title }) }, { categories: latest ? latest.categories : [], projects }, { below: quickAddField }),
     onAdd: (title, toToday) => fb.addCard(uid, newCard({ title, dueDate: toToday ? todayISO() : null })),
     onEdit: openCard,
   });
 
   const editor = setupEditor({
-    onSave: (cardId, changes, { moveSeries }) => {
+    onSave: (cardId, changes, { moveSeries, newProject }) => {
+      resolveProject(changes, newProject);
       const card = findCard(cardId);
       if (card) Object.assign(changes, seriesChanges(card, changes, moveSeries));
       // A new date means a new zone, where the card's old place among its
@@ -413,7 +441,8 @@ async function start() {
       if ('dueDate' in changes) changes.order = null;
       fb.updateCard(uid, cardId, changes).catch(showSaveError);
     },
-    onDone: (cardId, changes, { moveSeries }) => {
+    onDone: (cardId, changes, { moveSeries, newProject }) => {
+      resolveProject(changes, newProject);
       const card = findCard(cardId);
       if (card) Object.assign(changes, seriesChanges(card, changes, moveSeries));
       if (card && repeats({ ...card, ...changes })) {
@@ -422,7 +451,8 @@ async function start() {
       }
       fb.markDone(uid, cardId, changes).catch(showSaveError);
     },
-    onCreate: (values) => {
+    onCreate: (values, { newProject }) => {
+      resolveProject(values, newProject);
       const fresh = { id: null, ...newCard(values) };
       const { id, saved } = fb.addCard(uid, { ...newCard(values), ...values, ...seriesChanges(fresh, values, false) });
       quickAdd.showAdded(addedText(values.dueDate), id);
@@ -439,8 +469,10 @@ async function start() {
         return;
       }
       // The board redraws whenever Firestore sends news, which replaces the
-      // card that opened the panel. Focus goes back to the new copy of it.
-      const button = views.board.querySelector(`[data-card-id="${CSS.escape(card.id)}"]`);
+      // card that opened the panel. Focus goes back to the new copy of it,
+      // on the board or the project page, whichever is showing.
+      const scope = views.project.hidden ? views.board : views.project;
+      const button = scope.querySelector(`[data-card-id="${CSS.escape(card.id)}"]`);
       if (button) button.focus();
     },
   });
@@ -456,6 +488,21 @@ async function start() {
     saved.catch(showSaveError);
   }
 
+  // "New project..." in the editor: the project is made now, and `fields`
+  // (the card's changes or values) point at it. A name you already use
+  // joins that project instead of making a twin.
+  function resolveProject(fields, newProject) {
+    if (fields.projectId !== NEW_PROJECT) return;
+    const twin = findByName(projects, newProject || '');
+    if (twin) {
+      fields.projectId = twin.id;
+      return;
+    }
+    const { id, saved } = fb.addProject(uid, { name: newProject, color: nextColor(projects), endDate: null });
+    fields.projectId = id;
+    saved.catch(showSaveError);
+  }
+
   function addedText(dueDate) {
     if (!dueDate) return 'Added to Someday.';
     if (dueDate === todayISO()) return 'Added to Today.';
@@ -465,8 +512,10 @@ async function start() {
   function openCard(cardId) {
     const card = latest && latest.cards.find((c) => c.id === cardId);
     // Beside the card; a card in a closed Someday drawer has nothing to sit
-    // beside, so it opens under the quick add field.
-    if (card) editor.open(card, latest.categories, { cardId, fallback: quickAddField });
+    // beside, so it opens under the quick add field (or the project page's
+    // heading).
+    const fallback = views.project.hidden ? quickAddField : projectHeading;
+    if (card) editor.open(card, { categories: latest.categories, projects }, { cardId, fallback });
   }
 
   for (const el of [zonesEl, somedayCardsEl]) {
@@ -656,23 +705,163 @@ async function start() {
     });
   }
 
-  // #done shows the record; anything else, the board. Before sign-in has
-  // finished, the sign-in code reads the address itself.
+  // Projects: the list, the form, and a project's page. The page's open
+  // cards are the board's own (already downloaded and live); its finished
+  // ones come from one query on projectId, started when the page opens and
+  // stopped when it closes. projectFinished is undefined while loading.
+  let projectQueryFor = null;
+  let projectFinished;
+  let projectError = null;
+  let stopProjectCards = null;
+
+  const projectList = setupProjectList({
+    onCreate: (fields) => {
+      const { saved } = fb.addProject(uid, fields);
+      projectList.showListStatus(`Made \u201c${fields.name}\u201d.`);
+      saved.catch((err) => projectList.showListStatus(`Couldn't save \u201c${fields.name}\u201d (${err.code || err.message}).`));
+    },
+    onSave: (id, changes) => {
+      fb.updateProject(uid, id, changes).catch(showProjectError);
+    },
+    onArchive: (id, archived) => {
+      projectPage.showStatus(archived ? 'Archived. Its cards stay where they are.' : 'Back on the list.');
+      fb.archiveProject(uid, id, archived).catch(showProjectError);
+    },
+    onDelete: deleteProject,
+    // "Its 6 cards (2 open, 4 done or let go) stay where they are, without
+    // a project." The finished ones are known once the page's query is in.
+    deleteText: (project) => {
+      const open = latest ? latest.cards.filter((c) => c.projectId === project.id).length : 0;
+      const closed = projectQueryFor === project.id && projectFinished ? projectFinished.done.length + projectFinished.letGo.length : null;
+      const total = open + (closed || 0);
+      const plural = (n) => `${n} ${n === 1 ? 'card' : 'cards'}`;
+      let cards;
+      if (closed === null) cards = `Its ${open ? `${plural(open)} on the board` : 'cards'}, and any finished ones, stay where they are, without a project.`;
+      else if (!total) cards = 'It has no cards.';
+      else if (open && closed) cards = `Its ${plural(total)} (${open} open, ${closed} done or let go) stay where they are, without a project.`;
+      else cards = `Its ${plural(total)} ${open ? 'on the board' : 'in What you did'} ${total === 1 ? 'stays where it is' : 'stay where they are'}, without a project.`;
+      return `Delete \u201c${project.name}\u201d? ${cards} This can't be undone.`;
+    },
+  });
+
+  const projectPage = setupProjectPage({
+    onOpenCard: openCard,
+    onEdit: (project) => projectList.openForm(project, projects),
+  });
+
+  for (const button of document.querySelectorAll('[data-open-projects]')) {
+    button.addEventListener('click', () => {
+      if (uid) projectList.openList(listState());
+    });
+  }
+
+  function listState() {
+    return { projects, counts: openCounts(latest ? latest.cards : []), today: todayISO() };
+  }
+
+  projectView = {
+    refresh() {
+      projectList.refresh(listState());
+      refreshProject();
+    },
+  };
+
+  function stopProjectQuery() {
+    if (stopProjectCards) stopProjectCards();
+    stopProjectCards = null;
+    projectQueryFor = null;
+    projectFinished = undefined;
+    projectError = null;
+  }
+
+  // Draws the project page for the address, starting its query when the
+  // project has changed.
+  function refreshProject() {
+    if (!uid || views.project.hidden) return;
+    const projectId = projectIdFromHash(location.hash);
+    if (projectId !== projectQueryFor) {
+      stopProjectQuery();
+      projectQueryFor = projectId;
+      if (projectId) {
+        stopProjectCards = fb.watchProjectCards(
+          uid,
+          projectId,
+          (cards) => {
+            projectFinished = finishedOf(cards);
+            refreshProject();
+          },
+          (err) => {
+            projectError =
+              err.code === 'permission-denied'
+                ? 'Firestore refused to share these cards. Check that the rules in firestore.rules are published in the Firebase console.'
+                : `Couldn't load the finished cards (${err.code || err.message}).`;
+            projectFinished = { done: [], letGo: [] };
+            refreshProject();
+          },
+        );
+      }
+    }
+    const project = projectsLoaded ? projects.find((p) => p.id === projectId) || null : undefined;
+    projectPage.render({
+      project,
+      loading: !projectsLoaded || !latest,
+      today: todayISO(),
+      categories,
+      cards: latest ? latest.cards.filter((c) => c.projectId === projectId) : [],
+      finished: projectFinished,
+      error: projectError,
+    });
+    document.title = `${projectPage.title()} \u00b7 Horizon`;
+  }
+
+  function showProjectError(err) {
+    const text = `A change to the project didn't save (${err.code || err.message}).`;
+    if (!views.project.hidden) projectPage.showStatus(text);
+    else projectList.showListStatus(text);
+  }
+
+  // Deleting a project: its cards lose the project and stay; then the
+  // project goes (see firebase.js). You land on the board.
+  function deleteProject(id) {
+    const project = projects.find((p) => p.id === id);
+    const name = project ? project.name : 'The project';
+    location.hash = '';
+    quickAdd.showText(`Deleting \u201c${name}\u201d\u2026`);
+    fb.deleteProject(uid, id).then(
+      () => quickAdd.showNote(`Deleted \u201c${name}\u201d. Its cards are still here, without a project.`),
+      (err) => quickAdd.showText(`\u201c${name}\u201d wasn't deleted (${err.code || err.message}).`),
+    );
+  }
+
+  // #done shows the record, #project/<id> a project's page; anything else,
+  // the board. Before sign-in has finished, the sign-in code reads the
+  // address itself.
   function route() {
     if (!uid) return;
     const view = routeView();
-    if (view === (views.done.hidden ? 'board' : 'done')) return;
-    show(view);
-    window.scrollTo(0, 0);
-    if (view === 'done') {
-      editor.close();
-      datePick.cancel();
-      settingsBox.close();
-      refreshDone();
-      doneScreen.focusHeading();
-    } else {
+    const was = shownView();
+    const projectChanged = view === 'project' && projectIdFromHash(location.hash) !== projectQueryFor;
+    if (view === was && !projectChanged) return;
+    if (was === 'done' && view !== 'done') {
       stopDoneQueries();
       doneScreen.reset();
+    }
+    if (was === 'project') {
+      stopProjectQuery();
+      projectPage.reset();
+    }
+    show(view);
+    window.scrollTo(0, 0);
+    editor.close();
+    datePick.cancel();
+    settingsBox.close();
+    projectList.close();
+    if (view === 'done') {
+      refreshDone();
+      doneScreen.focusHeading();
+    } else if (view === 'project') {
+      refreshProject();
+      projectPage.focusHeading();
     }
   }
   window.addEventListener('hashchange', route);
@@ -803,6 +992,16 @@ async function start() {
     highlightDay = null;
     stopDoneQueries();
     doneScreen.reset();
+    stopProjectQuery();
+    projectPage.reset();
+    projectList.close();
+    if (stopProjects) {
+      stopProjects();
+      stopProjects = null;
+    }
+    projects = [];
+    projectsLoaded = false;
+    projectsButton.disabled = true;
     categories = [];
     settings = normalizeSettings(null);
     openZones.clear();
@@ -838,7 +1037,23 @@ async function start() {
       categories = profile.categories;
       settings = profile.settings;
       settingsButton.disabled = false;
+      projectsButton.disabled = false;
       quickAdd.setEnabled(true);
+      stopProjects = fb.watchProjects(
+        user.uid,
+        (list) => {
+          projects = list;
+          projectsLoaded = true;
+          // Drawing the board refreshes the project page and list too.
+          if (latest) draw();
+          else projectView.refresh();
+        },
+        (err) => {
+          console.warn('Could not load projects', err);
+          projectsLoaded = true;
+          projectView.refresh();
+        },
+      );
       stopWatching = fb.watchActiveCards(
         user.uid,
         (cards) => {
@@ -848,6 +1063,7 @@ async function start() {
         showLoadError,
       );
       refreshDone();
+      refreshProject();
       // The record just read is fresh unless the tab is out of sight, in
       // which case the visit waits until you look, and reads it again then.
       claimVisit(document.hidden ? null : visit);

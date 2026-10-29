@@ -4,18 +4,23 @@
 //
 //   users/{uid}                  profile: createdAt, categories, visits
 //   users/{uid}/cards/{cardId}   one document per card, in every status
+//   users/{uid}/projects/{id}    one document per project
 //
 // Later slices add, under the same users/{uid}:
-//   projects/{projectId}         Phase 2
 //   inbox/{draftId}              Phase 3 drafts (and, later, cards a
 //                                colleague sends you)
+//
+// Shared projects, if they come, would live in a top-level projects/{id}
+// collection with a members list. Ids never collide, so a card's projectId
+// can point at either kind, and sharing one of yours means moving its
+// document there under the same id. Cards always stay under their owner.
 //
 // A card document:
 //   title          string
 //   notes          string, optional
 //   dueDate        "YYYY-MM-DD" string, or null for Someday
 //   deadlineType   "soft" (default) or "hard"
-//   projectId      string or null
+//   projectId      string or null: the project the card belongs to
 //   category       a category id from the profile, e.g. "programs"
 //   status         "open", "in_progress", "done", or "let_go"
 //   repeat         "none", "weekly", or "monthly"
@@ -29,6 +34,15 @@
 //   order          number, or null: the card's place within its zone, set
 //                  when you drag it (see order.js). null means date order.
 //   createdAt, updatedAt, completedAt, letGoAt   Firestore timestamps
+//
+// A project document:
+//   name           string, unique among your projects (ignoring capitals)
+//   color          "#RRGGBB", one of PROJECT_COLORS in projects.js
+//   endDate        "YYYY-MM-DD" string, or null. It's only shown; it never
+//                  moves or hides anything.
+//   status         "active" or "archived"
+//   archivedAt     Firestore timestamp, or null
+//   createdAt, updatedAt   Firestore timestamps
 //
 // The profile document also keeps the visit record that morning triage and
 // the Since yesterday line use (see visits.js):
@@ -69,6 +83,26 @@ export function newCard({ title, dueDate = null }) {
     seriesId: null,
     seriesDate: null,
     seriesDay: null,
+  };
+}
+
+export const PROJECT_STATUS = {
+  ACTIVE: 'active',
+  ARCHIVED: 'archived',
+};
+
+// A project with defaults filled in, the same way normalizeCard does for
+// cards. A color that isn't a plain "#RRGGBB" becomes gray.
+export function normalizeProject(id, data) {
+  return {
+    id,
+    name: typeof data.name === 'string' && data.name.trim() ? data.name.trim() : 'Untitled project',
+    color: typeof data.color === 'string' && /^#[0-9a-f]{6}$/i.test(data.color) ? data.color : '#6B6F78',
+    endDate: readDueDate(data.endDate),
+    status: data.status === PROJECT_STATUS.ARCHIVED ? PROJECT_STATUS.ARCHIVED : PROJECT_STATUS.ACTIVE,
+    archivedAt: millis(data.archivedAt),
+    createdAt: millis(data.createdAt),
+    updatedAt: millis(data.updatedAt),
   };
 }
 
