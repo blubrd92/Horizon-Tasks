@@ -43,12 +43,10 @@ triage and drags move one card, and the editor's "Move the series too"
 moves the series; the mockup's repeat icon on cards. Every card in a
 series shares a `seriesId`.
 
-**Branches:** `main` still stops at 1c. 1d was confirmed on
-`claude/wonderful-bell-ijpxxj` and never merged; 1e was built on top of it
-on `claude/gallant-meitner-ij50nq`, which carries both. GitHub Pages
-serves whichever branch you pointed it at. Merging this branch into `main`
-(and pointing Pages back at `main`) is an open proposal; until then, start
-1f from this branch.
+**Branches:** 1d and 1e were built on side branches and merged into `main`
+on 2026-10-29 (a fast-forward: `main` simply caught up, nothing was
+rewritten). `main` now has every confirmed slice. If GitHub Pages is still
+pointed at a side branch, point it back at `main` (Settings > Pages).
 
 **Next: slice 1f** (the Done record view, the last slice of Phase 1).
 Start it in a fresh session: read this file, then SPEC.md "The Done record
@@ -76,8 +74,7 @@ Things to settle there:
 
 Open proposals carried over: Undo for Let it go and Mark done, Let it go
 in the editor, triage per device instead of per account, pinning zone
-headers on long columns, saving the sample card scripts in `tools/`, and
-merging this branch into `main`.
+headers on long columns, and saving the sample card scripts in `tools/`.
 
 ## Slice 1e: repeating cards (confirmed)
 
