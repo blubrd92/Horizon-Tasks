@@ -34,20 +34,52 @@ and one let go, for 1f). The scripts that add and remove them were given in
 the chat and aren't in the repo; saving them as a `tools/` folder is an open
 proposal.
 
-**Slice 1e: built, awaiting your test** (2026-10-25). Repeating cards.
-This branch started from 1c, since 1d was confirmed on
-`claude/wonderful-bell-ijpxxj` but never merged into `main`; 1e is built on
-top of 1d, so this branch carries both. Point GitHub Pages at this branch
-to test (Settings > Pages), or test locally.
+**Slice 1e: done and confirmed** (2026-10-29). Repeating cards: a Repeats
+menu in the editor (Doesn't repeat, Weekly, Monthly) with the rhythm in
+words; Mark done and Let it go add the next card in the same write; the
+next date follows the schedule, never piling up missed periods; monthly on
+the 29th to 31st uses the last day of shorter months and comes back;
+triage and drags move one card, and the editor's "Move the series too"
+moves the series; the mockup's repeat icon on cards. Every card in a
+series shares a `seriesId`.
 
-**Next, once 1e is confirmed: slice 1f** (the Done record view). The prompt
-for it comes at the end of the message that closes 1e.
+**Branches:** `main` still stops at 1c. 1d was confirmed on
+`claude/wonderful-bell-ijpxxj` and never merged; 1e was built on top of it
+on `claude/gallant-meitner-ij50nq`, which carries both. GitHub Pages
+serves whichever branch you pointed it at. Merging this branch into `main`
+(and pointing Pages back at `main`) is an open proposal; until then, start
+1f from this branch.
 
-Open proposals carried over from 1d: Undo for Let it go and Mark done, Let
-it go in the editor, triage per device instead of per account, pinning zone
-headers on long columns, and saving the sample card scripts in `tools/`.
+**Next: slice 1f** (the Done record view, the last slice of Phase 1).
+Start it in a fresh session: read this file, then SPEC.md "The Done record
+("What you did")", "Visual design", and "Security" plus the Done privacy
+line under "Future", and `design/Done.dc.html` and `design/horizon-done.png`.
+Things to settle there:
+- How finished cards are loaded without downloading years of history:
+  only the range on screen (Week, Month, Year), by `completedAt`, and
+  whether that needs a Firestore index.
+- What counts as a week, month, and year (weeks run Monday to Sunday
+  here), and whether the range buttons step back through earlier ones.
+- Repeating cards: each finished card is its own row; whether rows show
+  the repeat icon, and whether "Copy as text" groups a series using
+  `seriesId`.
+- Let-go cards: the collapsed section at the bottom of the range, by
+  `letGoAt`; and whether a done or let-go card can be brought back to the
+  board from here (the Undo proposals below), including what that means
+  for a repeating card whose next card already exists.
+- Cards with no category, or a category id not on your profile, in the
+  per-category tiles.
+- The sample cards (`sample: true`, some done and one let go) are there to
+  test this view with.
+- The parked question about Done privacy and the Firebase console (see
+  "Parked for later"), which matters only once colleagues join.
 
-## Slice 1e: repeating cards
+Open proposals carried over: Undo for Let it go and Mark done, Let it go
+in the editor, triage per device instead of per account, pinning zone
+headers on long columns, saving the sample card scripts in `tools/`, and
+merging this branch into `main`.
+
+## Slice 1e: repeating cards (confirmed)
 
 ### What it does
 
