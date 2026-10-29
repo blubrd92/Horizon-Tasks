@@ -536,11 +536,13 @@ async function start() {
       const before = settings;
       settings = { ...settings, [name]: value };
       draw();
+      refreshDone();
       fb.saveSetting(uid, name, value).catch((err) => {
         // Refused: put the setting and the board back as they were.
         settings = before;
         settingsBox.show(settings);
         draw();
+        refreshDone();
         boardMessage.hidden = false;
         boardMessage.textContent = `The setting didn't save, so it's back as it was (${err.code || err.message}).`;
       });
@@ -553,6 +555,8 @@ async function start() {
   // doneCards and letGoCards are undefined while loading.
   let doneKind = 'month';
   let doneOffset = 0;
+  // Custom's dates, { start, end }, once you've picked Custom.
+  let doneCustom = null;
   let doneRange = null;
   let doneCards;
   let letGoCards;
@@ -560,9 +564,17 @@ async function start() {
   let stopDone = [];
 
   const doneScreen = setupDone({
-    // Week, Month, and Year always open the current one.
-    onRange: (kind) => setDoneRange(kind, 0),
+    // Week, Month, and Year always open the current one. Custom starts
+    // from the range you were looking at.
+    onRange: (kind) => {
+      if (kind === 'custom' && doneKind !== 'custom' && doneRange) doneCustom = { start: doneRange.start, end: doneRange.end };
+      setDoneRange(kind, 0);
+    },
     onStep: (step) => setDoneRange(doneKind, Math.min(0, doneOffset + step)),
+    onCustom: (start, end) => {
+      doneCustom = { start, end };
+      setDoneRange('custom', 0);
+    },
     onCopy: copyDone,
     onPutBack: putBack,
   });
@@ -586,7 +598,8 @@ async function start() {
   function refreshDone() {
     if (!uid || views.done.hidden) return;
     doneDay = todayISO();
-    const range = rangeFor(doneKind, doneOffset, doneDay);
+    if (doneKind === 'custom' && !doneCustom) doneKind = 'month';
+    const range = rangeFor(doneKind, doneOffset, doneDay, { yearStart: settings.yearStart, custom: doneCustom });
     if (!doneRange || range.start !== doneRange.start || range.end !== doneRange.end) {
       stopDoneQueries();
       doneCards = undefined;
@@ -621,10 +634,10 @@ async function start() {
     drawDone();
   }
 
-  async function copyDone() {
+  async function copyDone({ notes }) {
     if (!doneCards || !doneCards.length) return;
     const n = doneCards.length;
-    const copied = await writeClipboard(copyText(doneCards, categories, doneRange, doneDay));
+    const copied = await writeClipboard(copyText(doneCards, categories, doneRange, doneDay, { notes }));
     doneScreen.showStatus(
       copied
         ? `Copied ${n} ${n === 1 ? 'card' : 'cards'} as text, ready to paste.`

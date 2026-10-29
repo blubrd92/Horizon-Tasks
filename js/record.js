@@ -2,12 +2,16 @@
 // and tallies inside it, its wording, and the text Copy as text produces.
 // No Firebase, no page.
 //
-// Week is Monday to Sunday; Month and Year are the calendar's. A range is
+// Week is Monday to Sunday; Month is the calendar's; Year starts in the
+// month you choose in Settings (January unless you change it, July for a
+// fiscal year). Custom is any two dates you pick. A range is
 // { kind, offset, start, end }: offset 0 is the one holding today, -1 the
-// one before. start and end are "YYYY-MM-DD", both included.
+// one before, and null for Custom. start and end are "YYYY-MM-DD", both
+// included.
 
 import {
   addDays,
+  daysBetween,
   formatMonthDay,
   formatRange,
   formatShort,
@@ -19,15 +23,20 @@ import {
 import { STATUS } from './model.js';
 import { repeats } from './repeat.js';
 
+const MONTH_SHORT = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 const MONTH_NAMES = [
   'January', 'February', 'March', 'April', 'May', 'June',
   'July', 'August', 'September', 'October', 'November', 'December',
 ];
 const FALLBACK_COLOR = '#6B6F78';
 
-export const RANGE_KINDS = ['week', 'month', 'year'];
+// A Custom span longer than this many days is grouped by month, like Year.
+const MONTHLY_AFTER = 62;
 
-export function rangeFor(kind, offset, today) {
+// yearStart is the month the year starts in (1 for January). custom is
+// { start, end } for Custom.
+export function rangeFor(kind, offset, today, { yearStart = 1, custom = null } = {}) {
+  if (kind === 'custom') return { kind, offset: null, start: custom.start, end: custom.end };
   if (kind === 'week') {
     const start = addDays(weekStartOf(today), offset * 7);
     return { kind, offset, start, end: addDays(start, 6) };
@@ -38,8 +47,20 @@ export function rangeFor(kind, offset, today) {
     const last = new Date(first.getFullYear(), first.getMonth() + 1, 0);
     return { kind, offset, start: toISO(first), end: toISO(last) };
   }
-  const year = now.getFullYear() + offset;
-  return { kind, offset, start: `${year}-01-01`, end: `${year}-12-31` };
+  // The year holding today starts this calendar year if its first month
+  // has come, otherwise last year.
+  const year = now.getFullYear() - (now.getMonth() + 1 < yearStart ? 1 : 0) + offset;
+  const first = new Date(year, yearStart - 1, 1);
+  const last = new Date(year + 1, yearStart - 1, 0);
+  return { kind, offset, start: toISO(first), end: toISO(last) };
+}
+
+// "2026", or "Jul 2025 to Jun 2026" for a year that doesn't start in January.
+function yearName(range) {
+  if (range.start.endsWith('-01-01')) return range.start.slice(0, 4);
+  const a = fromISO(range.start);
+  const b = fromISO(range.end);
+  return `${MONTH_SHORT[a.getMonth()]} ${a.getFullYear()} to ${MONTH_SHORT[b.getMonth()]} ${b.getFullYear()}`;
 }
 
 // The range as times for a query: from its first midnight up to, not
@@ -65,21 +86,24 @@ export function newestFirst(cards, field) {
 
 // The line under the heading: "October so far."
 export function rangeLine(range, today) {
+  if (range.kind === 'custom') return `${spanText(range.start, range.end)}.`;
   const current = range.offset === 0;
   if (range.kind === 'week') {
     if (current) return 'This week so far.';
     return `${formatRange(range.start, range.end)}${yearSuffix(range.end, today, ', ')}.`;
   }
   if (range.kind === 'month') return `${monthName(range, today)}${current ? ' so far' : ''}.`;
-  return `${range.start.slice(0, 4)}${current ? ' so far' : ''}.`;
+  return `${yearName(range)}${current ? ' so far' : ''}.`;
 }
 
-// "this month", "that week", "in September", "in 2025".
+// "this month", "that week", "in September", "in 2025", "between those
+// dates".
 function rangePhrase(range, today) {
+  if (range.kind === 'custom') return 'between those dates';
   if (range.offset === 0) return `this ${range.kind}`;
   if (range.kind === 'week') return 'that week';
   if (range.kind === 'month') return `in ${monthName(range, today)}`;
-  return `in ${range.start.slice(0, 4)}`;
+  return `in ${yearName(range)}`;
 }
 
 // "September", or "September 2025" when it isn't this year.
@@ -93,7 +117,7 @@ function yearSuffix(iso, today, glue) {
 
 // What an empty range says instead of a big zero.
 export function emptyLine(range, today) {
-  if (range.offset === 0) return `Nothing finished this ${range.kind} yet.`;
+  if (range.kind !== 'custom' && range.offset === 0) return `Nothing finished this ${range.kind} yet.`;
   return `Nothing finished ${rangePhrase(range, today)}.`;
 }
 
@@ -104,10 +128,37 @@ export function letGoLine(count, range, today) {
   return `You let ${cards} go ${rangePhrase(range, today)}. ${kept} kept here too, quietly.`;
 }
 
-// The finished cards in weeks, newest first, each newest first. A week
-// with nothing in it isn't listed. A week that crosses the range's edge is
-// labeled with the part inside it. Returns [{ label, cards }].
-export function groupByWeek(cards, range, today) {
+// The finished cards in groups, newest first: by month for Year and a long
+// Custom span, by week otherwise. Returns [{ label, cards }].
+export function groupCards(cards, range, today) {
+  const monthly = range.kind === 'year' || (range.kind === 'custom' && daysBetween(range.start, range.end) > MONTHLY_AFTER);
+  return monthly ? groupByMonth(cards, range, today) : groupByWeek(cards, range, today);
+}
+
+// Months, each newest first, labeled "October", or "December 2025" when it
+// isn't this year. A month cut off by a Custom span's edge is labeled with
+// the part inside it ("Oct 15 to 31").
+function groupByMonth(cards, range, today) {
+  const months = new Map();
+  for (const card of newestFirst(cards, 'completedAt')) {
+    const first = `${dayOf(card.completedAt).slice(0, 7)}-01`;
+    if (!months.has(first)) months.set(first, []);
+    months.get(first).push(card);
+  }
+  return [...months].map(([first, list]) => {
+    const date = fromISO(first);
+    const end = toISO(new Date(date.getFullYear(), date.getMonth() + 1, 0));
+    const from = first < range.start ? range.start : first;
+    const to = end > range.end ? range.end : end;
+    const whole = from === first && to === end;
+    const label = whole ? `${MONTH_NAMES[date.getMonth()]}${yearSuffix(first, today, ' ')}` : formatRange(from, to);
+    return { label, cards: list };
+  });
+}
+
+// Weeks, each newest first. A week with nothing in it isn't listed. A week
+// that crosses the range's edge is labeled with the part inside it.
+function groupByWeek(cards, range, today) {
   const thisWeek = weekStartOf(today);
   const weeks = new Map();
   for (const card of newestFirst(cards, 'completedAt')) {
@@ -167,8 +218,9 @@ export function putBackChanges(card) {
 
 // Copy as text: a heading, the counts, then one line per card, newest
 // first. A repeating series with the same title is one line, at its latest
-// date, with how many times.
-export function copyText(cards, categories, range, today) {
+// date, with how many times. With notes on, each card's notes follow its
+// line, indented (a series: its latest card's).
+export function copyText(cards, categories, range, today, { notes = false } = {}) {
   const categoryById = new Map(categories.map((c) => [c.id, c]));
   const last = range.offset === 0 && today >= range.start && today < range.end ? today : range.end;
   const total = cards.length;
@@ -203,6 +255,9 @@ export function copyText(cards, categories, range, today) {
     }
     const category = categoryOf(latest, categoryById).name;
     lines.push(`${formatShort(days[days.length - 1])} · ${latest.title}${times} · ${category}`);
+    if (notes && latest.notes.trim()) {
+      for (const line of latest.notes.trim().split(/\r?\n/)) lines.push(`    ${line}`);
+    }
   }
   return `${lines.join('\n')}\n`;
 }

@@ -11,7 +11,7 @@ import {
   categoryOf,
   emptyLine,
   finishedDay,
-  groupByWeek,
+  groupCards,
   inSeries,
   letGoLine,
   newestFirst,
@@ -26,17 +26,24 @@ const LETGO_ICON =
 const REPEAT_ICON =
   '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17 2l4 4-4 4"></path><path d="M3 11V9a3 3 0 0 1 3-3h15"></path><path d="M7 22l-4-4 4-4"></path><path d="M21 13v2a3 3 0 0 1-3 3H3"></path></svg>';
 
-// onRange(kind) for Week, Month, Year; onStep(-1 or 1) for the arrows;
-// onCopy() for Copy as text; onPutBack(card) from a card's box.
-export function setupDone({ onRange, onStep, onCopy, onPutBack }) {
+// onRange(kind) for Week, Month, Year, Custom; onStep(-1 or 1) for the
+// arrows; onCustom(start, end) when Custom's dates change; onCopy({ notes })
+// for Copy as text; onPutBack(card) from a card's box.
+export function setupDone({ onRange, onStep, onCustom, onCopy, onPutBack }) {
   const heading = document.getElementById('done-heading');
   const rangeEl = document.getElementById('done-range');
   const statusEl = document.getElementById('done-status');
   const body = document.getElementById('done-body');
   const prev = document.getElementById('done-prev');
   const next = document.getElementById('done-next');
+  const steps = document.querySelector('.done-steps');
   const copy = document.getElementById('done-copy');
+  const withNotes = document.getElementById('done-notes');
   const rangeButtons = document.querySelectorAll('[data-range]');
+  const customRow = document.getElementById('done-custom');
+  const fromInput = document.getElementById('done-from');
+  const toInput = document.getElementById('done-to');
+  const customNote = document.getElementById('done-custom-note');
 
   const box = document.getElementById('record-card');
   const boxTitle = document.getElementById('record-title');
@@ -58,7 +65,23 @@ export function setupDone({ onRange, onStep, onCopy, onPutBack }) {
   for (const button of rangeButtons) button.addEventListener('click', () => onRange(button.dataset.range));
   prev.addEventListener('click', () => onStep(-1));
   next.addEventListener('click', () => onStep(1));
-  copy.addEventListener('click', () => onCopy());
+  copy.addEventListener('click', () => onCopy({ notes: withNotes.checked }));
+
+  // Custom: the page follows once both dates make sense.
+  for (const input of [fromInput, toInput]) {
+    input.addEventListener('change', () => {
+      const start = fromInput.value;
+      const end = toInput.value;
+      if (!start || !end) {
+        customNote.textContent = 'Pick both dates.';
+      } else if (start > end) {
+        customNote.textContent = 'The From date is after the To date, so nothing changed.';
+      } else {
+        customNote.textContent = '';
+        onCustom(start, end);
+      }
+    });
+  }
 
   body.addEventListener('click', (event) => {
     const toggle = event.target.closest('[data-letgo-toggle]');
@@ -109,10 +132,21 @@ export function setupDone({ onRange, onStep, onCopy, onPutBack }) {
 
     rangeEl.textContent = `${rangeLine(range, today)} Every card you finished, kept.`;
     for (const button of rangeButtons) button.setAttribute('aria-pressed', String(button.dataset.range === range.kind));
-    prev.setAttribute('aria-label', `Previous ${range.kind}`);
-    next.setAttribute('aria-label', `Next ${range.kind}`);
-    // There's no future to show.
-    next.disabled = range.offset >= 0;
+    // Custom has no previous or next; its dates take the arrows' place.
+    const custom = range.kind === 'custom';
+    steps.hidden = custom;
+    customRow.hidden = !custom;
+    if (custom) {
+      // Not while you're typing in one.
+      if (document.activeElement !== fromInput) fromInput.value = range.start;
+      if (document.activeElement !== toInput) toInput.value = range.end;
+    } else {
+      customNote.textContent = '';
+      prev.setAttribute('aria-label', `Previous ${range.kind}`);
+      next.setAttribute('aria-label', `Next ${range.kind}`);
+      // There's no future to show.
+      next.disabled = range.offset >= 0;
+    }
     copy.disabled = Boolean(error) || loading || done.length === 0;
 
     // Keep keyboard focus through a redraw (live updates, Show and Hide).
@@ -128,7 +162,7 @@ export function setupDone({ onRange, onStep, onCopy, onPutBack }) {
       html = '<p class="done-quiet">Loading what you did…</p>';
     } else {
       for (const card of [...done, ...letGo]) shown.set(card.id, card);
-      html = done.length ? tilesHTML(done, categories) + weeksHTML(done, range) : `<p class="done-quiet">${emptyLine(range, today)}</p>`;
+      html = done.length ? tilesHTML(done, categories) + groupsHTML(done, range) : `<p class="done-quiet">${emptyLine(range, today)}</p>`;
       if (letGo.length) html += letGoHTML(letGo, range);
     }
     body.innerHTML = html;
@@ -161,8 +195,8 @@ export function setupDone({ onRange, onStep, onCopy, onPutBack }) {
       </section>`;
   }
 
-  function weeksHTML(done, range) {
-    return groupByWeek(done, range, today)
+  function groupsHTML(done, range) {
+    return groupCards(done, range, today)
       .map(
         (week) => `
         <section class="record-week" aria-label="${escapeHTML(week.label)}">

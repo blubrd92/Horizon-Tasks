@@ -6,18 +6,23 @@
 export function setupSettings({ onChange }) {
   const dialog = document.getElementById('settings');
   const fold = document.getElementById('setting-fold');
+  const yearStart = document.getElementById('setting-year-start');
+  const months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+  yearStart.innerHTML = months.map((name, i) => `<option value="${i + 1}">${name}</option>`).join('');
 
   function open(settings) {
-    fold.checked = settings.foldLongZones;
+    show(settings);
     dialog.showModal();
   }
 
-  // Puts a checkbox back (when a save is refused).
+  // Puts the controls back as saved (when a save is refused).
   function show(settings) {
     fold.checked = settings.foldLongZones;
+    yearStart.value = String(settings.yearStart);
   }
 
   fold.addEventListener('change', () => onChange('foldLongZones', fold.checked));
+  yearStart.addEventListener('change', () => onChange('yearStart', Number(yearStart.value)));
 
   document.getElementById('settings-close').addEventListener('click', () => dialog.close());
   document.getElementById('settings-done').addEventListener('click', () => dialog.close());

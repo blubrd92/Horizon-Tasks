@@ -1434,6 +1434,31 @@ a.button:hover { color: var(--ink); }
   box-shadow: 0 1px 2px rgba(24, 25, 28, 0.08);
 }
 
+/* "Include notes" for Copy as text. */
+.done-notes { align-self: center; }
+
+/* Custom's From and To, under the buttons. */
+.done-custom {
+  margin-top: -12px;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: flex-end;
+  gap: 12px;
+}
+
+.done-custom .field { width: 180px; }
+
+.done-custom-note {
+  order: -1;
+  margin: 0;
+  align-self: center;
+  font-size: 14px;
+  color: var(--overdue-ink);
+}
+
+.done-custom-note:empty { display: none; }
+
 .done-status {
   margin: -16px 0 0;
   font-size: 14px;
@@ -1682,6 +1707,9 @@ a.button:hover { color: var(--ink); }
   .done-header { padding: 14px 16px; }
   .done-main { padding: 28px 16px 48px; gap: 24px; }
   .done-heading { font-size: 40px; }
+  .done-custom { justify-content: flex-start; margin-top: -8px; }
+  .done-custom .field { width: auto; flex: 1 1 140px; }
+  .done-custom-note { order: 0; flex-basis: 100%; }
   .tiles { grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 10px; }
   .tile { padding: 16px; }
   .record-row { padding: 12px 16px; gap: 6px 12px; }

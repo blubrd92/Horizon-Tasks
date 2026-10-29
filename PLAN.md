@@ -49,8 +49,12 @@ rewritten). `main` now has every confirmed slice. If GitHub Pages is still
 pointed at a side branch, point it back at `main` (Settings > Pages).
 
 **Slice 1f: built, awaiting your test** (2026-10-29). The Done record
-view, "What you did". See the 1f section below for what it does, the five
-questions settled, and the test list.
+view, "What you did", plus one round of revisions after your first look
+(the header button renamed, Custom dates, a year that can start in July,
+Year grouped by month, notes in Copy as text). See the 1f section below.
+To test on the live site, point GitHub Pages at this slice's branch
+(`claude/friendly-brahmagupta-nnqtvp`) for now, then back to `main` once
+it's merged.
 
 **Next:** your test of 1f. Once it's confirmed and committed, Phase 1 is
 done; Phase 2 (Projects) starts in a fresh session.
@@ -62,6 +66,70 @@ account, pinning zone headers on long columns, and saving the sample card
 scripts in `tools/`. New from 1f: see its Proposals.
 
 ## Slice 1f: the Done record, "What you did" (awaiting test)
+
+### Revisions after your first look (awaiting test)
+
+You said "ranges" weren't findable, "Done" doesn't say where it goes, and
+you'd like a report over dates you choose. You picked "What you did" for
+the button and Copy as text for the report, and said yes to the three
+proposals.
+
+**1. The header button says "What you did"**, with a small check mark,
+matching the page it opens. (SPEC calls it the Done button; the page and
+its address, `#done`, keep that name inside the code.)
+
+**2. Custom dates.** A fourth button beside Week, Month, Year: "Custom".
+It shows From and To date boxes under the buttons, filled in with
+whatever range you were just looking at (so Year, then Custom, starts you
+on the whole year). Change either date and the page shows exactly that
+span; Copy as text copies it, headed "What I did, Jul 1, 2025 to Jun 30,
+2026". The arrows hide in Custom (there's no "previous" of a span you
+typed). A From after the To says so and changes nothing. Same reading
+rules as the other ranges: only those dates are downloaded.
+
+**3. A year that starts when yours does.** Settings (the gear on the
+board) gets "Year starts in", January by default. Set it to July and the
+Year button shows July to June: "Jul 2025 to Jun 2026 so far.", the
+arrows step by fiscal year, and Copy as text heads it the same way. Saved
+to your profile as `settings.yearStart` (1 to 12), so it follows you.
+
+**4. Year is grouped by month**, not week ("October", "September", with a
+year added when it isn't this one). So is a Custom span longer than two
+months. Week and Month stay grouped by week, as SPEC says.
+
+**5. Notes in Copy as text, if you want them.** An "Include notes"
+checkbox beside Copy as text, off by default. On, each card's notes
+follow its line, indented. A grouped series gets its latest card's notes
+once. The choice lasts until a reload.
+
+Files: `index.html`, `css/horizon.css`, `js/record.js`, `js/done.js`,
+`js/app.js`, `js/settings.js`, `js/model.js`. No rule changes, no index.
+
+Test list for this round:
+- [ ] The header says "What you did" with a check mark; it opens the page.
+- [ ] Custom: From and To appear, filled with the range you were on.
+      Change them: the page and the line under the heading follow. Copy
+      as text: the heading names your dates.
+- [ ] Custom with From after To: a note, and the page doesn't change.
+- [ ] Week, Month, or Year after Custom: the date boxes go away.
+- [ ] Settings > Year starts in > July. Year shows Jul to Jun, grouped by
+      month; the left arrow goes to the year before. Back to January:
+      calendar years again.
+- [ ] Include notes, then Copy as text: notes appear under their cards.
+
+Checked here, the same way as the first round: 37 new checks plus the
+first round's 109 again, 146 in all, all passing, no console errors.
+The button's words and icon; Custom prefilled from Month and from Week,
+the arrows hidden, Sep 15 to Oct 10 querying exactly those days and
+showing 6 cards in two clipped weeks, its copied heading, a From after
+the To refused with the note, a Dec 2025 to Oct 22 span grouped by month
+("Oct 1 to 22", "September", "December 2025"), Week bringing the arrows
+back; Year by month; Include notes off by default, indenting multi-line
+notes under their card, and off again; Year starts in July giving "Jul
+2026 to Jun 2027 so far." with 16 cards, the arrow to Jul 2025 to Jun
+2026, its copied heading, the setting remembered, and January restoring
+calendar years; the board header still on one row down to 1,200px; and
+the phone layout with Custom open, no sideways scroll.
 
 ### What it does
 
@@ -229,15 +297,11 @@ index.
    Wed, Oct 21 · Booklist descriptions for the November display · Programs
    ```
 
-### Proposals (not built; say yes and I'll add them)
+### Proposals
 
-- **A fiscal year range.** Library evaluations often run July to June, not
-  January to December. A "starts in" setting for Year would make Copy as
-  text match your evaluation period in one click.
-- **Group the Year view by month** instead of week. SPEC says by week, and
-  that's what's built, but a year is up to 52 headings.
-- **Notes in Copy as text**, as an option, for evaluations that want the
-  detail.
+All three were approved and built in the revisions above: a year that
+starts in the month you choose, Year grouped by month, and notes in Copy
+as text as an option.
 
 ### How to test
 

@@ -37,6 +37,8 @@
 //   sinceDay, sinceAt           the visit day before that one
 // and your settings:
 //   settings.foldLongZones      true to fold long zones (see board.js)
+//   settings.yearStart          1 to 12: the month the Done record's Year
+//                               starts in (see record.js)
 
 import { isISODate, toISO } from './dates.js';
 
@@ -71,10 +73,11 @@ export function newCard({ title, dueDate = null }) {
 }
 
 // Settings with their defaults filled in. Every setting is off until you
-// turn it on.
+// turn it on, and the year starts in January.
 export function normalizeSettings(data) {
   const settings = data && typeof data === 'object' ? data : {};
-  return { foldLongZones: settings.foldLongZones === true };
+  const yearStart = Number.isInteger(settings.yearStart) && settings.yearStart >= 1 && settings.yearStart <= 12 ? settings.yearStart : 1;
+  return { foldLongZones: settings.foldLongZones === true, yearStart };
 }
 
 // Turns a Firestore card document into a predictable object, filling in
