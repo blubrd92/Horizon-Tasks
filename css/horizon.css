@@ -1898,6 +1898,18 @@ a.button:hover { color: var(--ink); }
 
 .letgo-list .record-title { font-weight: 400; color: var(--ink-secondary); }
 
+/* A finished card's project, under its title in What you did. The row is
+   a button, so this is plain text, not a link. */
+.record-project {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 3px;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--accent);
+}
+
 /* One card's box. */
 .small-panel .record-box-title {
   font-size: 20px;
@@ -1912,6 +1924,16 @@ a.button:hover { color: var(--ink); }
   gap: 7px;
   font-size: 13px;
   color: var(--ink-secondary);
+}
+
+.record-box-project {
+  margin: -8px 0 0;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--accent);
 }
 
 .record-box-when,
@@ -1986,9 +2008,15 @@ a.button:hover { color: var(--ink); }
   gap: 10px;
 }
 
-/* Finished rows on a project page are plain rows, not buttons. */
-.record-row-plain { cursor: default; }
-.record-row-plain:hover { background: none; }
+/* The project page's quick add: the board's field, without the board's
+   bar around it. */
+.quickadd-bar.project-quickadd {
+  background: none;
+  border: none;
+  padding: 0;
+  margin-top: -12px;
+  justify-content: flex-start;
+}
 
 .project-finished .is-letgo .record-title { font-weight: 400; color: var(--ink-secondary); }
 

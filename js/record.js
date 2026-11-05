@@ -218,10 +218,13 @@ export function putBackChanges(card) {
 
 // Copy as text: a heading, the counts, then one line per card, newest
 // first. A repeating series with the same title is one line, at its latest
-// date, with how many times. With notes on, each card's notes follow its
-// line, indented (a series: its latest card's).
-export function copyText(cards, categories, range, today, { notes = false } = {}) {
+// date, with how many times. A card in a project ends with the project's
+// name (a project that was deleted isn't named). With notes on, each
+// card's notes follow its line, indented (a series: its latest card's).
+// projects is every project, active and archived.
+export function copyText(cards, categories, range, today, { notes = false, projects = [] } = {}) {
   const categoryById = new Map(categories.map((c) => [c.id, c]));
+  const projectById = new Map(projects.map((p) => [p.id, p]));
   const last = range.offset === 0 && today >= range.start && today < range.end ? today : range.end;
   const total = cards.length;
   const counts = tally(cards, categories).map((t) => `${t.name} ${t.count}`).join(', ');
@@ -254,7 +257,8 @@ export function copyText(cards, categories, range, today, { notes = false } = {}
       times = `, ${group.length} times (${days.map(formatMonthDay).join(', ')})`;
     }
     const category = categoryOf(latest, categoryById).name;
-    lines.push(`${formatShort(days[days.length - 1])} · ${latest.title}${times} · ${category}`);
+    const project = projectById.get(latest.projectId);
+    lines.push(`${formatShort(days[days.length - 1])} · ${latest.title}${times} · ${category}${project ? ` · ${project.name}` : ''}`);
     if (notes && latest.notes.trim()) {
       for (const line of latest.notes.trim().split(/\r?\n/)) lines.push(`    ${line}`);
     }

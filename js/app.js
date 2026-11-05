@@ -31,6 +31,7 @@ import { copyText, putBackChanges, rangeFor, rangeTimes } from './record.js';
 import { NEW_PROJECT, findByName, finishedOf, nextColor, openCounts, projectIdFromHash } from './projects.js';
 import { setupProjectList } from './projectlist.js';
 import { setupProjectPage } from './projectpage.js';
+import { setupRecordBox } from './recordbox.js';
 
 const views = {
   setup: document.getElementById('view-setup'),
@@ -421,6 +422,28 @@ async function start() {
   });
   notallowedSignout.addEventListener('click', () => fb.signOut());
 
+  // The quick add on a project page: the same keys, and the card starts in
+  // that project.
+  const projectQuickAdd = setupQuickAdd({
+    input: document.getElementById('project-quickadd-input'),
+    status: document.getElementById('project-quickadd-status'),
+    since: document.getElementById('project-quickadd-since'),
+    onCompose: (title) =>
+      editor.open(
+        { id: null, ...newCard({ title }), projectId: shownProjectId() },
+        { categories, projects },
+        { below: projectPage.quickAddField },
+      ),
+    onAdd: (title, toToday) =>
+      fb.addCard(uid, { ...newCard({ title, dueDate: toToday ? todayISO() : null }), projectId: shownProjectId() }),
+    onEdit: openCard,
+  });
+
+  // Whichever quick add is on screen, for confirmations after a save.
+  function activeQuickAdd() {
+    return views.project.hidden ? quickAdd : projectQuickAdd;
+  }
+
   quickAdd = setupQuickAdd({
     input: document.getElementById('quickadd-input'),
     status: document.getElementById('quickadd-status'),
@@ -455,17 +478,18 @@ async function start() {
       resolveProject(values, newProject);
       const fresh = { id: null, ...newCard(values) };
       const { id, saved } = fb.addCard(uid, { ...newCard(values), ...values, ...seriesChanges(fresh, values, false) });
-      quickAdd.showAdded(addedText(values.dueDate), id);
+      const line = activeQuickAdd();
+      line.showAdded(addedText(values.dueDate), id);
       saved.catch((err) => {
-        quickAdd.showText(`Couldn't save \u201c${values.title}\u201d (${err.code || err.message}).`);
-        quickAdd.giveBack(values.title);
+        line.showText(`Couldn't save \u201c${values.title}\u201d (${err.code || err.message}).`);
+        line.giveBack(values.title);
       });
     },
     onClose: (card, saved) => {
       // A new card closed without saving: its title goes back into quick
       // add, so nothing typed is lost. Focus is already back there.
       if (!card.id) {
-        if (!saved) quickAdd.giveBack(card.title);
+        if (!saved) activeQuickAdd().giveBack(card.title);
         return;
       }
       // The board redraws whenever Firestore sends news, which replaces the
@@ -484,7 +508,7 @@ async function start() {
     const next = nextCard(card, todayISO());
     const { id, saved } = fb.finishAndRepeat(uid, card.id, how, changes, next);
     const what = how === STATUS.DONE ? 'Done' : 'Let go';
-    quickAdd.showAdded(`${what}. The next one is due ${formatShort(next.dueDate)}.`, id);
+    activeQuickAdd().showAdded(`${what}. The next one is due ${formatShort(next.dueDate)}.`, id);
     saved.catch(showSaveError);
   }
 
@@ -612,7 +636,12 @@ async function start() {
   let doneError = null;
   let stopDone = [];
 
+  // The box for one finished or let-go card, shared by What you did and
+  // project pages.
+  const recordBox = setupRecordBox();
+
   const doneScreen = setupDone({
+    box: recordBox,
     // Week, Month, and Year always open the current one. Custom starts
     // from the range you were looking at.
     onRange: (kind) => {
@@ -625,7 +654,7 @@ async function start() {
       setDoneRange('custom', 0);
     },
     onCopy: copyDone,
-    onPutBack: putBack,
+    onPutBack: (card) => putBack(card, doneScreen.showStatus),
   });
   doneView = { refresh: refreshDone };
 
@@ -672,7 +701,7 @@ async function start() {
 
   function drawDone() {
     if (!doneRange) return;
-    doneScreen.render({ range: doneRange, today: doneDay, categories, done: doneCards, letGo: letGoCards, error: doneError });
+    doneScreen.render({ range: doneRange, today: doneDay, categories, projects, done: doneCards, letGo: letGoCards, error: doneError });
   }
 
   function showDoneError(err) {
@@ -686,7 +715,7 @@ async function start() {
   async function copyDone({ notes }) {
     if (!doneCards || !doneCards.length) return;
     const n = doneCards.length;
-    const copied = await writeClipboard(copyText(doneCards, categories, doneRange, doneDay, { notes }));
+    const copied = await writeClipboard(copyText(doneCards, categories, doneRange, doneDay, { notes, projects }));
     doneScreen.showStatus(
       copied
         ? `Copied ${n} ${n === 1 ? 'card' : 'cards'} as text, ready to paste.`
@@ -695,13 +724,14 @@ async function start() {
   }
 
   // A done or let-go card back on the board, with its old due date. It
-  // leaves the record (see putBackChanges in record.js).
-  function putBack(card) {
+  // leaves the record (see putBackChanges in record.js). showStatus is the
+  // page's line for saying so: What you did's or the project page's.
+  function putBack(card, showStatus) {
     if (!uid) return;
     const where = !card.dueDate ? 'in Someday' : card.dueDate === todayISO() ? 'due today' : `due ${formatShort(card.dueDate)}`;
-    doneScreen.showStatus(`\u201c${card.title}\u201d is back on the board, ${where}.`);
+    showStatus(`\u201c${card.title}\u201d is back on the board, ${where}.`);
     fb.updateCard(uid, card.id, putBackChanges(card)).catch((err) => {
-      doneScreen.showStatus(`\u201c${card.title}\u201d didn't go back on the board (${err.code || err.message}).`);
+      showStatus(`\u201c${card.title}\u201d didn't go back on the board (${err.code || err.message}).`);
     });
   }
 
@@ -746,6 +776,9 @@ async function start() {
 
   const projectPage = setupProjectPage({
     onOpenCard: openCard,
+    // The page is the project, so the box doesn't name it.
+    onOpenRecord: (card, onClosed) =>
+      recordBox.open(card, { categories, today: todayISO(), onPutBack: (c) => putBack(c, projectPage.showStatus), onClosed }),
     onEdit: (project) => projectList.openForm(project, projects),
   });
 
@@ -765,6 +798,11 @@ async function start() {
       refreshProject();
     },
   };
+
+  // The project the page is showing, for its quick add.
+  function shownProjectId() {
+    return views.project.hidden ? null : projectIdFromHash(location.hash);
+  }
 
   function stopProjectQuery() {
     if (stopProjectCards) stopProjectCards();
@@ -849,6 +887,7 @@ async function start() {
     if (was === 'project') {
       stopProjectQuery();
       projectPage.reset();
+      projectQuickAdd.clear();
     }
     show(view);
     window.scrollTo(0, 0);
@@ -856,6 +895,7 @@ async function start() {
     datePick.cancel();
     settingsBox.close();
     projectList.close();
+    recordBox.close();
     if (view === 'done') {
       refreshDone();
       doneScreen.focusHeading();
@@ -995,6 +1035,8 @@ async function start() {
     stopProjectQuery();
     projectPage.reset();
     projectList.close();
+    projectQuickAdd.clear();
+    projectQuickAdd.setEnabled(false);
     if (stopProjects) {
       stopProjects();
       stopProjects = null;
@@ -1039,6 +1081,7 @@ async function start() {
       settingsButton.disabled = false;
       projectsButton.disabled = false;
       quickAdd.setEnabled(true);
+      projectQuickAdd.setEnabled(true);
       stopProjects = fb.watchProjects(
         user.uid,
         (list) => {
@@ -1047,6 +1090,8 @@ async function start() {
           // Drawing the board refreshes the project page and list too.
           if (latest) draw();
           else projectView.refresh();
+          // What you did names each card's project.
+          drawDone();
         },
         (err) => {
           console.warn('Could not load projects', err);

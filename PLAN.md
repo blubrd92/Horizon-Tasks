@@ -62,8 +62,10 @@ for testing, point it back at `main` (Settings > Pages).
 on `claude/nifty-thompson-4doyfu`. Projects, the Projects list, a project
 for each card in the editor (with "New project" right there), the
 "↗ November display" tag on cards, and the project page with its open and
-finished cards. See "Slice 2a" below for the plan, the decisions, and the
-test list.
+finished cards. Then (2026-11-05) the three 2a proposals you approved: a
+quick add on the project page, finished rows that open their box with
+"Put back on the board", and What you did naming each card's project. See
+"Slice 2a" below for the plan, the decisions, and both test lists.
 
 **Next:** test 2a. Once it's confirmed, committed, and merged, slice 2b
 (the project page's notes and links) starts in a fresh session.
@@ -95,6 +97,69 @@ query, keeping them in sync with the board); notes and links are plain
 writing on one document, so they make a clean, small 2b.
 
 ## Slice 2a: projects, the Projects list, the tag, the project page (awaiting test)
+
+### Additions you approved (awaiting test)
+
+You said yes to all three proposals before testing the slice, so they're
+built on top of it and tested together.
+
+**1. A quick add on the project page.** Under the heading: "Add a card to
+November display", the board's own field with the board's own keys.
+Enter opens the new-card editor with this project already chosen (change
+it there if you like); Ctrl+Enter adds it to Someday; Shift+Enter adds it
+to Today. Its confirmation ("Added to Someday. Edit") shows beside that
+field, not up on the board's. Cancel puts the title back in it. Leaving
+the page clears it.
+
+**2. Finished rows open their box.** The rows in the project page's
+dashed box are now buttons. Each opens the same box What you did uses:
+category, when it was finished or let go, when it was due, notes, and
+"Put back on the board". Putting one back says so under the heading
+("... is back on the board, in Someday.") and the card moves up into its
+group. The box doesn't name the project there; the page is the project.
+(To share the box, it moved out of `done.js` into `js/recordbox.js`; What
+you did works exactly as before.)
+
+**3. What you did names the project.** A card in a project shows "↗
+November display" in small blue under its title, the arrow in the
+project's color, and its box says so too. It's plain text, not a link:
+the whole row is already a button, and a link inside a button confuses
+screen readers and keyboards. Copy as text adds it at the end of the
+line: `Wed, Oct 14 · Pull books for the display · Programs · November
+display`. A card with no project, or whose project was deleted, reads as
+before. A repeating series' line uses its latest card's project.
+
+Files: `index.html`, `css/horizon.css`, `js/app.js`, `js/done.js`,
+`js/record.js`, `js/projectpage.js`, and new `js/recordbox.js`. No new
+fields, no rule changes, no index.
+
+Test list for these:
+- [ ] A project page shows "Add a card to (its name)". Type and press
+      Ctrl+Enter: the card lands in Someday on the page, with "Added to
+      Someday. Edit" beside the field. Shift+Enter: Today.
+- [ ] Type and press Enter: the editor opens with this project chosen.
+      Add a date and Add card: it lands in the right group. Cancel
+      instead: the title is back in the field.
+- [ ] On the board, the new cards carry the project's tag.
+- [ ] The page's dashed box > Show: click a finished row. The box shows
+      its details; Close returns you to the row.
+- [ ] Put back on the board from there: the line under the heading says
+      where it went, and it's an open card on the page again.
+- [ ] What you did: finished cards in a project show "↗ Name" under the
+      title; the box names it too. Copy as text, paste: those lines end
+      with "· Name".
+
+Checked here, the same way as before: 40 new checks plus the first
+round's 116 again, 156 in all, all passing, no console errors. Each key
+on the page's quick add (the card's project, date, and group, the
+confirmation in the right spot, the board's field untouched), a project
+changed in the editor being honored, Cancel giving the title back, the
+field cleared on leaving; finished rows as buttons, the box's details,
+focus back to the row on Close and to the heading after Put back, a
+let-go card put back (`letGoAt` cleared, now open in Someday, the
+finished line updated); What you did's project lines (a deleted project
+not named), its box, focus, Copy as text with and without a project, and
+its own Put back still reporting on What you did.
 
 ### What it does
 
@@ -249,19 +314,14 @@ clickable link. They open in a new tab.
 3. **Project names are unique** (ignoring capitals), archived ones
    included, so the editor's menu never shows two of the same name.
 4. **Open counts on the list count open and in-progress cards.**
-5. **Finished rows on the project page are plain rows** (check, title,
-   category, date), not buttons. See Proposals.
+5. **Finished rows on the project page** were plain rows at first; they
+   now open their box (see "Additions you approved").
 6. **After Delete you land on the board**, with a line saying the cards
    are still there.
 
-### Proposals (not built; say yes and I'll add them)
+### Proposals
 
-1. **Add a card from the project page**: a small quick add on the page
-   that puts the new card in this project.
-2. **Finished rows open their box**, the same one What you did uses, with
-   "Put back on the board".
-3. **What you did names the project** on each row and in Copy as text
-   ("· November display"), useful for evaluations.
+All three were approved and built (see "Additions you approved" above).
 
 ### Data
 

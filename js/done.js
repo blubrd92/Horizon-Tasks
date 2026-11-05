@@ -1,12 +1,10 @@
 // The Done record view, "What you did": the range buttons, the tiles, the
-// finished cards in weeks, the let-go box, and the small box for one card.
-// This file only draws and reports clicks; app.js loads the cards, copies
-// the text, and saves.
+// finished cards in weeks, and the let-go box. A row opens the small box
+// for one card (recordbox.js). This file only draws and reports clicks;
+// app.js loads the cards, copies the text, and saves.
 
 import { formatShort } from './dates.js';
 import { escapeHTML } from './board.js';
-import { STATUS } from './model.js';
-import { REPEAT_NAMES, repeats } from './repeat.js';
 import {
   categoryOf,
   emptyLine,
@@ -28,8 +26,9 @@ const REPEAT_ICON =
 
 // onRange(kind) for Week, Month, Year, Custom; onStep(-1 or 1) for the
 // arrows; onCustom(start, end) when Custom's dates change; onCopy({ notes })
-// for Copy as text; onPutBack(card) from a card's box.
-export function setupDone({ onRange, onStep, onCustom, onCopy, onPutBack }) {
+// for Copy as text; onPutBack(card) from a card's box. box is the shared
+// box for one card (recordbox.js).
+export function setupDone({ onRange, onStep, onCustom, onCopy, onPutBack, box }) {
   const heading = document.getElementById('done-heading');
   const rangeEl = document.getElementById('done-range');
   const statusEl = document.getElementById('done-status');
@@ -45,22 +44,13 @@ export function setupDone({ onRange, onStep, onCustom, onCopy, onPutBack }) {
   const toInput = document.getElementById('done-to');
   const customNote = document.getElementById('done-custom-note');
 
-  const box = document.getElementById('record-card');
-  const boxTitle = document.getElementById('record-title');
-  const boxCategory = document.getElementById('record-category');
-  const boxWhen = document.getElementById('record-when');
-  const boxNotes = document.getElementById('record-notes');
-  const boxSeries = document.getElementById('record-series');
-
   // The cards on screen, by id, for the box.
   let shown = new Map();
   let categoryById = new Map();
+  let projectById = new Map();
   let today = '';
   // The let-go list is folded until you press Show.
   let letGoOpen = false;
-  // The card in the box, and whether it was put back (focus then has no
-  // row to return to).
-  let boxCard = null;
 
   for (const button of rangeButtons) button.addEventListener('click', () => onRange(button.dataset.range));
   prev.addEventListener('click', () => onStep(-1));
@@ -94,30 +84,25 @@ export function setupDone({ onRange, onStep, onCustom, onCopy, onPutBack }) {
     if (row && shown.has(row.dataset.recordId)) openBox(shown.get(row.dataset.recordId));
   });
 
-  document.getElementById('record-x').addEventListener('click', () => box.close());
-  document.getElementById('record-close').addEventListener('click', () => box.close());
-  document.getElementById('record-putback').addEventListener('click', () => {
-    const card = boxCard;
-    box.close();
-    if (card) onPutBack(card);
-  });
-  // A click on the dimmed page around the box.
-  box.addEventListener('click', (event) => {
-    if (event.target === box) box.close();
-  });
-  // Back to the card's row, which may have been redrawn while the box was
-  // open; if it's gone (put back), to the heading.
-  box.addEventListener('close', () => {
-    const id = boxCard && boxCard.id;
-    boxCard = null;
-    const row = id && body.querySelector(`[data-record-id="${CSS.escape(id)}"]`);
-    (row || heading).focus();
-  });
+  function openBox(card) {
+    box.open(card, {
+      categories: last.categories,
+      project: projectById.get(card.projectId) || null,
+      today,
+      onPutBack,
+      // Back to the card's row, which may have been redrawn while the box
+      // was open; if it's gone (put back), to the heading.
+      onClosed: (id) => {
+        const row = id && body.querySelector(`[data-record-id="${CSS.escape(id)}"]`);
+        (row || heading).focus();
+      },
+    });
+  }
 
   let last = null;
 
-  // state: { range, today, categories, done, letGo, error }. done and
-  // letGo are undefined while loading.
+  // state: { range, today, categories, projects, done, letGo, error }.
+  // done and letGo are undefined while loading.
   function render(state) {
     last = state;
     redraw();
@@ -128,6 +113,7 @@ export function setupDone({ onRange, onStep, onCustom, onCopy, onPutBack }) {
     const { range, categories, done, letGo, error } = last;
     today = last.today;
     categoryById = new Map(categories.map((c) => [c.id, c]));
+    projectById = new Map((last.projects || []).map((p) => [p.id, p]));
     const loading = done === undefined || letGo === undefined;
 
     rangeEl.textContent = `${rangeLine(range, today)} Every card you finished, kept.`;
@@ -229,37 +215,21 @@ export function setupDone({ onRange, onStep, onCustom, onCopy, onPutBack }) {
   function rowHTML(card, icon) {
     const category = categoryOf(card, categoryById);
     const repeat = inSeries(card) ? `<span class="record-repeat">${REPEAT_ICON}<span class="visually-hidden">Repeats</span></span>` : '';
+    // The card's project under its title, as plain text: the whole row is
+    // already a button. A project that was deleted isn't named.
+    const project = projectById.get(card.projectId);
+    const projectLine = project
+      ? `<span class="record-project"><span class="card-project-arrow" style="--project: ${escapeHTML(project.color)}" aria-hidden="true">\u2197</span><span class="visually-hidden">Project: </span>${escapeHTML(project.name)}</span>`
+      : '';
     return `
       <li>
         <button type="button" class="record-row" data-record-id="${escapeHTML(card.id)}">
           ${icon}
-          <span class="record-title">${escapeHTML(card.title)}${repeat}</span>
+          <span class="record-title">${escapeHTML(card.title)}${repeat}${projectLine ? ` ${projectLine}` : ''}</span>
           <span class="record-category">${swatch(category.color)}${escapeHTML(category.name)}</span>
           <span class="record-date">${formatShort(finishedDay(card))}</span>
         </button>
       </li>`;
-  }
-
-  function openBox(card) {
-    boxCard = card;
-    const category = categoryOf(card, categoryById);
-    boxTitle.textContent = card.title;
-    boxCategory.innerHTML = `${swatch(category.color)}${escapeHTML(category.name)}`;
-    const how = card.status === STATUS.LET_GO ? 'Let go' : 'Finished';
-    const due = card.dueDate ? `It was due ${withYear(card.dueDate)}.` : 'It had no date.';
-    boxWhen.textContent = `${how} ${withYear(finishedDay(card))}. ${due}`;
-    boxNotes.textContent = card.notes;
-    boxNotes.hidden = !card.notes.trim();
-    boxSeries.textContent = repeats(card)
-      ? `Part of a ${REPEAT_NAMES[card.repeat].toLowerCase()} series. It comes back on its own, as a one-off; the series already has its next card.`
-      : '';
-    boxSeries.hidden = !repeats(card);
-    box.showModal();
-  }
-
-  // "Wed, Oct 21", plus the year when it isn't this one.
-  function withYear(iso) {
-    return iso.slice(0, 4) === today.slice(0, 4) ? formatShort(iso) : `${formatShort(iso)}, ${iso.slice(0, 4)}`;
   }
 
   return {
@@ -278,7 +248,7 @@ export function setupDone({ onRange, onStep, onCustom, onCopy, onPutBack }) {
       letGoOpen = false;
       statusEl.textContent = '';
       body.innerHTML = '';
-      if (box.open) box.close();
+      box.close();
     },
   };
 }

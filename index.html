@@ -201,6 +201,22 @@
           </button>
         </div>
       </div>
+      <!-- Quick add for this project: the board's own keys, and the card
+           starts in this project. Hidden for a project that isn't there. -->
+      <div id="project-quickadd" class="quickadd-bar project-quickadd" hidden>
+        <label class="quickadd">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"></path></svg>
+          <span id="project-quickadd-label" class="visually-hidden">Add a card to this project</span>
+          <input type="text" id="project-quickadd-input" class="quickadd-input" autocomplete="off" enterkeyhint="done" aria-labelledby="project-quickadd-label" aria-describedby="quickadd-help" disabled>
+          <kbd class="quickadd-key" aria-hidden="true">Enter</kbd>
+        </label>
+        <div class="quickadd-line">
+          <p id="project-quickadd-status" class="quickadd-status" role="status"></p>
+          <!-- Quick add's code shares its spot with a Since yesterday line;
+               a project page has none, so this stays empty. -->
+          <p id="project-quickadd-since" class="since-line" hidden></p>
+        </div>
+      </div>
       <p id="project-status" class="done-status" role="status"></p>
       <div id="project-body" class="done-body project-body"></div>
     </main>
@@ -272,8 +288,8 @@
     </form>
   </dialog>
 
-  <!-- One card from the Done record: its details, and the way back to the
-       board. -->
+  <!-- One card from the Done record or a project page (recordbox.js): its
+       details, and the way back to the board. -->
   <dialog id="record-card" class="small-dialog" aria-labelledby="record-title">
     <div class="small-panel">
       <div class="settings-head">
@@ -283,6 +299,7 @@
         </button>
       </div>
       <p id="record-category" class="record-box-category"></p>
+      <p id="record-project" class="record-box-project" hidden></p>
       <p id="record-when" class="record-box-when"></p>
       <p id="record-notes" class="record-box-notes" hidden></p>
       <p id="record-series" class="record-box-series" hidden></p>

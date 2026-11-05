@@ -1,7 +1,8 @@
-// A project's page, at #project/<id>: its name, its end date, its open
-// cards grouped the way the board places them, and its finished ones
-// folded at the bottom. This file only draws and reports clicks; app.js
-// loads the cards and saves.
+// A project's page, at #project/<id>: its name, its end date, a quick add
+// for it, its open cards grouped the way the board places them, and its
+// finished ones folded at the bottom (each opens the box recordbox.js
+// draws). This file only draws and reports clicks; app.js loads the
+// cards, runs the quick add, and saves.
 
 import { formatShort } from './dates.js';
 import { cardsHTML, cardsIn, describeZone, escapeHTML } from './board.js';
@@ -17,15 +18,21 @@ const CHECK_ICON =
 const LETGO_ICON =
   '<svg class="record-icon" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9.2" fill="none" stroke="#9A9DA4" stroke-width="1.6"></circle><path d="M8 12h8" fill="none" stroke="#6B6F78" stroke-width="2" stroke-linecap="round"></path></svg>';
 
-// onOpenCard(cardId) when a card is clicked; onEdit(project) for Edit
-// project.
-export function setupProjectPage({ onOpenCard, onEdit }) {
+// onOpenCard(cardId) when an open card is clicked; onOpenRecord(card,
+// onClosed) when a finished one is, where onClosed(cardId) puts focus
+// back; onEdit(project) for Edit project.
+export function setupProjectPage({ onOpenCard, onOpenRecord, onEdit }) {
   const header = document.getElementById('project-header');
   const heading = document.getElementById('project-heading');
   const line = document.getElementById('project-line');
   const statusEl = document.getElementById('project-status');
   const body = document.getElementById('project-body');
   const editButton = document.getElementById('project-edit-button');
+  const quickAdd = document.getElementById('project-quickadd');
+  const quickAddInput = document.getElementById('project-quickadd-input');
+  const quickAddLabel = document.getElementById('project-quickadd-label');
+  // The finished cards on screen, by id, for the box.
+  let finishedById = new Map();
 
   let last = null;
   let finishedOpen = false;
@@ -38,6 +45,15 @@ export function setupProjectPage({ onOpenCard, onEdit }) {
     if (event.target.closest('[data-finished-toggle]')) {
       finishedOpen = !finishedOpen;
       redraw();
+      return;
+    }
+    const row = event.target.closest('[data-record-id]');
+    if (row && finishedById.has(row.dataset.recordId)) {
+      onOpenRecord(finishedById.get(row.dataset.recordId), (id) => {
+        // Back to the row; if it's gone (put back), to the heading.
+        const again = id && body.querySelector(`[data-record-id="${CSS.escape(id)}"]`);
+        (again || heading).focus();
+      });
       return;
     }
     const button = event.target.closest('[data-card-id]');
@@ -59,9 +75,12 @@ export function setupProjectPage({ onOpenCard, onEdit }) {
     const { project, loading, today, categories, cards, finished, error } = last;
     const active = body.contains(document.activeElement) ? document.activeElement : null;
     const focusId = active && active.dataset.cardId;
+    const focusRecord = active && active.dataset.recordId;
     const focusToggle = active && active.hasAttribute('data-finished-toggle');
 
     editButton.hidden = !project;
+    quickAdd.hidden = !project;
+    finishedById = new Map();
     if (!project) {
       header.style.removeProperty('--project');
       heading.textContent = loading ? 'Loading…' : 'Not here';
@@ -74,6 +93,8 @@ export function setupProjectPage({ onOpenCard, onEdit }) {
 
     header.style.setProperty('--project', project.color);
     heading.textContent = project.name;
+    quickAddInput.placeholder = `Add a card to ${project.name}`;
+    quickAddLabel.textContent = `Add a card to ${project.name}`;
     const done = finished ? finished.done.length : 0;
     const archived = project.status === PROJECT_STATUS.ARCHIVED ? 'Archived. ' : '';
     line.textContent = `${archived}${endSentence(project, today)} ${openLine(cards.length)}${done ? `, ${done} finished` : ''}.`;
@@ -85,11 +106,17 @@ export function setupProjectPage({ onOpenCard, onEdit }) {
     html += groups.length
       ? `<div class="project-groups">${groups.map((g) => groupHTML(g, today, categories)).join('')}</div>`
       : '<p class="done-quiet">No open cards. To add one, open a card on the board and choose this project.</p>';
-    if (finished && finished.done.length + finished.letGo.length) html += finishedHTML(finished, categories);
+    if (finished && finished.done.length + finished.letGo.length) {
+      for (const card of [...finished.done, ...finished.letGo]) finishedById.set(card.id, card);
+      html += finishedHTML(finished, categories);
+    }
     body.innerHTML = html;
 
     if (focusId) {
       const again = body.querySelector(`[data-card-id="${CSS.escape(focusId)}"]`);
+      (again || heading).focus();
+    } else if (focusRecord) {
+      const again = body.querySelector(`[data-record-id="${CSS.escape(focusRecord)}"]`);
       (again || heading).focus();
     } else if (focusToggle) {
       const again = body.querySelector('[data-finished-toggle]');
@@ -139,12 +166,12 @@ export function setupProjectPage({ onOpenCard, onEdit }) {
     const letGo = card.status === STATUS.LET_GO;
     return `
       <li class="${letGo ? 'is-letgo' : ''}">
-        <div class="record-row record-row-plain">
+        <button type="button" class="record-row" data-record-id="${escapeHTML(card.id)}">
           ${letGo ? LETGO_ICON : CHECK_ICON}
           <span class="record-title">${escapeHTML(card.title)}${letGo ? '<span class="visually-hidden"> (let go)</span>' : ''}</span>
           <span class="record-category"><span class="swatch" style="background: ${escapeHTML(category.color)}"></span>${escapeHTML(category.name)}</span>
           <span class="record-date">${formatShort(finishedDay(card))}</span>
-        </div>
+        </button>
       </li>`;
   }
 
@@ -154,15 +181,20 @@ export function setupProjectPage({ onOpenCard, onEdit }) {
     title() {
       return last && last.project ? last.project.name : 'Project';
     },
+    // A line under the heading: what Archive or Put back did.
     showStatus(text) {
       statusEl.textContent = text;
     },
+    // The quick add field, for the editor to open under.
+    quickAddField: quickAdd.querySelector('.quickadd'),
     focusHeading() {
       heading.focus();
     },
     reset() {
       last = null;
       finishedOpen = false;
+      finishedById = new Map();
+      quickAdd.hidden = true;
       statusEl.textContent = '';
       body.innerHTML = '';
       heading.textContent = '';
