@@ -67,13 +67,13 @@ quick add on the project page, finished rows that open their box with
 "Put back on the board", and What you did naming each card's project. See
 "Slice 2a" below for the plan, the decisions, and both test lists.
 
-**Branch:** 2a is on `claude/nifty-thompson-4doyfu`, not yet merged into
-`main`. Merge it before 2b starts (a fast-forward: `main` hasn't moved
-since 1f), and point GitHub Pages back at `main` if it was switched to
-the side branch for testing.
+**Branch:** 2a was built on `claude/nifty-thompson-4doyfu` and merged
+into `main` on 2026-11-06 (a fast-forward: nothing was rewritten). `main`
+has Phase 1 and slice 2a. If GitHub Pages was switched to the side branch
+for testing, point it back at `main` (Settings > Pages).
 
 **Next: slice 2b, the project page's notes and links** (SPEC "Projects"),
-in a fresh session, once 2a is merged. Things to settle there:
+in a fresh session. Things to settle there:
 - Where notes and links sit on the page (beside the cards on a wide
   screen, above them on a phone?) without pushing the cards out of view.
 - Notes: plain text with line breaks kept, or a little formatting? How
