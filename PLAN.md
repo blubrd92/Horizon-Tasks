@@ -58,8 +58,8 @@ merged into `main` on 2026-10-29 (a fast-forward: nothing was rewritten).
 `main` has all of Phase 1. If GitHub Pages was switched to the side branch
 for testing, point it back at `main` (Settings > Pages).
 
-**Phase 2, Projects: slice 2a built, awaiting your test** (2026-10-29),
-on `claude/nifty-thompson-4doyfu`. Projects, the Projects list, a project
+**Slice 2a: done and confirmed** (2026-11-06), on
+`claude/nifty-thompson-4doyfu`. Projects, the Projects list, a project
 for each card in the editor (with "New project" right there), the
 "↗ November display" tag on cards, and the project page with its open and
 finished cards. Then (2026-11-05) the three 2a proposals you approved: a
@@ -67,16 +67,32 @@ quick add on the project page, finished rows that open their box with
 "Put back on the board", and What you did naming each card's project. See
 "Slice 2a" below for the plan, the decisions, and both test lists.
 
-**Next:** test 2a. Once it's confirmed, committed, and merged, slice 2b
-(the project page's notes and links) starts in a fresh session.
+**Branch:** 2a is on `claude/nifty-thompson-4doyfu`, not yet merged into
+`main`. Merge it before 2b starts (a fast-forward: `main` hasn't moved
+since 1f), and point GitHub Pages back at `main` if it was switched to
+the side branch for testing.
+
+**Next: slice 2b, the project page's notes and links** (SPEC "Projects"),
+in a fresh session, once 2a is merged. Things to settle there:
+- Where notes and links sit on the page (beside the cards on a wide
+  screen, above them on a phone?) without pushing the cards out of view.
+- Notes: plain text with line breaks kept, or a little formatting? How
+  they save (as you type, or a Save button) and what a refused save
+  looks like. A length limit (a Firestore document holds about 1 MB).
+- Links: a title and an address each; only `http://` and `https://`,
+  checked with the browser's own address reader when saved and again
+  when drawn; open in a new tab. Adding, editing, removing, and
+  reordering them. What a link without a title shows.
+- Both stored on the project document (`notes`, `links`), as PLAN 2a's
+  data model planned, and both deleted with the project (Delete's
+  question should then say so).
 
 Open proposals carried over: Undo for Let it go and Mark done on the board
 (the Done view's "Put back on the board" covers getting a card back), Let
 it go in the editor, triage per device instead of per account, pinning
 zone headers on long columns, saving the sample card scripts in `tools/`,
 and a Settings gear on the What you did page (Year starts in is only
-reachable from the board). New in 2a: see "Slice 2a > Proposals". Still
-parked: Done privacy and the Firebase console, and one approved list for
+reachable from the board). Still parked: Done privacy and the Firebase console, and one approved list for
 3a.
 
 ## Phase 2: Projects, split into two slices
@@ -96,9 +112,9 @@ destination that 2b throws away. The cards are also the risky part (the
 query, keeping them in sync with the board); notes and links are plain
 writing on one document, so they make a clean, small 2b.
 
-## Slice 2a: projects, the Projects list, the tag, the project page (awaiting test)
+## Slice 2a: projects, the Projects list, the tag, the project page (confirmed)
 
-### Additions you approved (awaiting test)
+### Additions you approved (confirmed)
 
 You said yes to all three proposals before testing the slice, so they're
 built on top of it and tested together.
