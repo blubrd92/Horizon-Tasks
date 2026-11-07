@@ -77,7 +77,9 @@ for testing, point it back at `main` (Settings > Pages).
 notes and links: Notes and Links panels beside the cards on a wide
 screen and folded above them on a phone; notes as plain text with a
 Save button; links with a title and an http(s) address, added, edited,
-removed, and reordered; both deleted with the project. See "Slice 2b"
+removed, and reordered; both deleted with the project. Plus the one 2b
+proposal you approved: no empty gap under the project page's quick add.
+See "Slice 2b"
 below for the plan, the decisions, and the test list.
 
 **Next:** test 2b. Once it's confirmed, committed, and merged, Phase 2 is
@@ -272,13 +274,17 @@ js/app.js          wiring: saving notes and links, refused saves,
 
 None. No rule changes, no index.
 
-### Proposal (not built)
+### Addition you approved
 
-- **The empty space under the project page's quick add.** About 45px
-  stays empty under the field, held for its "Added to Someday. Edit"
-  line. It was there in 2a, but on a phone it now sits right above the
-  folded Notes row and looks like a mistake. I'd let that line take
-  space only while it says something. Say yes and I'll change it.
+**The empty space under the project page's quick add** (approved
+2026-11-07). The field's "Added to Someday. Edit" line used to hold
+about 45px open even when empty, which on a phone sat right above the
+folded Notes row. Now it takes room only while it says something: on a
+phone the gap from the field to Notes is 24px, the page's usual spacing,
+and the line opens to 44px while a confirmation shows, then closes when
+it fades. On a wide screen the line sits beside the field, so nothing
+moves. The empty line stays in the page, so screen readers still hear
+what appears in it. The board's own quick add is unchanged. (CSS only.)
 
 ### How to test
 
@@ -326,6 +332,10 @@ projects have no notes or links yet.
       two rows, "Notes  (first line)  Show" and "Links  2 links  Show",
       and the first cards are visible without scrolling. Show opens one,
       Hide folds it. Add a link and edit notes from the phone.
+- [ ] Phone width: no empty gap between the project page's quick add
+      and the Notes row. Add a card with Ctrl+Enter: "Added to Someday.
+      Edit" appears under the field, pushing the panels down; a few
+      seconds later it fades and the gap closes again.
 - [ ] Open the same project on a second device or tab and change the
       notes there: the first one shows the change (unless you're typing
       in the box, which is left alone; whoever saves last wins).
@@ -366,6 +376,10 @@ panels folded above the cards with the cards starting about 670px down,
 the summaries, Show and Hide with focus kept, notes and link editing,
 no sideways scroll, every target 44px or taller. The board and What you
 did still load without errors.
+
+The approved addition, measured at 390px and 1,280px: the gap closed
+on a phone (24px), opening to 44px for the confirmation and closing
+again after it fades; on a wide screen nothing moved.
 
 Not checked: real Firestore (the only new writes are two fields on a
 project document, through the same `updateProject` 2a already uses),

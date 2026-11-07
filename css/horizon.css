@@ -2018,6 +2018,13 @@ a.button:hover { color: var(--ink); }
   justify-content: flex-start;
 }
 
+/* Its "Added to Someday. Edit" line takes room only while it says
+   something; on a phone, where it wraps under the field, an empty one
+   would leave a gap above the Notes row. The line stays in the page,
+   empty, so screen readers still hear what appears in it. */
+.project-quickadd:has(.quickadd-status:empty) { row-gap: 0; }
+.project-quickadd .quickadd-line:has(.quickadd-status:empty) { min-height: 0; }
+
 .project-finished .is-letgo .record-title { font-weight: 400; color: var(--ink-secondary); }
 
 /* Notes and links (projectnotes.js). Stacked above the cards until the
