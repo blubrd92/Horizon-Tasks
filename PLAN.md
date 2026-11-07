@@ -72,19 +72,35 @@ into `main` on 2026-11-06 (a fast-forward: nothing was rewritten). `main`
 has Phase 1 and slice 2a. If GitHub Pages was switched to the side branch
 for testing, point it back at `main` (Settings > Pages).
 
-**Slice 2b: built, awaiting your test** (2026-11-07), on
-`claude/tender-wright-y5xpt6`. The project page's
-notes and links: Notes and Links panels beside the cards on a wide
-screen and folded above them on a phone; notes as plain text with a
-Save button; links with a title and an http(s) address, added, edited,
-removed, and reordered; both deleted with the project. Plus the one 2b
-proposal you approved: no empty gap under the project page's quick add.
-See "Slice 2b"
-below for the plan, the decisions, and the test list.
+**Slice 2b: done and confirmed** (2026-11-07), on
+`claude/tender-wright-y5xpt6`. The project page's notes and links: Notes
+and Links panels beside the cards on a wide screen and folded above them
+on a phone; notes as plain text with a Save button; links with a title
+and an http(s) address, added, edited, removed, and reordered; both
+deleted with the project. Plus the one 2b proposal you approved: no
+empty gap under the project page's quick add. **Phase 2 is complete.**
+See "Slice 2b" below for the plan, the decisions, and the test list.
 
-**Next:** test 2b. Once it's confirmed, committed, and merged, Phase 2 is
-done and the next slice is 3a (the Apps Script backend with its token
-check, approved list, and rate limit), in a fresh session.
+**Branch:** 2b is on `claude/tender-wright-y5xpt6`, a few commits ahead
+of `main` with nothing in between, so merging is a fast-forward (nothing
+rewritten). Once it's merged into `main`, point
+GitHub Pages back at `main` if you switched it to the branch for testing
+(Settings > Pages).
+
+**Next: slice 3a, the Apps Script backend** (SPEC "Stack", "Screenshot
+to card" steps 2 and 3, "Security", "Build order" 3a), in a fresh
+session, tested on its own before the site uses it. Things to settle
+there:
+- How the site will reach the script given Apps Script's cross-origin
+  limits (SPEC asks for the approach to be explained before it's built).
+- The token check: verifying the Firebase ID token through the Firebase
+  Auth REST API, and what a refusal returns.
+- One approved list or two (parked below): the script could ask
+  Firestore's `allowlist` instead of keeping its own in Script
+  Properties.
+- The per-day rate limit: how many calls, counted where, reset when.
+- Where the script's address goes (`config.js` has `appsScriptUrl`), and
+  the setup steps in Google Apps Script and the Anthropic console.
 
 Open proposals carried over: Undo for Let it go and Mark done on the board
 (the Done view's "Put back on the board" covers getting a card back), Let
@@ -111,11 +127,9 @@ destination that 2b throws away. The cards are also the risky part (the
 query, keeping them in sync with the board); notes and links are plain
 writing on one document, so they make a clean, small 2b.
 
-## Slice 2b: the project page's notes and links (awaiting test)
+## Slice 2b: the project page's notes and links (confirmed)
 
-Built 2026-11-07 on `claude/tender-wright-y5xpt6` and pushed there as
-"awaiting test" (as 2a was), so you can point GitHub Pages at the branch
-to try it. A "confirmed" commit follows once you say it works.
+Built and confirmed 2026-11-07 on `claude/tender-wright-y5xpt6`.
 
 ### What it does
 
@@ -274,7 +288,7 @@ js/app.js          wiring: saving notes and links, refused saves,
 
 None. No rule changes, no index.
 
-### Addition you approved
+### Addition you approved (confirmed)
 
 **The empty space under the project page's quick add** (approved
 2026-11-07). The field's "Added to Someday. Edit" line used to hold
