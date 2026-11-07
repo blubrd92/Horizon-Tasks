@@ -2020,6 +2020,308 @@ a.button:hover { color: var(--ink); }
 
 .project-finished .is-letgo .record-title { font-weight: 400; color: var(--ink-secondary); }
 
+/* Notes and links (projectnotes.js). Stacked above the cards until the
+   window is 960px wide; from there, a 300px column on the right. */
+.project-layout {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  min-width: 0;
+}
+
+@media (min-width: 960px) {
+  .project-layout:has(> .project-aside:not([hidden])) {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 300px;
+    align-items: start;
+  }
+
+  .project-layout > .project-aside { grid-column: 2; grid-row: 1; }
+  .project-layout > .project-body { grid-column: 1; grid-row: 1; }
+
+  /* Folding is the phone's; here everything shows. */
+  .side-fold,
+  .side-summary { display: none !important; }
+}
+
+.project-aside {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-width: 0;
+}
+
+.side-panel {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-panel);
+  padding: 14px 18px 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-width: 0;
+}
+
+.side-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  min-height: 44px;
+}
+
+.side-title {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: 20px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+
+.side-button,
+.side-add {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0 12px;
+  font-size: 13px;
+  border-color: var(--field-border);
+}
+
+.side-add:disabled {
+  cursor: default;
+  color: var(--ink-placeholder);
+  background: transparent;
+  border-color: var(--border-soft);
+}
+
+/* On a phone, a folded panel is one row: its title, a line of what's in
+   it, and Show. */
+.side-summary {
+  flex: 1;
+  min-width: 0;
+  margin: 0 0 0 4px;
+  font-size: 13px;
+  color: var(--ink-secondary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.side-panel:not(.is-folded) .side-summary { display: none; }
+.side-panel:not(.is-folded) .side-title { margin-right: auto; }
+
+.side-content {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.side-fold {
+  flex: none;
+  padding: 0 14px;
+  font-size: 13px;
+  border-color: var(--field-border);
+}
+
+.side-empty {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--ink-secondary);
+}
+
+.side-status {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.4;
+  color: var(--ink-secondary);
+}
+
+.side-status.is-error { color: var(--overdue-ink); }
+.side-status:empty { display: none; }
+
+.side-foot {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.side-foot .side-note { margin: 0; }
+
+/* Notes: your text as you typed it, line breaks and all. */
+.notes-view {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.notes-text {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.55;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.notes-text.is-empty { color: var(--ink-secondary); }
+
+.notes-form {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.notes-input {
+  min-height: 200px;
+  font-size: 14px;
+  line-height: 1.55;
+}
+
+.notes-form .field-error,
+.notes-form .field-note { margin-top: -4px; }
+
+/* Links: a row each, the whole row the link, a pencil at its end. */
+.links-list {
+  list-style: none;
+  margin: -4px -10px 0;
+  padding: 0;
+}
+
+.link-item {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  min-width: 0;
+}
+
+.link-item + .link-item { border-top: 1px solid #ECE9E1; }
+
+.link-row {
+  flex: 1;
+  min-width: 0;
+  min-height: 52px;
+  padding: 8px 10px;
+  border-radius: var(--radius-button);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--ink);
+  text-decoration: none;
+}
+
+a.link-row:hover { background: var(--surface-soft); color: var(--ink); }
+a.link-row:hover .link-title { text-decoration: underline; }
+a.link-row:focus-visible { outline-offset: -2px; }
+
+.link-icon { flex: none; color: var(--accent); }
+.link-out { flex: none; color: var(--ink-secondary); }
+
+.link-text {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.link-title {
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 1.35;
+  color: var(--accent);
+  overflow-wrap: anywhere;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* An untitled link shows its address, like every other address on the
+   page: in mono. */
+.link-title.is-address {
+  font-family: var(--font-mono);
+  font-size: 12.5px;
+  font-weight: 400;
+  word-break: break-all;
+}
+
+.link-site {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--ink-secondary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Not an http(s) address: gray, and not a link. */
+.link-row.is-broken .link-icon,
+.link-row.is-broken .link-title { color: var(--ink-secondary); }
+
+.link-row.is-broken .link-site {
+  font-family: var(--font-body);
+  white-space: normal;
+}
+
+.link-edit {
+  border-color: transparent;
+  background: transparent;
+  color: var(--ink-secondary);
+}
+
+.link-edit:hover { border-color: var(--field-border); background: var(--surface); color: var(--ink); }
+
+.links-list.is-reordering .link-title { color: var(--ink); }
+
+.link-moves {
+  flex: none;
+  display: flex;
+  gap: 4px;
+}
+
+.link-moves .icon-button:disabled {
+  cursor: default;
+  color: #B9B5AB;
+  background: transparent;
+  border-color: var(--border-soft);
+}
+
+/* The form, in place of the row it changes, or under the list. */
+.link-form-slot { display: block; padding: 8px 0; }
+
+.link-form {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 14px;
+  border: 1px solid var(--border-soft);
+  border-radius: var(--radius-card);
+  background: var(--surface-soft);
+}
+
+.link-form .field-error,
+.link-form .field-note { margin-top: -6px; }
+
+.link-form-foot {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.link-form-foot .small-foot { margin-left: auto; padding-top: 0; }
+
+/* The phone's folded panels: just the row. */
+@media (max-width: 959px) {
+  .side-panel.is-folded { padding-bottom: 14px; }
+
+  .side-panel.is-folded .side-content,
+  .side-panel.is-folded .side-button { display: none; }
+}
+
 @media (max-width: 760px) {
   .done-header { padding: 14px 16px; }
   .done-main { padding: 28px 16px 48px; gap: 24px; }

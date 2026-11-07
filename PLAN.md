@@ -72,28 +72,25 @@ into `main` on 2026-11-06 (a fast-forward: nothing was rewritten). `main`
 has Phase 1 and slice 2a. If GitHub Pages was switched to the side branch
 for testing, point it back at `main` (Settings > Pages).
 
-**Next: slice 2b, the project page's notes and links** (SPEC "Projects"),
-in a fresh session. Things to settle there:
-- Where notes and links sit on the page (beside the cards on a wide
-  screen, above them on a phone?) without pushing the cards out of view.
-- Notes: plain text with line breaks kept, or a little formatting? How
-  they save (as you type, or a Save button) and what a refused save
-  looks like. A length limit (a Firestore document holds about 1 MB).
-- Links: a title and an address each; only `http://` and `https://`,
-  checked with the browser's own address reader when saved and again
-  when drawn; open in a new tab. Adding, editing, removing, and
-  reordering them. What a link without a title shows.
-- Both stored on the project document (`notes`, `links`), as PLAN 2a's
-  data model planned, and both deleted with the project (Delete's
-  question should then say so).
+**Slice 2b: built, awaiting your test** (2026-11-07), on
+`claude/tender-wright-y5xpt6`. The project page's
+notes and links: Notes and Links panels beside the cards on a wide
+screen and folded above them on a phone; notes as plain text with a
+Save button; links with a title and an http(s) address, added, edited,
+removed, and reordered; both deleted with the project. See "Slice 2b"
+below for the plan, the decisions, and the test list.
+
+**Next:** test 2b. Once it's confirmed, committed, and merged, Phase 2 is
+done and the next slice is 3a (the Apps Script backend with its token
+check, approved list, and rate limit), in a fresh session.
 
 Open proposals carried over: Undo for Let it go and Mark done on the board
 (the Done view's "Put back on the board" covers getting a card back), Let
 it go in the editor, triage per device instead of per account, pinning
 zone headers on long columns, saving the sample card scripts in `tools/`,
 and a Settings gear on the What you did page (Year starts in is only
-reachable from the board). Still parked: Done privacy and the Firebase console, and one approved list for
-3a.
+reachable from the board). Still parked: Done privacy and the Firebase
+console, and one approved list for 3a.
 
 ## Phase 2: Projects, split into two slices
 
@@ -111,6 +108,269 @@ the project page. Without a page in 2a, the tag would need a stand-in
 destination that 2b throws away. The cards are also the risky part (the
 query, keeping them in sync with the board); notes and links are plain
 writing on one document, so they make a clean, small 2b.
+
+## Slice 2b: the project page's notes and links (awaiting test)
+
+Built 2026-11-07 on `claude/tender-wright-y5xpt6` and pushed there as
+"awaiting test" (as 2a was), so you can point GitHub Pages at the branch
+to try it. A "confirmed" commit follows once you say it works.
+
+### What it does
+
+A project page gains two white panels, **Notes** and **Links**. On a wide
+screen they sit in a 300px column on the right, beside the cards; the
+cards keep the rest of the width (three groups to a row instead of four).
+On a phone, and anything narrower than 960px, they sit above the cards,
+under the quick add, each folded to a single row until you open it:
+"Notes  Theme: harvest and gratitude.  Show" and "Links  4 links  Show".
+The two rows together take about 150px, so the cards still start on the
+first screen of a phone.
+
+**Notes** read as plain text with your line breaks kept. "Edit" (or "Add
+notes" when there are none) turns them into a box you type in, with Save
+and Cancel under it. **Links** are rows: a link icon, the title, and
+under it the site it goes to ("drive.google.com"). Click the row and the
+address opens in a new tab. Each row has a pencil to edit it. "Add link"
+opens a small form at the bottom of the list: Title (optional) and
+Address. "Reorder" (once there are two) turns the rows into a list with
+an up and a down arrow on each; Done goes back.
+
+### The four questions, settled
+
+**1. Where they sit.** Beside the cards on a wide screen, on the right,
+because the left edge of the page is "now" (the groups run Overdue,
+Today, ... left to right, like the board) and reference material belongs
+off to the side of time, the way the Someday drawer is on the board's
+right. Above the cards on a phone, but folded to one row each (the
+notes' first line, the number of links, and Show), so they never bury
+the cards. Show opens a panel in place and Hide folds it again. The
+breakpoint is 960px wide.
+
+(I first built a preview instead: five lines of notes and three links,
+each with "Show all". On a 390px-wide phone that still pushed the cards
+to about 1,090px down, below the first screen, so I changed it to the
+folded rows before handing it to you.) In the page's reading order (Tab, and a screen reader), the panels
+come before the cards, matching the phone, where they're on top.
+
+**2. Notes.**
+- *Plain text, line breaks kept.* No bold, no lists, no clickable
+  addresses inside notes. Formatting means a little language to learn
+  and a parser to trust, and plain text can never smuggle anything onto
+  the page. Addresses you want to click belong in Links.
+- *A Save button, not saving as you type.* Notes are read far more often
+  than written, so they show as text, and a stray tap on a phone doesn't
+  pop up the keyboard. Saving as you type would write to Firestore every
+  pause and fight with the live updates coming back. Ctrl+Enter (Cmd+Enter
+  on a Mac) also saves. Escape cancels only if you haven't changed
+  anything.
+- *A refused save:* the box opens again with everything you typed still
+  in it, and a rose line under it: "Your notes didn't save
+  (permission-denied). They're still here; try Save again."
+- *Nothing typed gets lost by wandering off.* Leave the page with unsaved
+  notes (Back to the board, Projects, the browser's Back) and the text is
+  kept for this visit: open the project again and the box is open with
+  it, saying "Not saved yet." Reloading or closing the tab with unsaved
+  notes gets the browser's own "Leave site?" question.
+- *Limit: 10,000 characters* (about four printed pages). A Firestore
+  document holds about 1 MB, so this leaves plenty of room. The box stops
+  at 10,000, and a line counts down from 9,000 ("812 characters left").
+  Spaces and empty lines at the very end are trimmed when saved; notes
+  that are all spaces count as none.
+
+**3. Links.**
+- *A title and an address each.* The title is optional, up to 120
+  characters. The address is up to 2,000.
+- *Only http:// and https://.* On Save, the address goes through the
+  browser's own address reader (`new URL`), and is refused unless it
+  comes out as http or https with a site name. "javascript:", "data:",
+  "mailto:", "file:" and the rest get "Only web addresses (http:// or
+  https://) can be saved." Something that isn't an address at all gets
+  "That doesn't look like a web address."
+- *One convenience:* an address typed with no `http` part at all
+  ("drive.google.com/drive/folders/...") gets `https://` put in front
+  before it's checked, the way a browser's address bar does it. Anything
+  that names another kind (`mailto:`) is checked as typed and refused.
+  An address with a space in it is refused too: Chrome's address reader
+  quietly turns "not a link" into a site called "not%20a%20link", and a
+  real address writes its spaces as `%20`.
+- *Checked again when drawn.* Every address is read again when the page
+  draws it. One that isn't http(s) (typed into the console, say) shows
+  its title in gray with "This address can't be opened from here." and
+  is not a link at all.
+- *Opens in a new tab*, with `rel="noopener noreferrer"`, so the site
+  you open can't reach back into Horizon. A screen reader hears "(opens
+  in a new tab)".
+- *Without a title*, a link shows its address minus the `https://` and
+  `www.` ("drive.google.com/drive/folders/1AbC…"), on up to two lines,
+  and skips the site line under it (it would say the same thing). The
+  site line under titled links is always shown, so a title can't hide
+  where a link really goes.
+- *Adding:* "Add link" at the bottom. *Editing:* the pencil turns that
+  row into the same form, with "Remove link" in it. *Removing* happens at
+  once from there (you're already two taps in) and says so: "Removed
+  “Reference images”." *Reordering:* "Reorder" gives each row Move up and
+  Move down buttons (44px each); each move saves right away and keeps
+  focus on the button you pressed. Done returns to the plain list.
+- *Up to 50 links* a project. At 50, Add link is greyed with a note.
+- *Refused saves:* a rose line in the Links panel ("“Reference images”
+  didn't save (permission-denied).") and, for an add or an edit, the form
+  opens again with what you typed.
+
+**4. Stored and deleted with the project.** Both live on the project's own
+document, as 2a planned: `notes` (text) and `links` (a list of `{ id,
+title, url }`, in the order shown). The project document already sits
+under `users/{uid}`, so **no rule change, no index, no setup.** Deleting
+the project deletes its document, and the notes and links go with it.
+Delete's question now says so when there are any: "Delete “November
+display”? Its notes and 3 links are deleted with it. Its 6 cards (2
+open, 4 done or let go) stay where they are, without a project. This
+can't be undone."
+
+### Decisions I made that the questions didn't cover (change any of them)
+
+1. **Two panels**, Notes then Links, white like the Done record's lists,
+   with headings in the wordmark's typeface at 20px.
+2. **Last save wins** if you edit the same notes on two devices at once.
+   It's your own board; a merge tool would be more than it's worth.
+3. **Editing notes on an archived project is allowed.** Archived means
+   "done with it", not "frozen".
+4. **No rules check on length or addresses.** The rules already lock the
+   document to you; the app checks lengths and addresses, and checks
+   addresses again when drawing, which is what actually protects the
+   page. (Rules could also check them; say so if you want it.)
+5. **The links' ids** are short random strings, only so the page can keep
+   track of which row is which while you edit and reorder.
+6. **On a phone, both panels start folded every time** you open the
+   page; it doesn't remember which ones you opened.
+
+### Data
+
+Project document, two new fields:
+
+```
+notes   string, up to 10,000 characters; "" when there are none
+links   list of { id: string, title: string ("" for none), url: string }
+```
+
+A project made before 2b has neither; it reads as no notes and no links.
+Cards: unchanged.
+
+### Files touched
+
+```
+index.html         the Notes and Links panels on the project page
+css/horizon.css    the panels, the two-column layout, the phone preview
+js/links.js        NEW: checking and shortening addresses, the notes
+                   limit, making link lists; no Firebase, no page
+js/projectnotes.js NEW: draws and runs the two panels; reports saves
+js/model.js        notes and links on the project document
+js/app.js          wiring: saving notes and links, refused saves,
+                   Delete's question, unsaved notes when leaving
+```
+
+### Setup steps (yours)
+
+None. No rule changes, no index.
+
+### Proposal (not built)
+
+- **The empty space under the project page's quick add.** About 45px
+  stays empty under the field, held for its "Added to Someday. Edit"
+  line. It was there in 2a, but on a phone it now sits right above the
+  folded Notes row and looks like a mistake. I'd let that line take
+  space only while it says something. Say yes and I'll change it.
+
+### How to test
+
+Nothing to set up. Open a project page (with `?today=` if you like). Your
+projects have no notes or links yet.
+- [ ] Wide window: Notes and Links sit in a column on the right, the
+      cards to their left. Notes says "No notes yet." with Add notes;
+      Links says "No links yet. Add one for things like a Drive folder
+      of reference images."
+- [ ] Add notes: a box opens with the cursor in it. Type a few lines with
+      an empty line between two of them. Save (or Ctrl+Enter): the notes
+      show with your line breaks, and Edit is back.
+- [ ] Edit, change something, Cancel: unchanged. Edit, change nothing,
+      press Escape: it closes. Change something and press Escape: it
+      stays open (Escape never throws away typing).
+- [ ] Edit, type something, then Back to the board without saving. Open
+      the project again: the box is open with your text and "Not saved
+      yet." Cancel throws it away.
+- [ ] Edit, type, then reload the page: the browser asks whether to leave.
+- [ ] Paste a lot of text: once past 9,000 characters a countdown
+      appears; the box stops at 10,000.
+- [ ] Edit, delete everything, Save: back to "No notes yet."
+- [ ] Add link: a form under the list, cursor in Title. Save with no
+      address: "Type the link's address." Type `mailto:you@example.com`:
+      "Only web addresses (http:// or https://) can be saved." Type
+      `not a link`: "That doesn't look like a web address."
+- [ ] Paste a real Drive folder address, title it "Reference images",
+      Save: a row with the title in blue and "drive.google.com" under it.
+      Click it: the folder opens in a new tab.
+- [ ] Add one with no title and no `https://` (just
+      `example.com/some/page`): it saves, and the row shows
+      "example.com/some/page" in the mono type, no site line.
+- [ ] The pencil on a row: the row becomes the form, filled in. Change
+      the title, Save: the row follows. The pencil again, Remove link:
+      the row is gone and "Removed "...". " shows under Links.
+- [ ] With three or more links, Reorder: each row gets up and down
+      arrows; the top one's up and the bottom one's down are greyed. Move
+      one with the keyboard (Tab to an arrow, Enter, Enter): it moves and
+      the arrow keeps focus. Done: plain rows again, in the new order.
+      Reload: the order stuck.
+- [ ] Edit project > Delete project: the question now starts "Its notes
+      and 2 links are deleted with it." Keep it. (On a project with
+      neither, it doesn't mention them.)
+- [ ] Phone width (or a real phone): the panels sit above the cards as
+      two rows, "Notes  (first line)  Show" and "Links  2 links  Show",
+      and the first cards are visible without scrolling. Show opens one,
+      Hide folds it. Add a link and edit notes from the phone.
+- [ ] Open the same project on a second device or tab and change the
+      notes there: the first one shows the change (unless you're typing
+      in the box, which is left alone; whoever saves last wins).
+- [ ] In the Firebase console, the project document has `notes` (text)
+      and `links` (a list of maps with `id`, `title`, `url`). Change one
+      link's `url` to `javascript:alert(1)` by hand: the page shows that
+      link in gray with "This address can't be opened from here.", and
+      it isn't clickable. Fix it with the pencil.
+
+What I checked here, in Chromium with a pretend Firebase, Pacific time,
+`?today=2026-10-22`, a project seeded with notes and four links (one
+`javascript:`, one untitled, one with HTML in its title): 144 checks, all
+passing, no console errors. The address checks (Drive without
+`https://`, `localhost:8080`, a host with a port, capitals, `javascript:`
+in two spellings, `mailto:`, `data:`, `ftp:`, `chrome:`, blank, a bare
+`https://`, words with spaces, an address over 2,000 characters), the
+draw-time check, short addresses and site names, trimming notes, and the
+list changes (move at the edges, replace, add, remove, reading messy
+lists from the console). The wide layout (the 300px column level with the
+cards, no sideways scroll, even with 50 links); line breaks kept; HTML in
+notes and titles shown as text; links with `target="_blank"` and
+`rel="noopener noreferrer"`; the bad address never becoming a link.
+Notes: save (one write, trimmed), save with nothing changed (no write),
+Cancel, both Escapes, a change from elsewhere while typing leaving the
+box alone, a refused save bringing the text back with its line and a
+retry working, the countdown and the limit, all spaces saving as none,
+the unsaved draft surviving Back to the board and a detour to another
+project, and Cancel dropping it. Links: add (with each refusal, and
+`https://` added), the stored fields, focus on the new row, edit in
+place, a link added elsewhere while the form was open kept on Save,
+Escape, fixing the bad address, remove with its line, reorder by mouse
+and keyboard with focus following and moving to the other arrow at the
+bottom, a refused reorder saying so in rose and reverting, a refused add
+bringing the form back with what was typed, the 50 limit. Delete's
+question with notes and links, with notes only, and with neither;
+Delete itself; a missing project showing no panels. At 390px: both
+panels folded above the cards with the cards starting about 670px down,
+the summaries, Show and Hide with focus kept, notes and link editing,
+no sideways scroll, every target 44px or taller. The board and What you
+did still load without errors.
+
+Not checked: real Firestore (the only new writes are two fields on a
+project document, through the same `updateProject` 2a already uses),
+a real phone, and the browser's "Leave site?" question (headless Chrome
+doesn't show it).
 
 ## Slice 2a: projects, the Projects list, the tag, the project page (confirmed)
 

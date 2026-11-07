@@ -42,6 +42,9 @@
 //                  moves or hides anything.
 //   status         "active" or "archived"
 //   archivedAt     Firestore timestamp, or null
+//   notes          string, up to 10,000 characters; "" or missing for none
+//   links          list of { id, title, url }, in the order shown; title
+//                  is "" for none, url an http(s) address (see links.js)
 //   createdAt, updatedAt   Firestore timestamps
 //
 // The profile document also keeps the visit record that morning triage and
@@ -55,6 +58,7 @@
 //                               starts in (see record.js)
 
 import { isISODate, toISO } from './dates.js';
+import { normalizeLinks } from './links.js';
 
 export const STATUS = {
   OPEN: 'open',
@@ -92,7 +96,8 @@ export const PROJECT_STATUS = {
 };
 
 // A project with defaults filled in, the same way normalizeCard does for
-// cards. A color that isn't a plain "#RRGGBB" becomes gray.
+// cards. A color that isn't a plain "#RRGGBB" becomes gray. A project made
+// before notes and links existed reads as having none.
 export function normalizeProject(id, data) {
   return {
     id,
@@ -101,6 +106,8 @@ export function normalizeProject(id, data) {
     endDate: readDueDate(data.endDate),
     status: data.status === PROJECT_STATUS.ARCHIVED ? PROJECT_STATUS.ARCHIVED : PROJECT_STATUS.ACTIVE,
     archivedAt: millis(data.archivedAt),
+    notes: typeof data.notes === 'string' ? data.notes : '',
+    links: normalizeLinks(data.links),
     createdAt: millis(data.createdAt),
     updatedAt: millis(data.updatedAt),
   };

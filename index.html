@@ -218,7 +218,83 @@
         </div>
       </div>
       <p id="project-status" class="done-status" role="status"></p>
-      <div id="project-body" class="done-body project-body"></div>
+      <!-- Notes and links (projectnotes.js), then the cards. On a wide
+           screen the panels sit in a column on the right; on a phone,
+           above the cards, each folded to one row until you open it.
+           They come first in the page's reading order, as on a phone. -->
+      <div class="project-layout">
+        <aside id="project-aside" class="project-aside" aria-label="Notes and links" hidden>
+          <section id="notes-panel" class="side-panel" aria-labelledby="notes-heading">
+            <div class="side-head">
+              <h2 id="notes-heading" class="side-title">Notes</h2>
+              <!-- The phone's folded row: a line of the notes, and Show. -->
+              <p id="notes-summary" class="side-summary"></p>
+              <button type="button" id="notes-edit" class="button side-button">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20h4L19 9l-4-4L4 16z"></path><path d="M13.5 6.5l4 4"></path></svg>
+                <span id="notes-edit-label">Edit</span>
+              </button>
+              <button type="button" id="notes-fold" class="button side-fold" aria-controls="notes-content" aria-expanded="false" aria-label="Show notes">Show</button>
+            </div>
+            <div id="notes-content" class="side-content">
+              <div id="notes-view" class="notes-view">
+                <p id="notes-text" class="notes-text"></p>
+              </div>
+              <form id="notes-form" class="notes-form" novalidate hidden>
+                <label for="notes-input" class="visually-hidden">Notes for this project</label>
+                <textarea id="notes-input" class="field-input field-notes notes-input" rows="8" aria-describedby="notes-count"></textarea>
+                <p id="notes-count" class="field-note notes-count"></p>
+                <p id="notes-error" class="field-error side-error" hidden></p>
+                <div class="small-foot">
+                  <button type="button" id="notes-cancel" class="button">Cancel</button>
+                  <button type="submit" class="button button-primary">Save</button>
+                </div>
+              </form>
+            </div>
+          </section>
+
+          <section id="links-panel" class="side-panel" aria-labelledby="links-heading">
+            <div class="side-head">
+              <h2 id="links-heading" class="side-title">Links</h2>
+              <p id="links-summary" class="side-summary"></p>
+              <button type="button" id="links-reorder" class="button side-button" hidden>Reorder</button>
+              <button type="button" id="links-fold" class="button side-fold" aria-controls="links-content" aria-expanded="false" aria-label="Show links">Show</button>
+            </div>
+            <p id="links-status" class="side-status" role="status"></p>
+            <div id="links-content" class="side-content">
+              <div id="links-body" class="links-body"></div>
+              <div class="side-foot">
+                <button type="button" id="links-add" class="button side-add" aria-describedby="links-full">
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"></path></svg>
+                  Add link
+                </button>
+                <p id="links-full" class="field-note side-note" hidden></p>
+              </div>
+            </div>
+
+            <!-- Adding or changing a link. Moved into place by
+                 projectnotes.js: under the list for a new link, or in
+                 place of the row being changed. -->
+            <form id="link-form" class="link-form" novalidate hidden>
+              <label class="field">Title
+                <input type="text" id="link-title" class="field-input" autocomplete="off" aria-describedby="link-title-note">
+              </label>
+              <p id="link-title-note" class="field-note">Optional. Without one, the address shows.</p>
+              <label class="field">Address
+                <input type="url" id="link-url" class="field-input" autocomplete="off" inputmode="url" spellcheck="false" placeholder="https://drive.google.com/…" aria-describedby="link-url-error">
+              </label>
+              <p id="link-url-error" class="field-error" hidden></p>
+              <div class="link-form-foot">
+                <button type="button" id="link-remove" class="button button-danger">Remove link</button>
+                <div class="small-foot">
+                  <button type="button" id="link-cancel" class="button">Cancel</button>
+                  <button type="submit" class="button button-primary">Save</button>
+                </div>
+              </div>
+            </form>
+          </section>
+        </aside>
+        <div id="project-body" class="done-body project-body"></div>
+      </div>
     </main>
   </div>
 

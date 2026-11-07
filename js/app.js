@@ -31,6 +31,7 @@ import { copyText, putBackChanges, rangeFor, rangeTimes } from './record.js';
 import { NEW_PROJECT, findByName, finishedOf, nextColor, openCounts, projectIdFromHash } from './projects.js';
 import { setupProjectList } from './projectlist.js';
 import { setupProjectPage } from './projectpage.js';
+import { setupProjectNotes } from './projectnotes.js';
 import { setupRecordBox } from './recordbox.js';
 
 const views = {
@@ -770,8 +771,26 @@ async function start() {
       else if (!total) cards = 'It has no cards.';
       else if (open && closed) cards = `Its ${plural(total)} (${open} open, ${closed} done or let go) stay where they are, without a project.`;
       else cards = `Its ${plural(total)} ${open ? 'on the board' : 'in What you did'} ${total === 1 ? 'stays where it is' : 'stay where they are'}, without a project.`;
-      return `Delete \u201c${project.name}\u201d? ${cards} This can't be undone.`;
+      return `Delete \u201c${project.name}\u201d? ${heldText(project)}${cards} This can't be undone.`;
     },
+  });
+
+  // Delete's word on what goes with the project: "Its notes and 3 links
+  // are deleted with it. " Nothing, if it has neither.
+  function heldText(project) {
+    const n = project.links.length;
+    const links = n ? `${n} ${n === 1 ? 'link' : 'links'}` : '';
+    if (project.notes && links) return `Its notes and ${links} are deleted with it. `;
+    if (project.notes) return 'Its notes are deleted with it. ';
+    if (links) return `Its ${links} ${n === 1 ? 'is' : 'are'} deleted with it. `;
+    return '';
+  }
+
+  // The page's Notes and Links. Saves show at once; a refusal brings back
+  // what you typed (see projectnotes.js).
+  const projectNotes = setupProjectNotes({
+    onSaveNotes: (id, notes) => fb.updateProject(uid, id, { notes }),
+    onSaveLinks: (id, links) => fb.updateProject(uid, id, { links }),
   });
 
   const projectPage = setupProjectPage({
@@ -849,6 +868,8 @@ async function start() {
       finished: projectFinished,
       error: projectError,
     });
+    // The panels wait until the page has its project and the cards.
+    projectNotes.render(project && latest ? project : null);
     document.title = `${projectPage.title()} \u00b7 Horizon`;
   }
 
@@ -886,6 +907,7 @@ async function start() {
     }
     if (was === 'project') {
       stopProjectQuery();
+      projectNotes.leave();
       projectPage.reset();
       projectQuickAdd.clear();
     }
@@ -1033,6 +1055,8 @@ async function start() {
     stopDoneQueries();
     doneScreen.reset();
     stopProjectQuery();
+    projectNotes.leave();
+    projectNotes.forget();
     projectPage.reset();
     projectList.close();
     projectQuickAdd.clear();
