@@ -81,11 +81,10 @@ deleted with the project. Plus the one 2b proposal you approved: no
 empty gap under the project page's quick add. **Phase 2 is complete.**
 See "Slice 2b" below for the plan, the decisions, and the test list.
 
-**Branch:** 2b is on `claude/tender-wright-y5xpt6`, a few commits ahead
-of `main` with nothing in between, so merging is a fast-forward (nothing
-rewritten). Once it's merged into `main`, point
-GitHub Pages back at `main` if you switched it to the branch for testing
-(Settings > Pages).
+**Branch:** 2b was built on `claude/tender-wright-y5xpt6` and merged
+into `main` on 2026-11-07 (a fast-forward: nothing was rewritten). `main`
+has Phases 1 and 2. If GitHub Pages was switched to the side branch for
+testing, point it back at `main` (Settings > Pages).
 
 **Next: slice 3a, the Apps Script backend** (SPEC "Stack", "Screenshot
 to card" steps 2 and 3, "Security", "Build order" 3a), in a fresh
