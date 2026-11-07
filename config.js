@@ -24,8 +24,11 @@ export const config = {
   // person, named with their Google email in lowercase. Add or remove people
   // there in the Firebase console. (firestore.rules explains why.)
 
-  // Phase 3: the URL of your deployed Google Apps Script web app. The
-  // allowlist of user IDs it accepts lives in that script's Script Properties.
+  // Phase 3: the URL of your deployed Google Apps Script web app (it ends in
+  // /exec). Not a secret: the script turns away anyone who isn't signed in
+  // and on the approved list above. The script checks that same Firestore
+  // list; its own settings, including the Anthropic API key, live in its
+  // Script Properties (see apps-script/Code.gs).
   appsScriptUrl: '',
 
   // The categories a brand-new user starts with. After the first sign-in,

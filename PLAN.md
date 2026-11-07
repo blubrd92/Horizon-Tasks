@@ -86,28 +86,460 @@ into `main` on 2026-11-07 (a fast-forward: nothing was rewritten). `main`
 has Phases 1 and 2. If GitHub Pages was switched to the side branch for
 testing, point it back at `main` (Settings > Pages).
 
-**Next: slice 3a, the Apps Script backend** (SPEC "Stack", "Screenshot
-to card" steps 2 and 3, "Security", "Build order" 3a), in a fresh
-session, tested on its own before the site uses it. Things to settle
-there:
-- How the site will reach the script given Apps Script's cross-origin
-  limits (SPEC asks for the approach to be explained before it's built).
-- The token check: verifying the Firebase ID token through the Firebase
-  Auth REST API, and what a refusal returns.
-- One approved list or two (parked below): the script could ask
-  Firestore's `allowlist` instead of keeping its own in Script
-  Properties.
-- The per-day rate limit: how many calls, counted where, reset when.
-- Where the script's address goes (`config.js` has `appsScriptUrl`), and
-  the setup steps in Google Apps Script and the Anthropic console.
+**Slice 3a: built, awaiting your test** (2026-11-07), on
+`claude/affectionate-babbage-xbq6e8`. The Apps Script backend on its own:
+`apps-script/Code.gs` (the gate: a real sign-in, on the approved list,
+under today's limit; one action, `ping`, behind it; and `checkSetup`, run
+from the editor), plus `apps-script/console-test.js`, a test you paste
+into the browser console on the live site. The site itself doesn't change
+and doesn't call the script yet. See "Slice 3a" below for the six
+questions settled, the setup steps, and the test list.
+
+**Next: set up and test 3a** (see "Slice 3a", Setup steps and How to
+test), then send me the web app's address so it goes into `config.js`,
+and I'll commit the slice as confirmed. After it's merged, slice 3b
+(screenshot to Inbox draft, and the Inbox review panel) in a fresh session.
 
 Open proposals carried over: Undo for Let it go and Mark done on the board
 (the Done view's "Put back on the board" covers getting a card back), Let
 it go in the editor, triage per device instead of per account, pinning
 zone headers on long columns, saving the sample card scripts in `tools/`,
 and a Settings gear on the What you did page (Year starts in is only
-reachable from the board). Still parked: Done privacy and the Firebase
-console, and one approved list for 3a.
+reachable from the board). New from 3a: a total daily cap across everyone,
+and updating SPEC's line about the script's allowlist (both under "Slice
+3a", Proposals). Still parked: Done privacy and the Firebase console. (One
+approved list is settled: see "Slice 3a", question 3.)
+
+## Slice 3a: the Apps Script backend (built, awaiting your test)
+
+Built 2026-11-07 on `claude/affectionate-babbage-xbq6e8`. Nothing on the
+site changes in this slice. The backend is built and tested on its own,
+from the browser's console; 3b is the first slice where the site calls it.
+
+### What it does
+
+A small Google Apps Script web app, `apps-script/Code.gs`, that you paste
+into script.google.com and deploy. In 3a it has one job: deciding who may
+use it. Every request passes a gate (a real Horizon sign-in, still valid,
+on the approved list, under today's limit), and only then does the script
+do what was asked. In 3a the only thing you can ask for is `ping`, which
+does nothing except answer "you got through" with your user ID, your
+email, and how many calls you've used today. 3b adds `screenshot` and 3c
+adds `quickadd`, behind the same gate, and those are the only places the
+Anthropic key will ever be used.
+
+It also has `checkSetup`, a function you run from the Apps Script editor,
+not from the web. It checks every Script Property and says in plain words
+whether the Firebase key, the Firestore project, the Anthropic key, and the
+Haiku model all answer, and shows the date and time where your day ends.
+
+### The six questions, settled
+
+**1. How the site reaches the script (the cross-origin problem).**
+
+A page on `blubrd92.github.io` asking `script.google.com` for something is
+a cross-origin request: one website talking to another. Browsers allow it
+only when the other site says yes. For anything beyond a plain request,
+the browser first sends a separate question, the "preflight" (an OPTIONS
+request: "may I send you this?"), and Apps Script has no way to answer
+one. So any request that triggers a preflight dies before it starts. Two
+things trigger it: a custom header, such as `Authorization: Bearer ...`,
+the usual home for a sign-in token; and a body labeled as JSON.
+
+The approach: send a "simple" request, the kind that needs no preflight.
+A POST, with the body labeled plain text (`Content-Type: text/plain`), and
+the token inside the body beside everything else:
+`{"action": "ping", "idToken": "..."}`. The body really is JSON; only the
+label says text, and the script reads it as JSON. Apps Script sends its
+answer by way of a redirect to a one-time address on
+`script.googleusercontent.com` (Google does this for security reasons of
+its own), the browser follows it, and that answer carries the header
+`Access-Control-Allow-Origin: *`, which means "any page may read this."
+So the page can read it. No proxy, no second service, nothing to host.
+
+What follows from that:
+
+- *Every answer arrives as "200 OK", even a refusal.* Apps Script can't
+  send any other status. So every answer is JSON saying `"ok": true` or
+  `"ok": false` with a code, and the site reads that, never the status.
+- *The address is public,* like the Firebase config: it will sit in
+  `config.js` on GitHub, and anyone can send requests to it. That's fine,
+  because the gate turns away everything that doesn't carry a valid
+  sign-in from your Firebase project for a person on your approved list.
+  The protection is the gate, not the secrecy of the address.
+- *"Any page may read this" sounds loose,* but an answer only ever holds
+  things about the person whose token was sent, and no other website can
+  get your token: it lives in the browser's storage for
+  `blubrd92.github.io`, which other sites can't open.
+- *No cookies go with the request* (`credentials: 'omit'`), so the
+  Google account you're logged into in the browser plays no part. The
+  script knows you only by the token you send.
+- *The token rides in the body, not the address* (`?idToken=...`).
+  Addresses end up in server logs and browser history. Bodies don't.
+
+In the deployment this means "Execute as: Me" and "Who has access:
+Anyone". "Anyone" sounds alarming; it means Google itself doesn't demand
+a Google login before passing a request to the script. The alternative,
+"Anyone with a Google account", makes Google answer the browser with a
+login page, which breaks the cross-origin answer. The script's own gate
+does the checking instead.
+
+What I couldn't verify from here: one Reddit report says this pattern
+worked on a desktop but was blocked in Chrome on a phone. I suspect that
+person relied on Google login cookies, which we don't use. 3b's test list
+will include the phone, since 3a's test runs in a desktop console.
+
+**2. The token check.**
+
+When you sign in, Firebase gives your browser an ID token: a note signed
+by Google saying "this is user X, with email Y, signed in to project
+horizontasks-29d6c", good for one hour. The site renews it on its own.
+Apps Script can't check Google's signature itself (it has no tool for
+verifying that kind of signature), so the script hands the token to the
+Firebase Auth REST API (`accounts:lookup`). Firebase answers with the
+account if the token is genuine and current, and with `INVALID_ID_TOKEN`
+if it isn't. I sent it a token with a forged signature from here and got
+exactly that.
+
+The gate, in order. The first check that fails ends the request.
+
+1. **Read the request.** Not JSON, or an action it doesn't know:
+   `bad-request`.
+2. **Script Properties in place** (question 5): `not-set-up`.
+3. **A token at all:** `no-token`.
+4. **A first look at the token, trusting nothing yet:** shaped like a
+   token, meant for your project, issued by Firebase for your project,
+   not expired, under 4,000 characters (real ones are about 1,000).
+   Anything off: `bad-token`, without spending a call to Google. This
+   throws out junk cheaply; each call to Google counts against Apps
+   Script's 20,000 a day.
+5. **Firebase confirms it:** forged, expired, deleted, or disabled
+   account: `bad-token`. The script also checks that Firebase's answer is
+   about the same user the token names.
+6. **A verified email,** the same requirement `firestore.rules` makes:
+   `not-approved`. Google accounts are always verified.
+7. **On the approved list** (question 3): `not-approved`.
+8. **Under today's limit** (question 4): `over-limit`.
+
+If Google can't be reached, or answers something unexpected:
+`unavailable`. The gate fails closed: whenever it's unsure, the answer
+is no.
+
+What every refusal returns. The shape is always
+`{ "ok": false, "error": "<code>", "message": "<sentence>" }`; the
+sentences are written so 3b can show them as they are.
+
+| Code | When | Message |
+|---|---|---|
+| `bad-request` | not JSON, or an unknown action | Horizon's backend didn't understand that request. |
+| `not-set-up` | a Script Property missing or malformed (the answer also lists which) | Horizon's backend isn't set up yet. Run checkSetup in the Apps Script editor. |
+| `no-token` | no token sent | Sign in to Horizon first. |
+| `bad-token` | junk, wrong project, expired, forged, deleted or disabled account | Your sign-in couldn't be confirmed. Sign out and back in, then try again. |
+| `not-approved` | not on the list, or email not verified | This Horizon is private, and your account isn't on its approved list. |
+| `over-limit` | today's limit reached (the answer also carries `used`, `limit`, `day`) | You've used today's AI requests. They start again at midnight. |
+| `busy` | two requests collided and one waited more than 10 seconds | Horizon's backend is busy. Try again in a moment. |
+| `unavailable` | Google unreachable, an unexpected answer, or a bug | Horizon's backend couldn't reach Google just now. Try again in a moment. |
+
+Every refusal also lands in the script's Executions log (Apps Script
+editor, left menu) with its code and, once known, the user ID. Tokens and
+keys never go in the log.
+
+For 3b: on `bad-token`, the site should ask Firebase for a fresh token
+and try once more before telling you anything, since an hour-old token is
+the usual cause.
+
+**3. One approved list, not two.**
+
+Settled: one list, the `allowlist` collection in Firestore that you
+already keep. The script asks Firestore "is this person on the list?"
+with the caller's own token, the exact question the site asks at sign-in:
+the document `allowlist/{their email}`. Firestore checks the token itself
+and applies `firestore.rules`, which let a person look up only their own
+email. A document there means yes; anything else means no.
+
+What it protects: the day you remove a colleague, you remove them in one
+place. With two lists, forgetting the second would leave someone locked
+out of the board but still spending your Anthropic key. A fork sets up
+nothing extra, and the rules don't change.
+
+What it costs, honestly: the script now leans on `firestore.rules` being
+right, and each call reads one document (the free plan allows 50,000 a
+day). And the caller's token would let the script read that person's
+cards too. This script never asks for them; it asks the one question,
+and the code is short enough to read.
+
+This departs from SPEC "Screenshot to card" step 3, which puts the list
+in Script Properties. `config.js` said the same in its comment, and that
+comment now points to Firestore. SPEC itself I left alone (see
+Proposals).
+
+**4. The daily limit.**
+
+- **How many:** 100 calls per person per day, changed with the
+  `DAILY_LIMIT` Script Property. The script reads it on every call, so a
+  change takes effect at once, with no new deployment. 0 switches the AI
+  features off for everyone: an off switch you can reach from your phone.
+- **Counted where:** in Script Properties, one row per person, named by
+  Firebase user ID: `usage:<user ID>` holding `{"day":"2026-11-07","count":12}`.
+  Only calls that pass the whole gate count, so strangers can neither
+  fill the storage nor use up your count. Every call that passes counts,
+  whether or not it goes on to work (ping too, which is how you can test
+  the limit).
+- **Resets when:** at midnight in `TIME_ZONE` (for you,
+  `America/Los_Angeles`), or the script project's own time zone if unset.
+  The day comes from the script's clock, never the browser's, so a page
+  can't claim it's already tomorrow. Nothing runs at midnight: a count
+  from yesterday simply doesn't match today, and the next call starts
+  over at 1.
+- **Two at once:** a lock (Apps Script's LockService) makes two calls in
+  the same instant count as two, not one.
+
+Why 100. At Haiku's price ($0.10 per million tokens read, $0.50 per
+million written, from Anthropic's current model table), a screenshot of
+about 3,000 tokens with an answer of up to about 1,500 costs roughly a
+tenth of a cent. That's my estimate, not a measurement; 3b will measure a
+real screenshot. A busy day of quick adds and screenshots might be 40 to
+60 calls. So the limit isn't about your normal use. It caps what a
+runaway bug (the site retrying in a loop) or a stolen token can do in a
+day: at 100 a day, every day, about $3 a month at the very worst.
+
+Why not count in Firestore: you can write to your own data there, so a
+stolen token could reset its own counter. Script Properties can be
+written only by the script and by you. Why not Apps Script's cache: it
+forgets everything within six hours.
+
+The real backstop sits in the Claude Console: a monthly spend limit on a
+workspace of Horizon's own (Setup, step A).
+
+**5. Where things live.**
+
+| Value | Where | Secret? |
+|---|---|---|
+| `ANTHROPIC_API_KEY` | Script Properties only | Yes. Never in the repo, never in `config.js`, never sent to a browser, never logged. |
+| `FIREBASE_PROJECT_ID` | Script Properties (a copy of `config.js` `projectId`) | No |
+| `FIREBASE_WEB_API_KEY` | Script Properties (a copy of `config.js` `apiKey`) | No: it names your project, it opens nothing |
+| `DAILY_LIMIT` | Script Properties, optional, default 100 | No |
+| `TIME_ZONE` | Script Properties, optional, default the project's | No |
+| The script's address | `config.js` `appsScriptUrl` | No |
+| The model name and API version | `Code.gs` itself | No; the same for every copy |
+
+`Code.gs` holds nothing that belongs to your copy of Horizon, so a fork
+pastes it unchanged, the same way `firestore.rules` works. The two
+Firebase values appear twice (in `config.js` and Script Properties)
+because Apps Script can't read `config.js`; neither is secret, and
+`checkSetup` confirms they match a real project. Script Properties are
+visible to anyone with edit access to the Apps Script project, which is
+you alone. Deploying as "Execute as: Me" doesn't show them to anyone.
+
+**6. Testing it alone.** See How to test, below.
+
+### Decisions I made that the questions didn't cover (change any of them)
+
+1. **Opening the address in a browser tab** shows
+   `{"ok":true,"service":"Horizon backend",...}` and nothing else, so you
+   can tell the deployment is live.
+2. **A malformed `DAILY_LIMIT`** (like `lots`) refuses every call with
+   `not-set-up` rather than quietly using 100. A misspelled `TIME_ZONE`
+   can't be caught that way (Apps Script quietly treats unknown zones as
+   GMT), so `checkSetup` prints the current time there for you to eyeball.
+3. **`not-set-up` names the missing properties** in its answer. The
+   names are already public in `Code.gs`, and it saves you a trip to the
+   log.
+4. **`checkSetup` checks the Anthropic key by asking about the model**
+   (`GET /v1/models/claude-haiku-5-5`), which costs nothing, instead of
+   sending Haiku a message.
+5. **The API version** sent to Anthropic is `2026-10-21`, the current
+   one. Nothing in 3a sends Haiku a message, so it matters from 3b on.
+
+### Proposals (not built; say yes and I'll add them)
+
+1. **A total daily cap across everyone** (say 300), on top of each
+   person's 100. It matters only once colleagues join: ten people at 100
+   each is 1,000 calls. The Claude Console's spend limit already caps the
+   money, so this is a second, earlier brake.
+2. **Update SPEC's line** in "Screenshot to card" step 3 ("checks my user
+   ID against an allowlist in Script Properties") to say the script checks
+   Firestore's `allowlist` with the caller's token, so SPEC and the code
+   agree.
+
+### Files
+
+```
+apps-script/Code.gs          NEW: the backend; paste it into the Apps
+                             Script editor. Holds no instance values.
+apps-script/console-test.js  NEW: a test you paste into the browser
+                             console on the live site. The site never
+                             loads it.
+config.js                    the comment above appsScriptUrl (the list
+                             is Firestore's; settings are in Script
+                             Properties). The address itself goes in once
+                             you've deployed.
+```
+
+### Setup steps (yours)
+
+Four places: the Claude Console, Google Apps Script, the browser, and
+(only if `checkSetup` asks) Google Cloud. The Firebase console needs
+nothing: the approved list and the rules stay as they are.
+
+**A. The Claude Console: a key, with a spending ceiling**
+
+The Console lives at `platform.claude.com` (Anthropic's docs say so; the
+menus may have moved since).
+
+1. Sign in. If you haven't already, add credits under **Settings >
+   Billing**. A few dollars lasts a long time at these prices.
+2. **Settings > Workspaces > Create workspace.** Name it `Horizon`.
+   (Only an organization admin can do this; on a personal account, that's
+   you.)
+3. Set that workspace's **monthly spend limit**, say $5. A third-party
+   guide puts this under the organization's billing and limits page; the
+   Default workspace can't have its own limit, which is why Horizon gets
+   a workspace of its own. If you can't find it, tell me and we'll look
+   together. This is the real ceiling on what the key can ever cost.
+4. **Settings > API keys > Create key.** Name it `horizon-apps-script`
+   and choose the `Horizon` workspace.
+5. Copy the key (it starts `sk-ant-`). The Console shows it **only
+   once**. Paste it straight into step B.4; don't save it in a note,
+   email, or the repo.
+
+**B. Google Apps Script: paste, set, check, deploy**
+
+1. Go to `script.google.com`, signed in as the Google account that owns
+   Horizon. **New project.** Click "Untitled project" at the top and name
+   it `Horizon backend`.
+2. In `Code.gs`, select everything and delete it. Paste all of
+   `apps-script/Code.gs` from the repo. Save (the disk icon, or Ctrl/Cmd+S).
+3. **Project Settings** (the gear in the left bar). Set **Time zone** to
+   Los Angeles (Pacific time), so the project agrees with step 4.
+4. Still in Project Settings, scroll to **Script Properties > Add script
+   property**, and add these (names exactly as written, no spaces):
+
+   | Property | Value |
+   |---|---|
+   | `FIREBASE_PROJECT_ID` | `horizontasks-29d6c` |
+   | `FIREBASE_WEB_API_KEY` | the `apiKey` line in `config.js` (starts `AIzaSy`) |
+   | `ANTHROPIC_API_KEY` | the key from step A.5 |
+   | `TIME_ZONE` | `America/Los_Angeles` |
+
+   Leave `DAILY_LIMIT` out for now (that means 100). **Save script
+   properties.**
+5. Back in the **Editor** (`< >` in the left bar). In the menu beside
+   **Run**, choose `checkSetup`, then click **Run**.
+6. The first run asks for permission. **Review permissions**, choose your
+   account. Google will likely say "Google hasn't verified this app": that
+   means *your* script, which only you use. Click **Advanced**, then **Go
+   to Horizon backend (unsafe)**. The permission it asks for should be
+   only **"Connect to an external service"** (that's the script calling
+   Firebase and Anthropic). If it asks for Drive, Gmail, or anything else,
+   stop and tell me. **Allow.**
+7. The **Execution log** opens under the code. Every line should start
+   `OK`, ending with "Everything checks out." A `FIX` line says what to
+   change. Fix it and run `checkSetup` again.
+8. **Deploy > New deployment.** Click the gear beside "Select type" and
+   pick **Web app**. Description: `3a`. **Execute as: Me.** **Who has
+   access: Anyone.** **Deploy.**
+9. Copy the **Web app URL** (it ends in `/exec`). Send it to me; it goes
+   in `config.js` when we commit (it isn't secret).
+10. Open that URL in a new tab. You should see
+    `{"ok":true,"service":"Horizon backend",...}`.
+
+*Changing the code later:* edit `Code.gs`, then **Deploy > Manage
+deployments**, the pencil on your deployment, **Version: New version**,
+**Deploy**. The address stays the same. ("New deployment" would make a new
+address, and `config.js` would need it.) Changing a Script Property needs
+no deployment at all.
+
+**C. Google Cloud console: only if `checkSetup` says the Firebase key has
+a website restriction**
+
+From here I sent your key a fake token with no website attached, and
+Firebase answered normally, so today the key has no website restriction
+and there is nothing to do. If you ever add one (Google Cloud console,
+your project, **APIs & Services > Credentials**, "Browser key (auto
+created by Firebase)", **Application restrictions: Websites**), the
+script's calls carry no website and will be turned away. The fix then:
+on that Credentials page, **Create credentials > API key**, under **API
+restrictions** choose **Restrict key** and tick only **Identity Toolkit
+API**, leave Application restrictions at **None**, and put that key in
+`FIREBASE_WEB_API_KEY`.
+
+### How to test
+
+You'll need the web app's address from step B.9.
+
+**From the browser console (the main test)**
+
+1. Open `apps-script/console-test.js` on GitHub (branch
+   `claude/affectionate-babbage-xbq6e8`), click **Raw**, and copy it all.
+2. Open the live site and sign in. Open Chrome's console:
+   Cmd+Option+J on a Mac, Ctrl+Shift+J on Windows. The first time, Chrome
+   asks you to type `allow pasting` before it accepts a paste.
+3. Paste. Before pressing Enter, replace `PASTE_YOUR_WEB_APP_URL_HERE`
+   with your address (keep the quotes). Press Enter.
+
+- [ ] The table shows six rows, all PASS: your real sign-in gets through;
+      no token, junk, your token with its signature altered, an unknown
+      action, and a non-JSON body are each refused with the right code.
+- [ ] Under the table: "Today (2026-11-..., America/Los_Angeles): 1 of
+      100 calls used." (More than 1 if you've run it before today.)
+- [ ] The altered-signature row is the important one: the token still
+      claims to be you, and only Firebase's signature check can catch it.
+- [ ] No red CORS errors in the console. (That proves the cross-origin
+      approach from question 1.)
+
+**The limit**
+
+- [ ] In Script Properties, add `DAILY_LIMIT` = `3`, save. (No redeploy.)
+- [ ] In the console, type `horizonLimitTest(5)` and press Enter. The
+      count rises to 3 of 3, then the rest say "refused: over-limit".
+- [ ] Script Properties now has a row `usage:<your user ID>` with today's
+      date and `"count":3`. (Refresh the settings page to see it.)
+- [ ] Set `DAILY_LIMIT` to `0`: `horizonLimitTest(1)` is refused (the off
+      switch). Then delete the `DAILY_LIMIT` row (back to 100). If you
+      want your count back to zero, delete your `usage:` row too.
+
+**Not on the list** (pick one)
+
+- [ ] *With a second Google account:* sign in to the site with it (it
+      shows the "private" screen, but it is signed in), paste the test
+      again. The first row now reads `not-approved` instead of `ok`, so it
+      shows FAIL: that FAIL is the pass.
+- [ ] *Or with your own:* in the Firebase console, delete your
+      `allowlist` document, paste the test again (first row
+      `not-approved`), then add the document back exactly as before
+      (lowercase email as the ID, a `note` field) and reload the site.
+
+**Setup refusals and the log**
+
+- [ ] Rename `FIREBASE_PROJECT_ID` to `FIREBASE_PROJECT_IDX` and run the
+      console test: the first four rows read `not-set-up` (the last two
+      still read `bad-request`, since that check comes first). Rename it
+      back.
+- [ ] In the editor, **Executions** (left bar) lists each call; open one
+      to see lines like "ping by Ab12... (2 of 100 today)" or "Refused:
+      bad-token". No token or key appears anywhere.
+
+### What I checked here
+
+I couldn't deploy Apps Script from here, so I ran `Code.gs` under Node
+with stand-ins for Apps Script's services: 41 checks, all passing.
+Against the **real services**: Firebase refused a token with the right
+project and expiry but a forged signature (`bad-token`), and a wrong API
+key gave `unavailable` with "API key not valid" in the log; `checkSetup`
+reported your real Firebase key and project as working, a fake Anthropic
+key as turned down by Anthropic, and a misspelled project ID as not found.
+(That last one caught a mistake of mine: Google answers 403 both when the
+rules say no and when a project doesn't exist, so `checkSetup` now tells
+them apart by the wording.) With **simulated** sign-ins: an approved ping;
+not on the list (404 and 403); unverified email; a lookup naming a
+different user; a disabled account; Firestore and the network failing;
+the lock busy; a limit of 3 counting 1, 2, 3, then refusing without
+raising the count; 11:59 pm in Los Angeles still yesterday and 12:01 am a
+fresh day; `TIME_ZONE` honored; 0 as an off switch; counts kept per
+person; a person refused at the list leaving no counter behind; and no token
+or key in any log line. The console test was checked for syntax only; it
+needs your deployment to run.
 
 ## Phase 2: Projects, split into two slices
 
@@ -2470,8 +2902,6 @@ rules, or Firestore, since there's no Firebase project yet.
   which collides with "No user, including an admin." The real fix is
   encrypting Done records in the browser with a key only their owner holds.
   Decide before colleagues join.
-- **One approved list, not two (for slice 3a).** SPEC puts the Apps Script
-  allowlist in Script Properties, which would mean keeping two lists in sync.
-  The script will already receive your Firebase sign-in token, and with it
-  it can ask Firestore "is this person on `allowlist`?" exactly the way the
-  app does. Worth deciding when 3a starts.
+- **One approved list, not two (for slice 3a).** Settled in 3a: one
+  list, Firestore's `allowlist`, which the script asks with the caller's
+  own token. See "Slice 3a", question 3.
