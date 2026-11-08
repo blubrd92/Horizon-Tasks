@@ -33,6 +33,8 @@ import { setupProjectList } from './projectlist.js';
 import { setupProjectPage } from './projectpage.js';
 import { setupProjectNotes } from './projectnotes.js';
 import { setupRecordBox } from './recordbox.js';
+import { setupInbox } from './inbox.js';
+import { callBackend } from './backend.js';
 
 const views = {
   setup: document.getElementById('view-setup'),
@@ -54,6 +56,8 @@ const signinError = document.getElementById('signin-error');
 const signoutButton = document.getElementById('signout-button');
 const settingsButton = document.getElementById('settings-button');
 const projectsButton = document.getElementById('projects-button');
+const inboxButton = document.getElementById('inbox-button');
+const inboxCount = document.getElementById('inbox-count');
 const projectHeading = document.getElementById('project-heading');
 const notallowedEmail = document.getElementById('notallowed-email');
 const notallowedSignout = document.getElementById('notallowed-signout');
@@ -126,7 +130,7 @@ let panelClosedAt = 0;
 function notePanelClosed() {
   panelClosedAt = performance.now();
 }
-for (const id of ['editor', 'datepick', 'settings', 'projects', 'project-edit']) document.getElementById(id).addEventListener('close', notePanelClosed);
+for (const id of ['editor', 'datepick', 'settings', 'projects', 'project-edit', 'inbox']) document.getElementById(id).addEventListener('close', notePanelClosed);
 document.getElementById('someday-close').addEventListener('click', notePanelClosed);
 
 const someday = setupSomeday({
@@ -501,6 +505,39 @@ async function start() {
       if (button) button.focus();
     },
   });
+
+  // The Inbox: screenshots in, drafts out (see inbox.js). The backend gets
+  // the image, the board's today (so ?today= testing works), and your
+  // categories' ids and names, nothing else from your board.
+  const inbox = setupInbox({
+    read: (image) =>
+      callBackend(
+        {
+          action: 'screenshot',
+          image,
+          today: todayISO(),
+          categories: categories.slice(0, 40).map((c) => ({ id: c.id, name: String(c.name || c.id).slice(0, 80) })),
+        },
+        fb.getIdToken,
+      ),
+    saveDraft: (fields) => fb.addDraft(uid, fields),
+    changeDraft: (id, changes) => fb.updateDraft(uid, id, changes),
+    discardDraft: (id) => fb.discardDraft(uid, id),
+    addToBoard: (id, card) => fb.addCardFromDraft(uid, id, card),
+    categories: () => categories,
+    addedText,
+    onCount: drawInboxCount,
+    onBoard: () => !views.board.hidden,
+  });
+  inboxButton.addEventListener('click', () => inbox.open());
+  let stopInbox = null;
+
+  // The header's pill: drafts plus screenshots still being read.
+  function drawInboxCount(n) {
+    inboxCount.hidden = n === 0;
+    inboxCount.textContent = String(n);
+    inboxButton.setAttribute('aria-label', n ? `Inbox, ${n} ${n === 1 ? 'draft' : 'drafts'}` : 'Inbox');
+  }
 
   // Marking a repeating card done, or letting it go, brings the next one in
   // the series (see repeat.js). `card` is the card with any edits made at
@@ -918,6 +955,7 @@ async function start() {
     settingsBox.close();
     projectList.close();
     recordBox.close();
+    inbox.close();
     if (view === 'done') {
       refreshDone();
       doneScreen.focusHeading();
@@ -1080,6 +1118,13 @@ async function start() {
     editor.close();
     quickAdd.clear();
     quickAdd.setEnabled(false);
+    // The screenshots in memory go first, with everything else.
+    if (stopInbox) {
+      stopInbox();
+      stopInbox = null;
+    }
+    inbox.reset();
+    inboxButton.disabled = true;
 
     if (!user) {
       show('signin');
@@ -1106,6 +1151,13 @@ async function start() {
       projectsButton.disabled = false;
       quickAdd.setEnabled(true);
       projectQuickAdd.setEnabled(true);
+      inbox.setEnabled(true);
+      inboxButton.disabled = false;
+      stopInbox = fb.watchInbox(
+        user.uid,
+        (drafts) => inbox.setDrafts(drafts),
+        (err) => console.warn('Could not load the Inbox', err),
+      );
       stopProjects = fb.watchProjects(
         user.uid,
         (list) => {

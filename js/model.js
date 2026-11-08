@@ -6,8 +6,8 @@
 //   users/{uid}/cards/{cardId}   one document per card, in every status
 //   users/{uid}/projects/{id}    one document per project
 //
-// Later slices add, under the same users/{uid}:
-//   inbox/{draftId}              Phase 3 drafts (and, later, cards a
+//   users/{uid}/inbox/{draftId}  drafts waiting in the Inbox (3b: from
+//                                screenshots; later, perhaps, cards a
 //                                colleague sends you)
 //
 // Shared projects, if they come, would live in a top-level projects/{id}
@@ -45,6 +45,19 @@
 //   notes          string, up to 10,000 characters; "" or missing for none
 //   links          list of { id, title, url }, in the order shown; title
 //                  is "" for none, url an http(s) address (see links.js)
+//   createdAt, updatedAt   Firestore timestamps
+//
+// A draft document (the Inbox). Never holds the screenshot itself.
+//   title, summary  strings
+//   dueDate         "YYYY-MM-DD" or null
+//   aiDueDate       the date Haiku read, or null. The panel's note about
+//                   the date shows only while dueDate still equals it.
+//   dueDateConfidence  "explicit", "inferred", or "none"
+//   dueDateQuote    the words the date came from, or ""
+//   category        a category id, or null
+//   deadlineType    "soft" or "hard"
+//   peopleMentioned list of names
+//   source          "screenshot"
 //   createdAt, updatedAt   Firestore timestamps
 //
 // The profile document also keeps the visit record that morning triage and
@@ -88,6 +101,50 @@ export function newCard({ title, dueDate = null }) {
     seriesDate: null,
     seriesDay: null,
   };
+}
+
+// A draft from the backend's answer to a screenshot (see Code.gs,
+// normalizeDraft_). The backend has already checked every field; these
+// checks are for a draft typed by hand in the console.
+export function newDraft(answer) {
+  const dueDate = isISODate(answer.due_date) ? answer.due_date : null;
+  return {
+    title: typeof answer.title === 'string' && answer.title.trim() ? answer.title.trim() : 'Look at this screenshot',
+    summary: typeof answer.summary === 'string' ? answer.summary : '',
+    dueDate,
+    aiDueDate: dueDate,
+    dueDateConfidence: !dueDate ? 'none' : answer.due_date_confidence === 'explicit' ? 'explicit' : 'inferred',
+    dueDateQuote: dueDate && typeof answer.due_date_quote === 'string' ? answer.due_date_quote : '',
+    category: typeof answer.suggested_category === 'string' ? answer.suggested_category : null,
+    deadlineType: answer.deadline_type === 'hard' ? 'hard' : 'soft',
+    peopleMentioned: Array.isArray(answer.people_mentioned) ? answer.people_mentioned.filter((p) => typeof p === 'string' && p) : [],
+    source: 'screenshot',
+  };
+}
+
+// A draft document with defaults filled in, as normalizeCard does.
+export function normalizeDraft(id, data) {
+  const dueDate = readDueDate(data.dueDate);
+  return {
+    id,
+    title: typeof data.title === 'string' ? data.title : '',
+    summary: typeof data.summary === 'string' ? data.summary : '',
+    dueDate,
+    aiDueDate: readDueDate(data.aiDueDate),
+    dueDateConfidence: ['explicit', 'inferred'].includes(data.dueDateConfidence) ? data.dueDateConfidence : 'none',
+    dueDateQuote: typeof data.dueDateQuote === 'string' ? data.dueDateQuote : '',
+    category: typeof data.category === 'string' && data.category ? data.category : null,
+    deadlineType: data.deadlineType === 'hard' ? 'hard' : 'soft',
+    peopleMentioned: Array.isArray(data.peopleMentioned) ? data.peopleMentioned.filter((p) => typeof p === 'string' && p) : [],
+    source: data.source || 'screenshot',
+    createdAt: millis(data.createdAt),
+  };
+}
+
+// What a draft adds to a card's notes: the summary, then the people.
+export function draftNotes(draft) {
+  const people = draft.peopleMentioned.length ? `People: ${draft.peopleMentioned.join(', ')}.` : '';
+  return [draft.summary.trim(), people].filter(Boolean).join('\n');
 }
 
 export const PROJECT_STATUS = {

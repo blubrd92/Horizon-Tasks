@@ -27,7 +27,7 @@ import {
 } from 'https://www.gstatic.com/firebasejs/12.19.0/firebase-firestore.js';
 
 import { config } from '../config.js';
-import { ACTIVE_STATUSES, PROJECT_STATUS, STATUS, normalizeCard, normalizeProject, normalizeSettings } from './model.js';
+import { ACTIVE_STATUSES, PROJECT_STATUS, STATUS, normalizeCard, normalizeDraft, normalizeProject, normalizeSettings } from './model.js';
 
 const app = initializeApp(config.firebase);
 const auth = getAuth(app);
@@ -43,6 +43,14 @@ export function signIn() {
 
 export function signOut() {
   return firebaseSignOut(auth);
+}
+
+// The signed-in person's ID token, for the Apps Script backend. Firebase
+// renews it on its own when it's close to expiring; `fresh` asks for a new
+// one regardless (after the backend turned one down). Null if signed out.
+export async function getIdToken(fresh = false) {
+  const user = auth.currentUser;
+  return user ? user.getIdToken(fresh) : null;
 }
 
 // True if this person's email is on the approved list (the "allowlist"
@@ -288,4 +296,41 @@ export async function deleteProject(uid, projectId) {
     await batch.commit();
   }
   await deleteDoc(doc(db, 'users', uid, 'projects', projectId));
+}
+
+// The Inbox: every draft, now and whenever one changes. A handful of small
+// documents. Returns a function that stops listening.
+export function watchInbox(uid, onChange, onError) {
+  return onSnapshot(
+    collection(db, 'users', uid, 'inbox'),
+    (snapshot) => onChange(snapshot.docs.map((d) => normalizeDraft(d.id, d.data({ serverTimestamps: 'estimate' })))),
+    onError,
+  );
+}
+
+// Saves a new draft. Returns its id at once, plus `saved`, as addCard does.
+export function addDraft(uid, fields) {
+  const ref = doc(collection(db, 'users', uid, 'inbox'));
+  const saved = setDoc(ref, { ...fields, createdAt: serverTimestamp(), updatedAt: serverTimestamp() });
+  return { id: ref.id, saved };
+}
+
+// Writes only the fields in `changes`.
+export function updateDraft(uid, draftId, changes) {
+  return updateDoc(doc(db, 'users', uid, 'inbox', draftId), { ...changes, updatedAt: serverTimestamp() });
+}
+
+export function discardDraft(uid, draftId) {
+  return deleteDoc(doc(db, 'users', uid, 'inbox', draftId));
+}
+
+// Add to board: the new card and the draft's removal in one write, so a
+// refused save can't leave both or neither. Returns the card's id at once,
+// plus `saved`.
+export function addCardFromDraft(uid, draftId, fields) {
+  const batch = writeBatch(db);
+  const ref = doc(collection(db, 'users', uid, 'cards'));
+  batch.set(ref, { ...fields, createdAt: serverTimestamp(), updatedAt: serverTimestamp() });
+  batch.delete(doc(db, 'users', uid, 'inbox', draftId));
+  return { id: ref.id, saved: batch.commit() };
 }

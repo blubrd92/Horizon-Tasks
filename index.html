@@ -59,6 +59,13 @@
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"></circle><path d="M8 12.5l2.8 2.8L16 10"></path></svg>
           What you did
         </a>
+        <!-- The Inbox (inbox.js): drafts from screenshots. The pill counts
+             them and hides at zero. -->
+        <button type="button" id="inbox-button" class="button button-link inbox-button" aria-haspopup="dialog" disabled>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 13l2.2-7.1A2 2 0 0 1 8.1 4.5h7.8a2 2 0 0 1 1.9 1.4L20 13"></path><path d="M4 13v5a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-5h-4.5l-1.5 2.5h-4L8.5 13z"></path></svg>
+          <span id="inbox-button-label">Inbox</span>
+          <span id="inbox-count" class="count-pill" aria-hidden="true" hidden>0</span>
+        </button>
         <button type="button" id="settings-button" class="icon-button header-icon" aria-label="Settings" disabled>
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
         </button>
@@ -478,6 +485,37 @@
       </div>
     </form>
   </dialog>
+
+  <!-- The Inbox (inbox.js). Slides in from the right over the dimmed
+       board. Drafts are built into #inbox-list; the screenshots in them are
+       held in memory only. -->
+  <dialog id="inbox" class="panel-dialog inbox-dialog" aria-labelledby="inbox-heading" aria-describedby="inbox-line">
+    <div class="panel">
+      <div class="panel-head">
+        <div class="inbox-titles">
+          <h2 id="inbox-heading" class="panel-title">Inbox</h2>
+          <p id="inbox-line" class="inbox-line"></p>
+        </div>
+        <button type="button" id="inbox-close" class="icon-button" aria-label="Close inbox">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"></path></svg>
+        </button>
+      </div>
+      <div class="panel-body inbox-body">
+        <p id="inbox-status" class="inbox-status" role="status"></p>
+        <div id="inbox-list" class="inbox-list"></div>
+        <div class="inbox-drop">
+          <p id="inbox-drop-text" class="inbox-drop-text"></p>
+          <button type="button" id="inbox-pick" class="button">Choose a file</button>
+          <input type="file" id="inbox-file" accept="image/*" multiple hidden>
+        </div>
+      </div>
+    </div>
+  </dialog>
+
+  <!-- Shown while an image file is dragged over the board. -->
+  <div id="drop-overlay" class="drop-overlay" hidden>
+    <p class="drop-overlay-text">Drop to read the screenshot</p>
+  </div>
 
   <!-- Settings, from the gear beside Sign out. Changes save at once. -->
   <dialog id="settings" class="small-dialog" aria-labelledby="settings-heading">
