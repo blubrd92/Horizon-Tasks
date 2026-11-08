@@ -86,21 +86,25 @@ into `main` on 2026-11-07 (a fast-forward: nothing was rewritten). `main`
 has Phases 1 and 2. If GitHub Pages was switched to the side branch for
 testing, point it back at `main` (Settings > Pages).
 
-**Slice 3a: built, awaiting your test** (2026-11-07), on
+**Slice 3a: done and confirmed** (2026-11-08), on
 `claude/affectionate-babbage-xbq6e8`. The Apps Script backend on its own:
 `apps-script/Code.gs` (the gate: a real sign-in, on the approved list,
 under today's limit; one action, `ping`, behind it; and `checkSetup`, run
 from the editor), plus `apps-script/console-test.js`, a test you paste
 into the browser console on the live site. The site itself doesn't change
 and doesn't call the script yet. See "Slice 3a" below for the six
-questions settled, the setup steps, and the test list.
+questions settled, the setup steps, the test list, and what was tested
+live. (The refusal at the limit was tested only here, not on the live
+script; you chose to skip it.)
 
 The web app is deployed (2026-11-08), and its address is in `config.js`
 as `appsScriptUrl`. The site doesn't read it until 3b.
 
-**Next: finish testing 3a** (see "Slice 3a", How to test), then I'll
-commit the slice as confirmed. After it's merged, slice 3b
-(screenshot to Inbox draft, and the Inbox review panel) in a fresh session.
+**Next: merge 3a into `main`, then slice 3b in a fresh session:**
+screenshot to Inbox draft, and the Inbox review panel (SPEC "Screenshot
+to card", "The Inbox review panel", "Security", "Visual design";
+`design/horizon-inbox-open.png` and `design/Main.dc.html`). Questions for
+3b are listed under "Slice 3a", Open for 3b.
 
 Open proposals carried over: Undo for Let it go and Mark done on the board
 (the Done view's "Put back on the board" covers getting a card back), Let
@@ -112,10 +116,11 @@ and updating SPEC's line about the script's allowlist (both under "Slice
 3a", Proposals). Still parked: Done privacy and the Firebase console. (One
 approved list is settled: see "Slice 3a", question 3.)
 
-## Slice 3a: the Apps Script backend (built, awaiting your test)
+## Slice 3a: the Apps Script backend (confirmed)
 
-Built 2026-11-07 on `claude/affectionate-babbage-xbq6e8`. Nothing on the
-site changes in this slice. The backend is built and tested on its own,
+Built 2026-11-07 and confirmed 2026-11-08 on
+`claude/affectionate-babbage-xbq6e8`. Nothing on the site changes in this
+slice. The backend is built and tested on its own,
 from the browser's console; 3b is the first slice where the site calls it.
 
 ### What it does
@@ -521,6 +526,49 @@ You'll need the web app's address from step B.9.
 - [ ] In the editor, **Executions** (left bar) lists each call; open one
       to see lines like "ping by Ab12... (2 of 100 today)" or "Refused:
       bad-token". No token or key appears anywhere.
+
+### What you tested live (2026-11-08)
+
+- `checkSetup`: every line OK. Firebase key, Firestore project and rules,
+  Anthropic key, `claude-haiku-5-5` available, limit 100, Los Angeles
+  time.
+- The address in a tab: `{"ok":true,"service":"Horizon backend",...}`,
+  arriving by way of `script.googleusercontent.com`, the redirect from
+  question 1.
+- The console test, from the live site, signed in as you: all six rows
+  PASS, no CORS errors, "1 of 100 calls used". So the cross-origin
+  approach works from the site's own page, Firebase caught the altered
+  signature, Firestore accepted your token and found you on the list,
+  and the counter wrote to Script Properties on Los Angeles time.
+- The console test signed in with a second Google account not on the
+  list: the first row read `not-approved` (the FAIL that's the pass), the
+  other five as before, and no "calls used" line, so nothing was counted
+  for it.
+- **Not tested live, by choice:** the refusal at the limit
+  (`horizonLimitTest` with `DAILY_LIMIT` at 3) and `DAILY_LIMIT` 0 as an
+  off switch. Both were tested here with stand-ins (below); the counting
+  they build on was confirmed live by the "1 of 100". Also untested:
+  Chrome on a phone (carried to 3b).
+
+### Open for 3b
+
+- **On `bad-token`,** fetch a fresh token and try once more before
+  saying anything.
+- **What the site shows** for each refusal (the table under question 2
+  has the sentences).
+- **The phone:** test the request in Chrome on a phone (one report says
+  this pattern was blocked there).
+- **The real cost of a screenshot:** measure one (the 3a estimate is
+  about a tenth of a cent), and how large a compressed screenshot body
+  gets.
+- **The Haiku call itself:** the prompt, the JSON shape from SPEC step 4,
+  and API version `2026-10-21` (which refuses `temperature`).
+- **Drafts and the "never saved" rule:** whether drafts live in
+  Firestore (`users/{uid}/inbox`) so they survive a reload, and if so
+  what happens to the preview, since the screenshot itself is never
+  stored.
+- **`suggested_category`:** how Haiku's suggestion maps onto your own
+  categories.
 
 ### What I checked here
 
