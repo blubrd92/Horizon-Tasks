@@ -100,7 +100,12 @@ script; you chose to skip it.)
 The web app is deployed (2026-11-08), and its address is in `config.js`
 as `appsScriptUrl`. The site doesn't read it until 3b.
 
-**Next: merge 3a into `main`, then slice 3b in a fresh session:**
+**Branch:** 3a was built on `claude/affectionate-babbage-xbq6e8` and
+merged into `main` on 2026-11-08 (a fast-forward: nothing was rewritten).
+`main` has Phases 1 and 2 and slice 3a. If GitHub Pages was switched to
+the side branch for testing, point it back at `main` (Settings > Pages).
+
+**Next: slice 3b, in a fresh session:**
 screenshot to Inbox draft, and the Inbox review panel (SPEC "Screenshot
 to card", "The Inbox review panel", "Security", "Visual design";
 `design/horizon-inbox-open.png` and `design/Main.dc.html`). Questions for
