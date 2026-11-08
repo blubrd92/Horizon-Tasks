@@ -29,7 +29,7 @@ export const config = {
   // and on the approved list above. The script checks that same Firestore
   // list; its own settings, including the Anthropic API key, live in its
   // Script Properties (see apps-script/Code.gs).
-  appsScriptUrl: '',
+  appsScriptUrl: 'https://script.google.com/macros/s/AKfycbymToHC-592d4KmqgK5n_Zrpqt0Y2deuEbAlQUsy18t19sReCZKlAvQ9Cuttqf_js6J-w/exec',
 
   // The categories a brand-new user starts with. After the first sign-in,
   // each user's categories are stored with their own data and can be edited

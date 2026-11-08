@@ -95,9 +95,11 @@ into the browser console on the live site. The site itself doesn't change
 and doesn't call the script yet. See "Slice 3a" below for the six
 questions settled, the setup steps, and the test list.
 
-**Next: set up and test 3a** (see "Slice 3a", Setup steps and How to
-test), then send me the web app's address so it goes into `config.js`,
-and I'll commit the slice as confirmed. After it's merged, slice 3b
+The web app is deployed (2026-11-08), and its address is in `config.js`
+as `appsScriptUrl`. The site doesn't read it until 3b.
+
+**Next: finish testing 3a** (see "Slice 3a", How to test), then I'll
+commit the slice as confirmed. After it's merged, slice 3b
 (screenshot to Inbox draft, and the Inbox review panel) in a fresh session.
 
 Open proposals carried over: Undo for Let it go and Mark done on the board
