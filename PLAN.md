@@ -625,6 +625,52 @@ Site only: no Apps Script version. **Files:** `index.html`,
 - [ ] The same on your phone: everything stacked, nothing cut off.
 - [ ] In the Inbox on your phone, the draft's date shows its full year.
 
+### Revision 4: three prompt tightenings (built, awaiting your test)
+
+From your live drafts of the exam email (2026-11-18), three habits the
+prompt allowed:
+
+- **The summary gave advice** once ("if you did not finish it, contact
+  Jennifer Landgren about your status", which the email never said) and
+  **repeated the timeline** another time ("start by 9:30 pm" appeared in
+  both). Now: report only what the screenshot says, never add advice or
+  next steps, never repeat a date, time, or step from the timeline; empty
+  is often right.
+- **Need to know ran two clauses.** Now: one line under 15 words.
+- **"(PDT)" on a line in your own time zone.** Now: never add the
+  reader's own zone, daylight or standard.
+
+Prompt only (`apps-script/Code.gs`): a new Apps Script version, nothing
+on the site. The backend's 28 checks pass, including that the new rules
+are in the prompt.
+
+**How to test:** paste `Code.gs`, **Deploy > Manage deployments >** the
+pencil **> New version > Deploy**, then paste the exam email once more.
+- [ ] The first line of the notes is gone, or says something the
+      timeline doesn't.
+- [ ] Need to know is short (something like "No notes, outside websites,
+      or AI tools.").
+- [ ] No "(PDT)".
+
+### Open for 3c (agreed 2026-11-18)
+
+- **Paste text, not just a screenshot.** In the Inbox, under the drop
+  zone, a "Paste text instead" box: the copied text of an email goes to
+  the backend and comes back as a draft in the same shape, through the
+  same prompt rules. 3c builds the text-to-draft backend for quick add
+  anyway; a pasted email is the same job with more words. A text paste on
+  the board itself stays a normal paste. Copied text often lacks the sent
+  date, so relative dates may need the yellow note more often.
+- **Proposed after 3c, not agreed yet: a short tuning slice** instead of
+  several Haikus voting (voting smooths randomness, but every copy shares
+  the same blind spots, which is what the mistakes so far were). A dozen
+  real cases as text (no images stored, as always) with the answer you'd
+  want; compare Haiku as now, Haiku with more effort, and Sonnet 5.5
+  (about a cent a screenshot; $2 and $10 per million tokens read and
+  written, Anthropic's pricing page, 2026-11-08); and, only if inferred
+  dates go wrong, a cheap second look at just those dates, with
+  disagreement shown in the yellow note rather than voted away.
+
 ### Files
 
 ```
