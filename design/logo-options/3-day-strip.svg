@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="Horizon">
+  <!-- The day strip in perspective: today's solid blue tile with its dot,
+       then the days after it, each smaller, running off toward the
+       horizon. -->
+  <rect width="64" height="64" rx="14" fill="#18191C"/>
+  <rect x="5" y="16" width="21" height="32" rx="5.5" fill="#2F5BD3"/>
+  <circle cx="15.5" cy="41" r="2.6" fill="#FFFFFF"/>
+  <rect x="29" y="21" width="14" height="22" rx="4" fill="#F3F1EB"/>
+  <circle cx="36" cy="38" r="1.8" fill="#2F5BD3"/>
+  <rect x="46" y="25" width="9" height="14" rx="3" fill="#F3F1EB" fill-opacity="0.7"/>
+  <rect x="57.5" y="28" width="4.5" height="8" rx="1.8" fill="#F3F1EB" fill-opacity="0.4"/>
+</svg>
