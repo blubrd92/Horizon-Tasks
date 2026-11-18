@@ -48,7 +48,9 @@
 //   createdAt, updatedAt   Firestore timestamps
 //
 // A draft document (the Inbox). Never holds the screenshot itself.
-//   title, summary  strings
+//   title           string
+//   notes           the notes the card will get, put together from Haiku's
+//                   answer by draftNotesFrom (below)
 //   dueDate         "YYYY-MM-DD" or null
 //   aiDueDate       the date Haiku read, or null. The panel's note about
 //                   the date shows only while dueDate still equals it.
@@ -56,7 +58,6 @@
 //   dueDateQuote    the words the date came from, or ""
 //   category        a category id, or null
 //   deadlineType    "soft" or "hard"
-//   peopleMentioned list of names
 //   source          "screenshot"
 //   createdAt, updatedAt   Firestore timestamps
 //
@@ -70,7 +71,7 @@
 //   settings.yearStart          1 to 12: the month the Done record's Year
 //                               starts in (see record.js)
 
-import { isISODate, toISO } from './dates.js';
+import { formatShort, formatTime, isISODate, toISO, todayISO } from './dates.js';
 import { normalizeLinks } from './links.js';
 
 export const STATUS = {
@@ -105,46 +106,95 @@ export function newCard({ title, dueDate = null }) {
 
 // A draft from the backend's answer to a screenshot (see Code.gs,
 // normalizeDraft_). The backend has already checked every field; these
-// checks are for a draft typed by hand in the console.
-export function newDraft(answer) {
+// checks are for safety. `today` is the board's today, for the notes'
+// dates.
+export function newDraft(answer, today = todayISO()) {
   const dueDate = isISODate(answer.due_date) ? answer.due_date : null;
   return {
     title: typeof answer.title === 'string' && answer.title.trim() ? answer.title.trim() : 'Look at this screenshot',
-    summary: typeof answer.summary === 'string' ? answer.summary : '',
+    notes: draftNotesFrom(answer, today),
     dueDate,
     aiDueDate: dueDate,
     dueDateConfidence: !dueDate ? 'none' : answer.due_date_confidence === 'explicit' ? 'explicit' : 'inferred',
     dueDateQuote: dueDate && typeof answer.due_date_quote === 'string' ? answer.due_date_quote : '',
     category: typeof answer.suggested_category === 'string' ? answer.suggested_category : null,
     deadlineType: answer.deadline_type === 'hard' ? 'hard' : 'soft',
-    peopleMentioned: Array.isArray(answer.people_mentioned) ? answer.people_mentioned.filter((p) => typeof p === 'string' && p) : [],
     source: 'screenshot',
   };
 }
 
-// A draft document with defaults filled in, as normalizeCard does.
+// The notes a screenshot's card gets, as plain text, one line each:
+//
+//   Bonnie needs them for the December newsletter.          the summary
+//   Tue, Nov 10, 5:00 pm: exam link arrives from FastTest.  the timeline,
+//   Fri, Nov 13, 11:59 pm: window closes.                   earliest first
+//   Need to know: no notes, outside aids, or AI.
+//   Contact: Jennifer Landgren, jennifer@example.org
+//
+// Haiku supplies the pieces; this writes them out, so every date reads the
+// way the board writes dates (with the year only when it isn't this year's)
+// and the timeline is in date order whatever order Haiku gave it. Any piece
+// that's empty is left out.
+export function draftNotesFrom(answer, today) {
+  const clean = (value) => (typeof value === 'string' ? value.replace(/\s+/g, ' ').trim() : '');
+  // A line ends with a full stop unless it already ends a sentence (a
+  // closing quote or bracket after the . ! or ? is fine).
+  const sentence = (value) => {
+    const text = clean(value);
+    return text && !/[.!?]["\u201d)\]]?$/.test(text) ? `${text}.` : text;
+  };
+  const lines = [];
+  const summary = sentence(answer.summary);
+  if (summary) lines.push(summary);
+
+  const moments = (Array.isArray(answer.timeline) ? answer.timeline : [])
+    .filter((m) => m && isISODate(m.date) && clean(m.what))
+    .map((m) => ({ date: m.date, time: /^([01]\d|2[0-3]):[0-5]\d$/.test(m.time) ? m.time : '', what: m.what }))
+    .sort((a, b) => `${a.date} ${a.time}`.localeCompare(`${b.date} ${b.time}`));
+  for (const m of moments) {
+    const year = m.date.slice(0, 4) !== String(today).slice(0, 4) ? `, ${m.date.slice(0, 4)}` : '';
+    const time = m.time ? `, ${formatTime(m.time)}` : '';
+    lines.push(`${formatShort(m.date)}${year}${time}: ${sentence(m.what)}`);
+  }
+
+  const need = sentence(answer.need_to_know);
+  if (need) lines.push(`Need to know: ${need}`);
+
+  const contact = answer.contact && typeof answer.contact === 'object' ? answer.contact : {};
+  const reach = [contact.name, contact.email, contact.phone].map(clean).filter(Boolean);
+  if (reach.length) lines.push(`Contact: ${reach.join(', ')}`);
+  return lines.join('\n');
+}
+
+// A draft document with defaults filled in, as normalizeCard does. A draft
+// saved before its notes were put together this way (a summary and a list
+// of people) still reads.
 export function normalizeDraft(id, data) {
-  const dueDate = readDueDate(data.dueDate);
+  let notes = typeof data.notes === 'string' ? data.notes : null;
+  if (notes === null) {
+    const people = Array.isArray(data.peopleMentioned) ? data.peopleMentioned.filter((p) => typeof p === 'string' && p) : [];
+    notes = [typeof data.summary === 'string' ? data.summary.trim() : '', people.length ? `People: ${people.join(', ')}.` : '']
+      .filter(Boolean)
+      .join('\n');
+  }
   return {
     id,
     title: typeof data.title === 'string' ? data.title : '',
-    summary: typeof data.summary === 'string' ? data.summary : '',
-    dueDate,
+    notes,
+    dueDate: readDueDate(data.dueDate),
     aiDueDate: readDueDate(data.aiDueDate),
     dueDateConfidence: ['explicit', 'inferred'].includes(data.dueDateConfidence) ? data.dueDateConfidence : 'none',
     dueDateQuote: typeof data.dueDateQuote === 'string' ? data.dueDateQuote : '',
     category: typeof data.category === 'string' && data.category ? data.category : null,
     deadlineType: data.deadlineType === 'hard' ? 'hard' : 'soft',
-    peopleMentioned: Array.isArray(data.peopleMentioned) ? data.peopleMentioned.filter((p) => typeof p === 'string' && p) : [],
     source: data.source || 'screenshot',
     createdAt: millis(data.createdAt),
   };
 }
 
-// What a draft adds to a card's notes: the summary, then the people.
+// What a draft gives the card's notes.
 export function draftNotes(draft) {
-  const people = draft.peopleMentioned.length ? `People: ${draft.peopleMentioned.join(', ')}.` : '';
-  return [draft.summary.trim(), people].filter(Boolean).join('\n');
+  return draft.notes;
 }
 
 export const PROJECT_STATUS = {

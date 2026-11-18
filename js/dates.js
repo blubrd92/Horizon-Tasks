@@ -114,6 +114,13 @@ export function formatShort(iso) {
   return `${DOW_SHORT[date.getDay()]}, ${MONTHS[date.getMonth()]} ${date.getDate()}`;
 }
 
+// "5:00 pm" from "17:00"; "12:00 am" from "00:00". For the times in a
+// screenshot draft's notes; the board itself has no times.
+export function formatTime(hhmm) {
+  const [h, m] = hhmm.split(':').map(Number);
+  return `${h % 12 || 12}:${String(m).padStart(2, '0')} ${h < 12 ? 'am' : 'pm'}`;
+}
+
 // "Thursday, Oct 22"
 export function formatLong(iso) {
   const date = fromISO(iso);

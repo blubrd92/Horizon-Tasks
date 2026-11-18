@@ -236,19 +236,24 @@ should look like, from Anthropic's own pages (fetched 2026-11-08):
   weeks with its weekday and the last day of each month. "Next Friday"
   and "end of next month" become lookups instead of arithmetic, which is
   where small models slip.
-- **The shape,** SPEC step 4 plus one field:
+- **The shape** (as changed by Revision 1, below; SPEC step 4's
+  `people_mentioned` is gone, and four fields are new):
 
   ```
-  { "title", "summary", "due_date" (YYYY-MM-DD or null),
+  { "title" (an action, no dates in it),
+    "summary" (one sentence of context, or ""),
+    "due_date" (YYYY-MM-DD or null),
     "due_date_confidence" ("explicit" | "inferred" | "none"),
     "due_date_quote" (the words the date came from, or ""),
+    "timeline" (up to 5 of { "date", "time" (HH:MM or ""), "what" }),
+    "need_to_know" (one line, or ""),
+    "contact" ({ "name", "email", "phone" }, each "" when not shown),
     "suggested_category" (one of your category ids, or null),
-    "deadline_type" ("soft" | "hard"),
-    "people_mentioned" (list of names) }
+    "deadline_type" ("soft" | "hard") }
   ```
 
-  `due_date_quote` is new: the panel's yellow note quotes it ("Date
-  inferred from 'end of next month.'"), and SPEC's example note needs it.
+  `due_date_quote` lets the panel's yellow note quote the words ("Date
+  inferred from 'end of next month.'"), which SPEC's example note needs.
 - **The prompt,** in short (the full text is in `Code.gs`): you're
   turning a screenshot of an email, calendar, chat, or document into one
   task for a public librarian; the title is a short action in their
@@ -288,7 +293,11 @@ theirs.
 A draft document:
 
 ```
-title, summary          strings
+title                   string
+notes                   the card's notes, put together by the site from
+                        Haiku's answer (Revision 1). A draft saved before
+                        Revision 1 has summary and peopleMentioned instead,
+                        and still reads.
 dueDate                 "YYYY-MM-DD" or null
 aiDueDate               the date Haiku gave (the note shows only while
                         dueDate still equals it)
@@ -296,7 +305,6 @@ dueDateConfidence       "explicit", "inferred", or "none"
 dueDateQuote            string
 category                a category id, or null
 deadlineType            "soft" or "hard"
-peopleMentioned         list of names
 source                  "screenshot"
 createdAt, updatedAt
 ```
@@ -310,10 +318,10 @@ nothing else from your board does.
 
 ### What becomes of the rest of Haiku's answer
 
-- **Summary and people:** shown in the draft, read-only, under the
-  fields ("Notes: ..."), and saved as the card's notes when you add it:
-  the summary, then "People: Bonnie, Marcus." You can change them in the
-  card's editor afterward.
+- **The notes** (Revision 1): shown in the draft, read-only, under the
+  fields, and saved as the card's notes when you add it: the context
+  line, the timeline, Need to know, and Contact. You can change them in
+  the card's editor afterward.
 - **Deadline type:** a Hard deadline checkbox in the draft, ticked when
   Haiku says hard, so nothing about the card is decided out of sight.
 - **The date notes:** yellow for inferred, green for explicit, a plain
@@ -463,6 +471,89 @@ the real Apps Script, and a real phone.
 
 Still to test: an inferred date, the reload, Add to board, the refusals,
 and the phone.
+
+### Revision 1: notes you can act on (built, awaiting your test)
+
+You asked for the prompt fixes and for notes that make it easy to see
+what to do and when. Built 2026-11-18.
+
+**What changed in what Haiku is asked for:**
+- **The title** is only the action. No dates, days, or deadline words;
+  the date has its own field.
+- **Written to you,** never naming you ("Not there? Check spam"), since
+  the reader is the person the screenshot is addressed to.
+- **`people_mentioned` is gone,** replaced by **`contact`**: the person to
+  reply to or follow up with, name, email, and phone as shown, never you.
+- **`timeline`:** up to 5 dated moments that matter (something arrives,
+  opens, starts, closes; a step to take first; the deadline when it has a
+  time). Each is a date, a time (24-hour, or none), and a short phrase.
+- **`need_to_know`:** one line, only when a detail would change what you
+  do (a rule, something to bring, a place). Never boilerplate.
+- **`summary`** shrinks to one sentence of context the rest doesn't give,
+  or nothing.
+- **Relative dates in an older email** count from the date it was sent
+  when the screenshot shows one ("by Friday" in last Tuesday's email is
+  last Friday, not this one), and the calendar now starts two weeks back
+  so that's a lookup too. (A gap I found while working on this.)
+- **Times in another time zone** stay as written, with the zone added
+  ("(ET)"). The script tells Haiku your time zone (`TIME_ZONE`).
+
+**Haiku reads; Horizon's own code writes the notes.** Haiku returns the
+pieces, the backend checks them (a moment without a real date is
+dropped, a time that isn't HH:MM is left off, an email or phone that
+doesn't look like one is left off, at most 5 moments), and the site puts
+the notes together: the dates written the way the board writes them,
+with the year only when it isn't this year's; the timeline sorted by
+date and time whatever order Haiku gave; each line ending in a full
+stop. For the exam email, the notes would read:
+
+```
+Tue, Nov 10, 5:00 pm: exam link arrives from FastTest; not there? check spam, then email Jennifer.
+Thu, Nov 12, 8:00 am: exam window opens.
+Fri, Nov 13, 9:30 pm: latest start (the exam takes about 2 hours).
+Fri, Nov 13, 11:59 pm: window closes.
+Need to know: no notes, outside aids, or AI.
+Contact: Jennifer Landgren, Jennifer.landgren@sfgov.org
+```
+
+The notes stay plain text, so the editor, What you did, and Copy as text
+work as they do. No new card fields. Drafts already in your Inbox keep
+their old notes (summary, then People).
+
+**Not in this revision** (still waiting on your yes or no): the "Added
+from screenshot" icon on cards, and the phone header.
+
+**Files:** `apps-script/Code.gs` (the prompt, the schema, the checks,
+the calendar), `js/model.js` (the draft keeps `notes`; `draftNotesFrom`
+writes them), `js/dates.js` (`formatTime`: "17:00" becomes "5:00 pm").
+
+**Setup:** paste `Code.gs` from the branch into the Apps Script editor,
+save, then **Deploy > Manage deployments >** the pencil **> Version: New
+version > Deploy** (description `3b revision 1`). Then hard-reload the
+site (Cmd/Ctrl+Shift+R). Both halves are needed: the old site can't read
+the new answer's notes, and the new site gets empty notes from the old
+script.
+
+**Checked here:** the backend's 28 checks, updated for the new shape
+(the schema lists every field as required, junk moments and contacts are
+cleaned up, the calendar starts two weeks back, your time zone is named,
+and no contact detail reaches the log); the notes for the exam email
+come out exactly as above from a shuffled timeline; a year shown only
+across a year end; a draft saved the old way still reads; and both
+browser tests, through Add to board.
+
+**How to test:**
+- [ ] Paste the exam email again: the title has no "by Friday", the
+      notes are the timeline above (or close), and Contact is Jennifer,
+      not you.
+- [ ] An email with several dates: the timeline is in date order.
+- [ ] An ordinary request with no dates: no timeline, maybe a context
+      line, Contact if someone's named. Need to know is absent unless
+      something truly matters. Tell me if it fills that line with filler.
+- [ ] An older email that says "by Friday": the date is the Friday after
+      it was sent.
+- [ ] Add one to the board, open its card: the notes are there, one line
+      each.
 
 ### Files
 
