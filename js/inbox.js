@@ -628,6 +628,15 @@ export function setupInbox({ read, saveDraft, changeDraft, discardDraft, addToBo
     });
     discard.addEventListener('click', () => discardDraftItem(entry));
     add.addEventListener('click', () => addDraftItem(entry));
+    // Ctrl+Enter (Cmd+Enter on a Mac) anywhere in the draft adds it, as
+    // Save does in the card editor. Enter alone in its notes starts a line.
+    add.title = 'Add to board (Ctrl+Enter)';
+    add.setAttribute('aria-keyshortcuts', 'Control+Enter Meta+Enter');
+    el.addEventListener('keydown', (event) => {
+      if (event.key !== 'Enter' || !(event.ctrlKey || event.metaKey) || event.isComposing) return;
+      event.preventDefault();
+      if (!add.disabled) addDraftItem(entry);
+    });
     return entry;
   }
 

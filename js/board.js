@@ -207,12 +207,23 @@ function cardHTML(card, today, categoryById, { triage = false, highlight = null,
          </span>`
       : '';
 
+  // A small page-with-lines mark: this card has notes (rest the pointer on
+  // it to read them; notespeek.js).
+  const notesMark =
+    typeof card.notes === 'string' && card.notes.trim()
+      ? `<span class="card-notes-mark">
+           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 3h9l4 4v13a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1z"></path><path d="M9 11h7M9 15h7M9 7h3"></path></svg>
+           <span class="visually-hidden">Has notes</span>
+         </span>`
+      : '';
+  const marks = notesMark || source ? `<span class="card-marks">${notesMark}${source}</span>` : '';
+
   // The title is a real button; CSS stretches its click area over the whole
   // card. app.js finds the card by data-card-id; drag.js by data-drag-id.
   return `
     <article class="card${highlight && card.dueDate === highlight ? ' is-match' : ''}" style="--band: ${escapeHTML(color)}" data-drag-id="${escapeHTML(card.id)}">
       <div class="card-top">
-        <span class="card-category">${escapeHTML(categoryName)}</span>${source}
+        <span class="card-category">${escapeHTML(categoryName)}</span>${marks}
       </div>
       <h3 class="card-title">
         <button type="button" class="card-open" data-card-id="${escapeHTML(card.id)}">${escapeHTML(card.title)}</button>

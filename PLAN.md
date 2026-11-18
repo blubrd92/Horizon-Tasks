@@ -319,15 +319,23 @@ How to test (hard-reload first):
 `index.html`, `css/horizon.css`. **Checked here** (headless Chrome,
 pretend Firebase): 11 checks, all passing.
 
-Proposals (not built): a small notes mark on cards that have notes, so
-you know which ones are worth resting on; Ctrl+Enter for Add to board on
-an Inbox draft.
+Then both proposals, approved and built:
+- **A notes mark** at a card's top right (a small page with lines, in the
+  secondary ink color), on every card with notes, before the screenshot
+  brackets when it has both. Screen readers hear "Has notes".
+- **Ctrl+Enter on an Inbox draft** adds it to the board, from any of its
+  fields, notes included (with the notes as typed, even before leaving
+  the box). The Add to board button's tooltip says so.
+Checked: 14 checks in all, passing. **Files** add `js/board.js`.
 
 How to test (hard-reload first):
 - [ ] Open a card, type in its notes, press Ctrl+Enter: saved and closed.
 - [ ] Rest the pointer on a card with notes: they appear beside it after
       a moment, and go when you move away. A card without notes shows
       nothing.
+- [ ] Cards with notes show the small notes mark at the top right.
+- [ ] In the Inbox, change a draft's notes and press Ctrl+Enter: it's on
+      the board with your change.
 
 **Next: settle the tuning slice's six questions** ("Tuning slice",
 "What I need from you"), then build the comparison tool and the quick
