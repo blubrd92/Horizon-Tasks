@@ -337,13 +337,14 @@ How to test (hard-reload first):
 - [ ] In the Inbox, change a draft's notes and press Ctrl+Enter: it's on
       the board with your change.
 
-**Planned, not built: your own categories (2026-11-18).** See
-"Categories you set yourself" below: seven questions, my recommendation
-for each. Waiting on your answers.
+**Agreed, not built: your own categories (2026-11-18).** See
+"Categories you set yourself" below. You chose every recommendation.
 
-**Next: settle the tuning slice's six questions** ("Tuning slice",
-"What I need from you"), then build the comparison tool and the quick
-add quote check, and stop so you can write your cases and run it.
+**Next: build "Categories you set yourself", in a fresh session.** Read
+that section (the seven questions are settled), plan the details into
+PLAN.md, then build and stop so you can test. **After that: the tuning
+slice** (its six questions still open; "Tuning slice" below), which you
+want to come back to later, not next.
 
 Open proposals carried over: Undo for Let it go and Mark done on the board
 (the Done view's "Put back on the board" covers getting a card back), Let
@@ -360,7 +361,7 @@ tuning slice (all under "Slice 3c", Proposals). Still parked: Done
 privacy and the Firebase console. (One approved list is settled: see
 "Slice 3a", question 3.)
 
-## Categories you set yourself (planned, not built)
+## Categories you set yourself (agreed, not built)
 
 Asked 2026-11-18. Each person's categories already live on their own
 profile (`users/{uid}`, `categories: [{ id, name, color }]`), copied
@@ -377,7 +378,9 @@ rename, recolor, move up or down, and retire. An **Add a category** row
 at the bottom. Changes save as you make them, to your account, so every
 device follows (like your other settings).
 
-### Questions, with my recommendation for each
+### The seven questions, settled 2026-11-18: every recommendation
+
+You chose the recommendation on each, as written below.
 
 1. **Where it lives.** A section in Settings (my recommendation; it's
    where your other settings are), or its own panel opened from
