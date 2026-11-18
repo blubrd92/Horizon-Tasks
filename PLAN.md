@@ -138,12 +138,14 @@ rewritten). `main` has Phases 1, 2, and 3. If GitHub Pages was switched
 to the side branch for testing, point it back at `main` (Settings >
 Pages).
 
-**Next: the tuning slice, in a fresh session** (proposed in 3b and 3c,
-not yet agreed in detail; "Slice 3c", Proposals 5). Settle its scope
-first: a dozen real cases as text with the answers you'd want; compare
-Haiku as now, Haiku at medium effort, and Sonnet 5.5 on screenshots,
-pasted text, and quick add; and only if dates go wrong, a cheap second
-look shown in the yellow note.
+**Tuning slice: planned, scope waiting on your answers** (2026-11-18), on
+`claude/nifty-mendel-uwgwln` (fast-forwarded to `main` first). See
+"Tuning slice" below: six questions to settle, my recommendation for
+each. Nothing is built yet.
+
+**Next: settle the tuning slice's six questions** ("Tuning slice",
+"What I need from you"), then build the comparison tool and the quick
+add quote check, and stop so you can write your cases and run it.
 
 Open proposals carried over: Undo for Let it go and Mark done on the board
 (the Done view's "Put back on the board" covers getting a card back), Let
@@ -159,6 +161,328 @@ a mark for pasted-text cards, SPEC's new `pasted_text` source, and the
 tuning slice (all under "Slice 3c", Proposals). Still parked: Done
 privacy and the Firebase console. (One approved list is settled: see
 "Slice 3a", question 3.)
+
+## Tuning slice: real cases, three models side by side (planned, not built)
+
+Planned 2026-11-18. The scope was never agreed, so this section proposes
+it and stops at six questions. Nothing gets built until you answer them.
+
+### What it's for
+
+So far every mistake Haiku made was judgment, not eyesight: advice it
+invented, a deadline in the title, your own zone added to a time. Those
+were found one live paste at a time, and fixed one prompt rule at a time.
+That works, but it never tells us whether a fix broke something else, or
+whether a pricier model would just get it right. The tuning slice gives
+us a fixed set of your real cases with the answers you'd want, and a tool
+that runs them through each setup and prints the results side by side,
+cost included. Then we decide, per action (screenshot, pasted text, quick
+add), which model and effort to keep, and whether any prompt rule needs
+changing. Every later prompt change gets checked against the same cases
+before it goes live.
+
+### Prices, checked today (Anthropic's pricing and models pages, 2026-11-18)
+
+| Model | API name | Read, per million tokens | Written | Default effort |
+|---|---|---|---|---|
+| Claude Haiku 5.5 | `claude-haiku-5-5` | $0.10 (prompts up to 100,000 tokens) | $0.50 | `medium` |
+| Claude Sonnet 5.5 | `claude-sonnet-5-5` | $2.00 | $10.00 | `high` |
+
+Both read images in the same high-resolution tier, so a screenshot costs
+the same number of image tokens on either. One thing worth knowing: Haiku
+5.5 ships at `medium`, and Horizon turns it *down* to `low`. So "Haiku at
+medium" is Haiku as Anthropic tunes it, not a premium setting.
+
+What each would cost live, from your real token counts (about 2,500 to
+3,400 in, 300 to 500 out):
+
+| | Haiku low (now) | Haiku medium | Sonnet 5.5 low |
+|---|---|---|---|
+| A quick add or screenshot | about $0.0005 | about $0.0007 to $0.001 (more thinking) | about $0.008 to $0.012 |
+| 10 a day for a month | about $0.15 | about $0.25 | about $3 |
+| 100 a day, every day (the limit) | about $1.50 | about $2.50 | about $30 |
+
+Sonnet is about twenty times Haiku. At your real use that's still pocket
+change, but it's the difference that makes "is it worth it?" a fair
+question rather than an obvious yes. (The Haiku medium and Sonnet figures
+are estimates; the tool measures them.)
+
+### The plan, in five parts
+
+**1. The cases: about fourteen, written as text, never images.**
+
+I'd suggest five quick add lines, five screenshots typed out (or copied
+as text from the original), and four pasted emails. Each case is chosen
+for a kind of trouble, not at random:
+
+- Quick add: a plain day ("fri"), a date with no year ("dec 4"), "next
+  friday" (must go to the Inbox), today's own weekday typed on that day
+  (must go to the Inbox), no date at all, a hard deadline word.
+- Material: the exam email (several times, a hard window, a contact), a
+  request with no date at all, an older email whose "by Friday" counts
+  from its sent date, pasted text with no sent date at all (copied email
+  often loses it), a time in another zone, an email holding two tasks,
+  and one that says "end of next month."
+
+Each case carries its own "today", so "next Friday" means the same date
+every time it runs, this month or next year.
+
+What the answer you want looks like, per case:
+
+```
+{
+  id: 'exam-email',
+  kind: 'screenshot',          // 'quickadd', 'text', or 'screenshot' (typed out)
+  today: '2026-11-08',
+  text: `...the email, as text...`,
+  want: {
+    due: '2026-11-13',         // or null
+    confidence: 'explicit',    // or 'inferred', 'none'
+    deadline: 'hard',
+    category: null,            // or one of your category ids
+    title: { has: ['exam'] },  // quick add: { exact: 'Flyer draft for nov program' }
+    notes: { has: ['FastTest', '11:59 pm'], not: ['PDT'] },
+    contact: 'Jennifer Landgren',
+  },
+}
+```
+
+An honest limit: a screenshot typed out tests what Haiku *makes of* the
+words, not whether it can *read* them off the image. Typed-out
+screenshots go through the pasted text prompt, which is word for word the
+screenshot prompt with "pasted text" for "screenshot". So far reading has
+never been the problem; judgment has. If you ever want to test the
+eyesight, that's a live paste on the site, as now.
+
+**2. Where the cases and the tool live: inside your Apps Script project.**
+
+Two new files in the same project as `Code.gs`, run from the editor's Run
+button, never from the web:
+
+- `Tuning.gs`: the tool. It's in the repo, and it holds no cases.
+- `TuningCases.gs`: your cases. It lives **only** in your Apps Script
+  project. The repo gets `TuningCases.example.gs` with made-up cases to
+  copy the shape from.
+
+The tool reads the Anthropic key from Script Properties exactly as the
+web app does, sends each case to each setup, and prints a results table
+in the Execution log. It uses the editor's current code, not the deployed
+version, so a prompt change can be tested against the cases *before* it
+goes live. (Live only changes when you deploy a new version, as always.)
+
+**3. The three setups, three runs each.**
+
+| Setup | Model | Effort |
+|---|---|---|
+| Haiku as now | `claude-haiku-5-5` | `low` |
+| Haiku medium | `claude-haiku-5-5` | `medium` |
+| Sonnet | `claude-sonnet-5-5` | `low` |
+
+Everything else stays exactly as live: the same prompts, calendar,
+schema, and field checks, so the only difference is the model and the
+effort. Sonnet at `low` because that's the cheapest Sonnet, and the fair
+question is whether the cheapest Sonnet beats Haiku. (A fourth column,
+Sonnet at `medium`, would add roughly half a dollar if you want it.)
+
+Three runs each, because Haiku with thinking doesn't answer identically
+every time, and a case that passes twice and fails once is a case that
+fails one quick add in three. A case passes only if all three runs pass;
+the table shows "2/3" so flaky cases stand out.
+
+**The whole run:** 14 cases × 3 runs × 3 setups = 126 calls. About $0.02
+for Haiku low, $0.04 for Haiku medium, $0.45 for Sonnet: **about half a
+dollar.** It sends each round of fourteen at once, so it finishes in about
+three minutes, inside Apps Script's six-minute limit. It won't start if
+the cases would need more than 200 calls, so a typo can't run up a bill.
+
+What the log shows (the shape; the numbers are invented):
+
+```
+Tuning, 14 cases x 3 runs, today's code
+                       Haiku low   Haiku medium   Sonnet low
+Wrong date or route    1           0              0
+Other misses           5           4              2
+Average cost a call    $0.0005     $0.0008        $0.0110
+Average wait           3.1 s       4.6 s          5.9 s
+
+exam-email      date ok   title ok   notes 2/3 (missing "11:59 pm")  ...
+weed-641s       route: Inbox, wanted Inbox   ...
+```
+
+The table up top names cases by their id only, so you can paste it to me
+without anyone's name or email in it. The detailed lines below it show
+Haiku's answers (titles, dates, notes) and stay in your log unless you
+choose to share them.
+
+**4. What counts as a pass.**
+
+| Field | Pass when | Severity |
+|---|---|---|
+| Due date | exactly the date you wanted (or none when you wanted none) | **critical** |
+| Quick add route | board, Inbox, or Someday, as the site would route it, matches yours | **critical** if it lands on the board on a wrong day |
+| Confidence | matches yours | **critical** if "explicit" on a wrong date (a green note on a wrong date); otherwise minor |
+| Title, quick add | your words exactly, ignoring the first letter's case and a trailing full stop | minor |
+| Title, material | holds every word you listed, none you ruled out, no date words (months, weekdays, today, tomorrow, by), under 80 characters | minor (plus your eye: "starts with a verb" isn't checkable by code) |
+| Notes | every piece you listed appears, none you ruled out; Need to know under 15 words | minor |
+| Contact, deadline type, category | match yours | minor |
+
+How a setup wins: fewest critical misses first, then fewest minor ones,
+then cost, then wait. My rule of thumb for switching: try one prompt
+revision first, since a rule costs nothing per call. Move an action to
+Haiku medium if that removes critical misses the revision didn't. Move it
+to Sonnet only if both Haiku settings still get dates wrong. And each
+action can land differently: quick add might stay on Haiku low while
+screenshots move.
+
+One caution: fourteen cases are few, and it's easy to tune a prompt until
+it passes these fourteen and nothing else. So whenever a real draft goes
+wrong later, it becomes a new case before it becomes a new rule.
+
+**5. Only if dates go wrong: a second look, shown, never voted.**
+
+If the runs show wrong dates, the tool gets one more measurement before
+anything changes on the site: for every inferred date, a narrow second
+question. Not "read this email again", but only "today is this, the
+calendar is this, the words were 'next Friday' (and the sent date, if
+any): which date, and could it reasonably mean another?" On a different
+model from the first look, since a second Haiku shares the first one's
+blind spots.
+
+The tool reports two numbers: how many wrong dates the second look caught,
+and how many right dates it questioned anyway (crying wolf). Only if the
+first is high and the second low does it go live, and then like this: the
+draft keeps the first date, and the yellow note says both. "Date inferred
+from 'next Friday.' It could also mean Fri, Nov 27. Worth a second look."
+Never an average, never a majority. Cost: a short call, on inferred dates
+only (a few a week), so pennies a month even on Sonnet.
+
+### The parked check from 3c: build it now
+
+"A date Claude calls plain must come from words you actually typed."
+Quick add is the one path to the board with no review, so this check
+guards the only door that's open. My recommendation: build it, in the
+backend, with one companion:
+
+1. **The quote must be in what you typed.** Ignoring case and spacing,
+   `due_date_quote` has to appear in your text. If Haiku says "explicit"
+   and the quote isn't there (it paraphrased, or made the date up), the
+   answer becomes "inferred", and the card goes to the Inbox with the
+   yellow note.
+2. **The quote and the date must agree.** If the quote names a weekday
+   ("fri"), the date has to fall on that weekday; if it names a month
+   ("dec 4"), the date has to be in that month. A slip from Friday to
+   Thursday goes to the Inbox instead of onto the board.
+
+Why the backend and not the site: the backend has your typed text and
+Haiku's answer side by side, and the tuning tool runs the same code, so
+the cases measure the check too (including how often it sends a correct
+card to the Inbox for nothing, such as Haiku quoting "Friday" when you
+typed "fri", which I'd allow by matching weekday abbreviations).
+The site's own check (past, or more than a year out, goes to the Inbox)
+stays as it is.
+
+It costs nothing per call and can only make a card wait in the Inbox,
+never put one on the board. Screenshots and pasted text don't need it:
+they always wait in the Inbox anyway.
+
+### Each security choice, and what it protects
+
+1. **The key never moves.** The tool reads `ANTHROPIC_API_KEY` from the
+   same Script Properties, in the same project. No copy in a second
+   project, no copy on your computer, nothing in the repo.
+2. **The tool can't be reached from the web.** The web app's only doors
+   are `doGet` and `doPost`, and `doPost` runs only the actions in its
+   list (`ping`, `screenshot`, `text`, `quickadd`). The tool is not on
+   that list. Only someone who can open your Apps Script editor (you)
+   can run it.
+3. **Your cases stay out of the repo.** Treat the repo as public (the
+   live site is served from it), and real emails carry other
+   people's names, addresses, and phone numbers. So the cases live only in
+   your Apps Script project, private to your Google account. The repo
+   gets made-up examples.
+4. **No new permissions.** I considered a Google Sheet for the cases: it's
+   nicer to edit and to read results in. But it would mean granting the
+   backend project access to your spreadsheets, and the web app runs as
+   you. A permission the live site never needs shouldn't be granted for a
+   test tool. A file in the editor needs only what the project already
+   has (reaching the internet, reading its own properties).
+5. **A spending ceiling.** The tool skips the daily limit (it's you, in
+   the editor), so it has its own: it refuses to start above 200 calls,
+   and it never retries on its own. A typo can't loop.
+6. **The log shows answers, never your case text.** And the summary
+   table names cases only by id, so it's safe to paste into a chat.
+7. **Anthropic sees your cases each run,** as it sees a live screenshot.
+   Its stated retention for API inputs is 30 days. Same edge as 3b.
+8. **The quote check can only hold a card back.** Its only effect is
+   "explicit" becoming "inferred", which sends a card to the Inbox. It
+   can't move a card onto the board.
+
+### What I need from you (the six questions)
+
+1. **The cases.** Is the mix right (five quick add lines, five typed-out
+   screenshots, four pasted emails), and will you write them? You can
+   paste the real text straight into `TuningCases.gs` in the editor, so
+   no real email ever passes through me. Or share redacted versions here
+   and I'll draft the `want` part for you to correct. Your choice.
+2. **Where they live.** A file in your Apps Script project (my
+   recommendation), or a Google Sheet (easier to edit, at the cost of a
+   new permission for the backend)?
+3. **The setups.** Haiku low, Haiku medium, Sonnet 5.5 low, three runs
+   each, about half a dollar. Add Sonnet medium as a fourth (roughly half
+   a dollar more)?
+4. **The pass rules** in part 4: anything you'd judge differently? In
+   particular, is "explicit vs inferred" with the right date really
+   minor to you?
+5. **The quote check:** build it now, with the weekday-and-month
+   companion? (My recommendation: yes.)
+6. **The second look:** measure it only if the first run shows wrong
+   dates, and build it into the site only if it catches them without
+   crying wolf? (My recommendation: yes, in that order.)
+
+### What gets built once you answer (my estimate)
+
+- `apps-script/Tuning.gs`: `runTuning()` and its scoring. Shares the
+  prompts and request builder with `Code.gs`, so live and tuning can't
+  drift apart.
+- `apps-script/TuningCases.example.gs`: three made-up cases, one of each
+  kind.
+- `apps-script/Code.gs`: a small refactor so the tool can ask for a
+  request with a different model and effort (live requests stay byte for
+  byte the same; I'll check that here as in 3c), and the quote check.
+- `PLAN.md`: setup steps, the test list, then your results.
+- The site: nothing in this half.
+
+After your first run: the decisions (model and effort per action, prompt
+rules, the second look) are the slice's second half, built from what the
+table shows.
+
+### Setup steps you'll have (preview)
+
+In the Apps Script editor: **+ > Script**, name it `Tuning`, paste
+`Tuning.gs`; **+ > Script**, name it `TuningCases`, paste the example,
+then replace the examples with your cases. Choose `runTuning` beside the
+Run button, Run, and read the Execution log. No new permission prompt
+should appear; if one does, stop and tell me. The quote check needs the
+usual new version (paste `Code.gs`, Deploy > Manage deployments > pencil
+> New version). Pasting `Code.gs` replaces only `Code.gs`, never your
+cases file.
+
+### Carried over (not part of this slice)
+
+Open proposals: Undo for Let it go and Mark done on the board; Let it go
+in the editor; triage per device instead of per account; pinning zone
+headers on long columns; saving the sample card scripts in `tools/`; a
+Settings gear on the What you did page. From 3a: a total daily cap across
+everyone; SPEC's line about the script's allowlist. From 3b: SPEC step
+4's JSON shape; paste on every page (advised against for now). From 3c:
+Haiku on the project page's quick add; a mark for pasted-text cards;
+SPEC's new `pasted_text` source. (3c's Alt+Enter proposal was built.)
+Still parked: Done privacy and the Firebase console.
+
+A new idea, not proposed for this slice: an email that says "Friday,
+November 13" when Nov 13 is a Thursday is wrong at the source. The same
+weekday-and-date check could flag it in the yellow note ("The email says
+Friday, but Nov 13 is a Thursday"). Worth a case in the set either way.
 
 ## Slice 3c: Haiku for quick add, pasted text in the Inbox, editable draft notes (confirmed)
 
