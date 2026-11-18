@@ -261,6 +261,18 @@ How to test, on your phone (hard-reload first):
 - [ ] Turn the phone sideways: if it's wider than 600, the row of
       buttons comes back.
 
+**Fix you asked for: the mark and name hold still between pages
+(2026-11-18, awaiting test).** They sat 6 pixels lower on the board than
+on What you did and project pages on a desktop (centered against the
+taller day strip), and 3 pixels higher on a project page on a phone.
+Now every page header gives them the same slot, at the top: as tall as
+the day strip (56 pixels) on a wider screen, a button's height (44) on a
+phone. Measured at 1440, 900, 700, and 390 pixels wide on the board,
+What you did, and a project page: the same spot on all three at each
+width. The cost: What you did's and the project page's headers are 12
+pixels taller on a wider screen; phones are unchanged. Site only;
+`css/horizon.css`.
+
 **Next: settle the tuning slice's six questions** ("Tuning slice",
 "What I need from you"), then build the comparison tool and the quick
 add quote check, and stop so you can write your cases and run it.
