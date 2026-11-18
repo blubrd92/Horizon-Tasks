@@ -144,14 +144,18 @@ Pages).
 each. Nothing is built yet.
 
 **Change you asked for, before tuning (2026-11-18, awaiting test):**
-Haiku's effort goes from `low` to `medium` for all three actions
-(screenshot, pasted text, quick add), one line in `Code.gs`. Medium is
-Haiku 5.5's own default. Expect a little more thinking per call (the
-estimate is about $0.0007 to $0.001 instead of $0.0005, and a second or
-two longer); the console's cost line will show the real figure.
-`max_tokens` stays 4,000, which leaves room. This makes "Haiku as now"
-in the tuning plan mean Haiku at `medium`, with `low` as the cheaper
-setup to compare against. Setup: paste `Code.gs`, run `checkSetup`,
+Haiku's effort is now set per action in `Code.gs` (`EFFORT`):
+screenshots and pasted text go from `low` to `medium` (Haiku 5.5's own
+default), where the mistakes so far came from; quick add stays `low`,
+where the wait matters more and the quote check (tuning slice) will
+guard the date. Thinking is billed as output, so medium costs a little
+more: my estimate is about $0.0007 to $0.001 a screenshot instead of
+$0.0005, and a second or two longer; the console's cost line will show
+the real figure. Limiting the tokens instead was weighed and rejected:
+`max_tokens` cuts thinking off with no answer rather than shortening it,
+and Anthropic's task budgets start at 20,000 tokens. `max_tokens` stays
+4,000 as a seatbelt. In the tuning plan, "Haiku as now" therefore means
+medium for screenshots and pasted text, low for quick add. Setup: paste `Code.gs`, run `checkSetup`,
 Deploy > Manage deployments > pencil > New version (description
 `medium effort`) > Deploy. The site doesn't change.
 
@@ -284,9 +288,10 @@ goes live. (Live only changes when you deploy a new version, as always.)
 
 **3. The three setups, three runs each.**
 
-(Since this plan was written, live moved to Haiku at `medium`; see
-Status. So "Haiku as now" below is `medium`, and `low` is the cheaper
-setup it's measured against.)
+(Since this plan was written, live moved screenshots and pasted text to
+Haiku at `medium`, with quick add still at `low`; see Status. The tool
+runs every case at both Haiku settings either way, so the table shows
+whether each action is on the right one.)
 
 | Setup | Model | Effort |
 |---|---|---|
