@@ -14,7 +14,7 @@ const TIME_LIMIT = 90 * 1000; // milliseconds to wait for an answer
 
 // Answers the site makes up itself, when the backend never answered.
 const LOCAL = {
-  'no-backend': 'Screenshots need the Apps Script backend, and config.js has no address for it.',
+  'no-backend': "Horizon's AI features need the Apps Script backend, and config.js has no address for it.",
   unreachable: "Couldn't reach Horizon's backend. Check your connection, then try again.",
   timeout: "Horizon's backend took too long to answer. Try again in a moment.",
   'no-token': 'Sign in to Horizon first.',
@@ -89,6 +89,23 @@ async function send(url, body) {
   if (!answer.ok && typeof answer.message !== 'string') answer.message = LOCAL.unreachable;
   answer.sentBytes = text.length;
   return answer;
+}
+
+// The middle of the console's cost line, for every AI request: what was
+// sent, Haiku's tokens, and the cost at Haiku 5.5's prices (Anthropic's
+// pricing page, 2026-11-08: $0.10 and $0.50 per million tokens).
+const PRICE_IN = 0.1 / 1e6;
+const PRICE_OUT = 0.5 / 1e6;
+export function costLine(answer) {
+  const tokens = answer.tokens || {};
+  const input = Number(tokens.input) || 0;
+  const output = Number(tokens.output) || 0;
+  const cost = input * PRICE_IN + output * PRICE_OUT;
+  const usage = answer.usage ? ` ${answer.usage.used} of ${answer.usage.limit} AI requests used today.` : '';
+  return (
+    `${Math.round((answer.sentBytes || 0) / 1024)} KB sent, ` +
+    `${input.toLocaleString()} tokens in, ${output.toLocaleString()} out, about $${cost.toFixed(4)}.${usage}`
+  );
 }
 
 function local(code) {

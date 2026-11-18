@@ -17,7 +17,7 @@ import { FOLD_SHOW, cardsIn, describeZone, offersTriage, placeOf, renderBoard, r
 import { renderStrip } from './strip.js';
 import { sinceLine } from './since.js';
 import { planVisit } from './visits.js';
-import { STATUS, newCard, normalizeSettings } from './model.js';
+import { STATUS, newCard, newDraft, normalizeSettings } from './model.js';
 import { keepSeries, nextCard, repeats, seriesChanges } from './repeat.js';
 import { planDrop } from './order.js';
 import { setupQuickAdd } from './quickadd.js';
@@ -34,7 +34,7 @@ import { setupProjectPage } from './projectpage.js';
 import { setupProjectNotes } from './projectnotes.js';
 import { setupRecordBox } from './recordbox.js';
 import { setupInbox } from './inbox.js';
-import { callBackend } from './backend.js';
+import { backendAddress, callBackend, costLine } from './backend.js';
 
 const views = {
   setup: document.getElementById('view-setup'),
@@ -449,12 +449,22 @@ async function start() {
     return views.project.hidden ? quickAdd : projectQuickAdd;
   }
 
+  // With a backend, the board's Enter goes to Claude; screen readers hear
+  // that instead of Phase 1's help.
+  if (backendAddress()) document.getElementById('quickadd-input').setAttribute('aria-describedby', 'quickadd-help-ai');
   quickAdd = setupQuickAdd({
     input: document.getElementById('quickadd-input'),
     status: document.getElementById('quickadd-status'),
     since: document.getElementById('since-line'),
-    onCompose: (title) =>
-      editor.open({ id: null, ...newCard({ title }) }, { categories: latest ? latest.categories : [], projects }, { below: quickAddField }),
+    onCompose: (title) => {
+      // With a backend, Haiku reads it (slice 3c). Without one (a copy of
+      // Horizon with no Apps Script), Enter opens the editor, as in Phase 1.
+      if (backendAddress()) {
+        readQuickAdd(title);
+        return;
+      }
+      editor.open({ id: null, ...newCard({ title }) }, { categories: latest ? latest.categories : [], projects }, { below: quickAddField });
+    },
     onAdd: (title, toToday) => fb.addCard(uid, newCard({ title, dueDate: toToday ? todayISO() : null })),
     onEdit: openCard,
   });
@@ -506,20 +516,75 @@ async function start() {
     },
   });
 
-  // The Inbox: screenshots in, drafts out (see inbox.js). The backend gets
-  // the image, the board's today (so ?today= testing works), and your
-  // categories' ids and names, nothing else from your board.
+  // What the backend gets besides the screenshot or text: the board's
+  // today (so ?today= testing works) and your categories' ids and names,
+  // nothing else from your board.
+  function aiContext() {
+    return {
+      today: todayISO(),
+      categories: categories.slice(0, 40).map((c) => ({ id: c.id, name: String(c.name || c.id).slice(0, 80) })),
+    };
+  }
+
+  // Quick add, Enter (slice 3c; PLAN.md "Slice 3c", question 3). Haiku
+  // reads the line; a plainly named date (today to a year out) goes
+  // straight onto the board, no date goes to Someday, and anything else
+  // waits in the Inbox. Nothing typed is lost: a refusal puts the text
+  // back in the field.
+  async function readQuickAdd(typed) {
+    const who = uid;
+    const short = typed.length > 60 ? `${typed.slice(0, 57)}\u2026` : typed;
+    quickAdd.showText(`Reading \u201c${short}\u201d\u2026`);
+    const answer = await callBackend({ action: 'quickadd', text: typed, ...aiContext() }, fb.getIdToken);
+    // Signed out (or someone else signed in) while it was reading.
+    if (!uid || uid !== who) return;
+    if (!answer.ok) {
+      console.info(`Quick add refused: ${answer.error}`);
+      const key = /Mac|iPhone|iPad/.test(navigator.platform || navigator.userAgent) ? 'Cmd' : 'Ctrl';
+      quickAdd.showText(`${answer.message} Your text is back in the box. ${key}+Enter adds it to Someday without Claude.`);
+      quickAdd.giveBack(typed);
+      return;
+    }
+    console.info(`Quick add: ${costLine(answer)}`);
+
+    const today = todayISO();
+    const draft = newDraft(answer.draft, today, { source: 'quick_add', typed });
+    if (draft.category && !categories.some((c) => c.id === draft.category)) draft.category = null;
+    const due = draft.dueDate;
+    // The site's own check on Haiku's "explicit": a date in the past or
+    // more than a year out waits in the Inbox however sure Haiku was.
+    const plain = draft.dueDateConfidence === 'explicit' && due >= today && due <= addDays(today, 365);
+
+    if (!due || plain) {
+      const card = {
+        ...newCard({ title: draft.title, dueDate: due }),
+        category: draft.category,
+        deadlineType: draft.deadlineType,
+        notes: draft.notes,
+      };
+      const { id, saved } = fb.addCard(uid, card);
+      const where = !due ? 'to Someday' : due === today ? 'to Today' : `for ${formatShort(due)}`;
+      quickAdd.showAdded(`Added \u201c${draft.title}\u201d ${where}.`, id);
+      saved.catch((err) => {
+        quickAdd.showText(`Couldn't save \u201c${draft.title}\u201d (${err.code || err.message}).`);
+        quickAdd.giveBack(typed);
+      });
+      return;
+    }
+
+    if (draft.dueDateConfidence === 'explicit') draft.dueDateConfidence = 'inferred';
+    const { saved } = fb.addDraft(uid, draft);
+    const quote = draft.dueDateQuote ? ` (\u201c${draft.dueDateQuote}\u201d)` : '';
+    quickAdd.showAction(`Sent \u201c${draft.title}\u201d to the Inbox to check the date${quote}.`, 'Review', () => inbox.open());
+    saved.catch((err) => {
+      quickAdd.showText(`Couldn't save \u201c${draft.title}\u201d to the Inbox (${err.code || err.message}).`);
+      quickAdd.giveBack(typed);
+    });
+  }
+
+  // The Inbox: screenshots and pasted text in, drafts out (see inbox.js).
   const inbox = setupInbox({
-    read: (image) =>
-      callBackend(
-        {
-          action: 'screenshot',
-          image,
-          today: todayISO(),
-          categories: categories.slice(0, 40).map((c) => ({ id: c.id, name: String(c.name || c.id).slice(0, 80) })),
-        },
-        fb.getIdToken,
-      ),
+    read: (request) => callBackend({ ...request, ...aiContext() }, fb.getIdToken),
     saveDraft: (fields) => fb.addDraft(uid, fields),
     changeDraft: (id, changes) => fb.updateDraft(uid, id, changes),
     discardDraft: (id) => fb.discardDraft(uid, id),

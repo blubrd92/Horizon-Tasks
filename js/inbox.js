@@ -1,38 +1,48 @@
-// The Inbox: the panel where screenshots become drafts, and drafts become
-// cards only when you say so (SPEC "The Inbox review panel").
+// The Inbox: the panel where screenshots and pasted text become drafts,
+// and drafts become cards only when you say so (SPEC "The Inbox review
+// panel").
 //
 // Two kinds of item live in the panel:
-//   - a screenshot being read, or one that failed: in this tab's memory
-//     only, never saved. It has Try again (when that could help) and
-//     Discard.
+//   - a screenshot or pasted text being read, or one that failed: in this
+//     tab's memory only, never saved. It has Try again (when that could
+//     help) and Discard.
 //   - a draft: saved in Firestore (users/{uid}/inbox), so it survives a
-//     reload and shows on your other devices. Its fields save as you leave
-//     them.
-// The screenshot itself is kept only here, in memory, as a preview, until
-// you press Add to board or Discard (or sign out, or close the tab). It is
-// never saved anywhere. After a reload, a draft shows a note in its place.
+//     reload and shows on your other devices. Its fields, notes included,
+//     save as you leave them. Drafts come from screenshots, pasted text,
+//     and quick add lines whose date needs a second look (slice 3c).
+// The screenshot or pasted text itself is kept only here, in memory, as a
+// preview, until you press Add to board or Discard (or sign out, or close
+// the tab). It is never saved anywhere. After a reload, a draft shows a
+// note in its place. A quick add draft shows what you typed instead.
 //
 // This file also takes screenshots in: a paste (Ctrl/Cmd+V) or a dropped
-// image anywhere on the board, or the panel's file picker. app.js decides
-// how drafts are saved and how the backend is called.
+// image anywhere on the board, or the panel's file picker; and pasted text,
+// from the panel's text box. app.js decides how drafts are saved and how
+// the backend is called.
 
-import { canRetry } from './backend.js';
+import { canRetry, costLine } from './backend.js';
 import { isISODate } from './dates.js';
 import { draftNotes, newCard, newDraft } from './model.js';
 import { shrink, splitImages, toBase64 } from './screenshot.js';
 
 const MAX_AT_ONCE = 5;
 const NO_CATEGORY_COLOR = '#6B6F78';
-// Haiku 5.5's prices per token, for the console's cost line only
-// (Anthropic's pricing page, 2026-11-08: $0.10 and $0.50 per million).
-const PRICE_IN = 0.1 / 1e6;
-const PRICE_OUT = 0.5 / 1e6;
+const MAX_TEXT = 20000; // characters of pasted text sent (the backend's limit)
+const MAX_NOTES = 10000; // the same as a project's notes
+const NOTES_ROWS = 10; // the notes box grows to this many lines, then scrolls
+
+// What each kind of draft calls its source, in the panel's notes.
+const SOURCE_WORDS = {
+  screenshot: { read: 'the screenshot', none: 'No date in the screenshot.', gone: "The screenshot isn't kept, so it's gone after a reload. Check the details against the original if you need to." },
+  pasted_text: { read: 'the text', none: 'No date in the text.', gone: "The pasted text isn't kept, so it's gone after a reload. Check the details against the original if you need to." },
+  quick_add: { read: 'what you typed', none: 'No date in what you typed.', gone: '' },
+};
 
 const finePointer = window.matchMedia('(any-pointer: fine)');
 const isMac = /Mac|iPhone|iPad/.test(navigator.platform || navigator.userAgent);
 
-// read(image) sends { mediaType, data } to the backend and returns its
-// answer. saveDraft(fields) returns { id, saved }. changeDraft(id, changes)
+// read(request) sends { action: "screenshot", image: { mediaType, data } }
+// or { action: "text", text } to the backend and returns its answer. saveDraft(fields) returns { id, saved }. changeDraft(id, changes)
 // and discardDraft(id) return promises. addToBoard(id, card) returns
 // { id, saved }. categories() is your category list. addedText(dueDate)
 // says where a new card went. onCount(n) hears the number of items.
@@ -47,6 +57,8 @@ export function setupInbox({ read, saveDraft, changeDraft, discardDraft, addToBo
   const dropText = document.getElementById('inbox-drop-text');
   const pickButton = document.getElementById('inbox-pick');
   const fileInput = document.getElementById('inbox-file');
+  const textInput = document.getElementById('inbox-text-input');
+  const textButton = document.getElementById('inbox-text-read');
   const overlay = document.getElementById('drop-overlay');
 
   let enabled = false;
@@ -54,7 +66,8 @@ export function setupInbox({ read, saveDraft, changeDraft, discardDraft, addToBo
   // Screenshots being read or that failed, by a number of their own.
   const pending = new Map();
   let nextPid = 1;
-  // Draft id -> the preview's address, for drafts made in this tab.
+  // Draft id -> its preview, for drafts made in this tab: { url } for a
+  // screenshot, { text } for pasted text.
   const previews = new Map();
   // Item key ("p3", "d<id>") -> its element and fields.
   const shown = new Map();
@@ -71,6 +84,15 @@ export function setupInbox({ read, saveDraft, changeDraft, discardDraft, addToBo
   });
   drawDropText();
   finePointer.addEventListener('change', drawDropText);
+
+  // Pasted text: Read the text, or Ctrl/Cmd+Enter in the box.
+  textButton.addEventListener('click', takeText);
+  textInput.addEventListener('keydown', (event) => {
+    if (event.key === 'Enter' && (event.ctrlKey || event.metaKey) && !event.isComposing) {
+      event.preventDefault();
+      takeText();
+    }
+  });
 
   // --- Taking screenshots in -----------------------------------------------
 
@@ -149,7 +171,7 @@ export function setupInbox({ read, saveDraft, changeDraft, discardDraft, addToBo
     if (images.length > MAX_AT_ONCE) notes.push(`Up to ${MAX_AT_ONCE} at a time: the first ${MAX_AT_ONCE} are being read.`);
     showStatus(notes.join(' '));
     for (const file of images.slice(0, MAX_AT_ONCE)) {
-      const item = { pid: nextPid++, file, blob: null, url: null, width: 0, height: 0, state: 'reading', error: null };
+      const item = { pid: nextPid++, kind: 'screenshot', file, blob: null, url: null, width: 0, height: 0, state: 'reading', error: null };
       pending.set(item.pid, item);
       scrollTo = `p${item.pid}`;
       queue = queue.then(() => process(item));
@@ -157,9 +179,29 @@ export function setupInbox({ read, saveDraft, changeDraft, discardDraft, addToBo
     render();
   }
 
+  // Starts reading the text in the panel's text box.
+  function takeText() {
+    if (!enabled) return;
+    const raw = textInput.value.replace(/\r\n?/g, '\n').trim();
+    if (!raw) {
+      showStatus('Paste the text of an email into the box first.');
+      textInput.focus();
+      return;
+    }
+    textInput.value = '';
+    // In a thread the newest message is usually on top, so the start is kept.
+    const text = raw.slice(0, MAX_TEXT);
+    showStatus(raw.length > MAX_TEXT ? `Only the first ${MAX_TEXT.toLocaleString()} characters are read.` : '');
+    const item = { pid: nextPid++, kind: 'text', text, state: 'reading', error: null };
+    pending.set(item.pid, item);
+    scrollTo = `p${item.pid}`;
+    queue = queue.then(() => process(item));
+    render();
+  }
+
   async function process(item) {
     if (!pending.has(item.pid)) return; // discarded while waiting
-    if (!item.blob) {
+    if (item.kind === 'screenshot' && !item.blob) {
       try {
         const small = await shrink(item.file);
         item.blob = small.blob;
@@ -188,17 +230,20 @@ export function setupInbox({ read, saveDraft, changeDraft, discardDraft, addToBo
     render();
     let answer;
     try {
-      // The base64 copy exists only for the length of the request.
-      answer = await read({ mediaType: 'image/jpeg', data: await toBase64(item.blob) });
+      answer =
+        item.kind === 'text'
+          ? await read({ action: 'text', text: item.text })
+          : // The base64 copy exists only for the length of the request.
+            await read({ action: 'screenshot', image: { mediaType: 'image/jpeg', data: await toBase64(item.blob) } });
     } catch (err) {
-      answer = { ok: false, error: 'unreachable', message: `Something went wrong reading the screenshot (${err.message}).` };
+      answer = { ok: false, error: 'unreachable', message: `Something went wrong reading it (${err.message}).` };
     }
     // Discarded, or signed out, while it was being read: the answer goes
     // unused.
     if (!pending.has(item.pid) || !enabled) return;
 
     if (!answer.ok) {
-      console.info(`Screenshot refused: ${answer.error}`);
+      console.info(`${item.kind === 'text' ? 'Pasted text' : 'Screenshot'} refused: ${answer.error}`);
       item.state = 'failed';
       item.error = { message: answer.message, retry: canRetry(answer.error) };
       render();
@@ -206,10 +251,11 @@ export function setupInbox({ read, saveDraft, changeDraft, discardDraft, addToBo
     }
 
     logCost(item, answer);
-    const { id, saved } = saveDraft(newDraft(answer.draft));
-    // The screenshot stays a pending item until the draft arrives from
-    // Firestore (a moment later), then hands its preview over to it.
-    previews.set(id, item.url);
+    const source = item.kind === 'text' ? 'pasted_text' : 'screenshot';
+    const { id, saved } = saveDraft(newDraft(answer.draft, undefined, { source }));
+    // The screenshot or text stays a pending item until the draft arrives
+    // from Firestore (a moment later), then hands its preview over to it.
+    previews.set(id, item.kind === 'text' ? { text: item.text } : { url: item.url });
     item.draftId = id;
     item.state = 'saving';
     render();
@@ -226,15 +272,8 @@ export function setupInbox({ read, saveDraft, changeDraft, discardDraft, addToBo
   }
 
   function logCost(item, answer) {
-    const tokens = answer.tokens || {};
-    const input = Number(tokens.input) || 0;
-    const output = Number(tokens.output) || 0;
-    const cost = input * PRICE_IN + output * PRICE_OUT;
-    const usage = answer.usage ? ` ${answer.usage.used} of ${answer.usage.limit} AI requests used today.` : '';
-    console.info(
-      `Screenshot: ${item.width}×${item.height}, ${Math.round((answer.sentBytes || 0) / 1024)} KB sent, ` +
-        `${input.toLocaleString()} tokens in, ${output.toLocaleString()} out, about $${cost.toFixed(4)}.${usage}`,
-    );
+    const what = item.kind === 'text' ? `Pasted text: ${item.text.length.toLocaleString()} characters` : `Screenshot: ${item.width}×${item.height}`;
+    console.info(`${what}, ${costLine(answer)}`);
   }
 
   function retry(item) {
@@ -249,12 +288,13 @@ export function setupInbox({ read, saveDraft, changeDraft, discardDraft, addToBo
     item.url = null;
     item.blob = null;
     item.file = null;
+    item.text = null;
   }
 
   function dropPreview(id) {
-    const url = previews.get(id);
+    const preview = previews.get(id);
     previews.delete(id);
-    if (url && !inUse(url)) URL.revokeObjectURL(url);
+    if (preview && preview.url && !inUse(preview.url)) URL.revokeObjectURL(preview.url);
   }
 
   // --- Drawing the panel ---------------------------------------------------
@@ -271,8 +311,8 @@ export function setupInbox({ read, saveDraft, changeDraft, discardDraft, addToBo
   function render() {
     const n = count();
     line.textContent = n
-      ? `${n} ${n === 1 ? 'draft' : 'drafts'} to look over. Nothing reaches the board until you add it, and screenshots are never saved.`
-      : 'Nothing to look over. Cards reach the board only when you add them, and screenshots are never saved.';
+      ? `${n} ${n === 1 ? 'draft' : 'drafts'} to look over. Nothing reaches the board until you add it, and screenshots and pasted text are never saved.`
+      : 'Nothing to look over. Cards reach the board only when you add them, and screenshots and pasted text are never saved.';
     onCount(n);
 
     const ordered = [...drafts].sort((a, b) => a.createdAt - b.createdAt);
@@ -328,12 +368,54 @@ export function setupInbox({ read, saveDraft, changeDraft, discardDraft, addToBo
       const fresh = document.createElement('img');
       fresh.src = url;
       fresh.alt = 'Your screenshot, for checking';
-      box.classList.remove('is-gone');
+      box.className = 'inbox-shot';
       box.replaceChildren(fresh);
-    } else if (img || !box.textContent) {
-      box.classList.add('is-gone');
-      box.replaceChildren("The screenshot isn't kept, so it's gone after a reload. Check the details against the original if you need to.");
+    } else {
+      showGone(box, SOURCE_WORDS.screenshot.gone);
     }
+  }
+
+  // The pasted text, if this tab still has it; otherwise a note. Shown as
+  // text, never as HTML.
+  function fillText(box, text) {
+    if (text) {
+      if (box.classList.contains('is-text') && box.dataset.shown === 'yes') return;
+      box.className = 'inbox-shot is-text';
+      box.dataset.shown = 'yes';
+      box.tabIndex = 0;
+      box.setAttribute('role', 'region');
+      box.setAttribute('aria-label', 'Your pasted text, for checking');
+      box.textContent = text;
+    } else {
+      showGone(box, SOURCE_WORDS.pasted_text.gone);
+    }
+  }
+
+  // A quick add draft: what you typed.
+  function fillTyped(box, typed) {
+    box.className = 'inbox-shot is-typed';
+    const label = document.createElement('span');
+    label.className = 'inbox-notes-label';
+    label.textContent = 'You typed';
+    box.replaceChildren(label, `\u201c${typed}\u201d`);
+  }
+
+  function showGone(box, text) {
+    if (box.classList.contains('is-gone') && box.textContent === text) return;
+    box.className = 'inbox-shot is-gone';
+    box.removeAttribute('tabindex');
+    box.removeAttribute('role');
+    box.removeAttribute('aria-label');
+    delete box.dataset.shown;
+    box.textContent = text;
+  }
+
+  // A draft's preview box, by where the draft came from.
+  function fillPreview(box, draft) {
+    const preview = previews.get(draft.id) || {};
+    if (draft.source === 'quick_add') fillTyped(box, draft.typed);
+    else if (draft.source === 'pasted_text') fillText(box, preview.text);
+    else fillShot(box, preview.url);
   }
 
   function button(text, className) {
@@ -347,7 +429,7 @@ export function setupInbox({ read, saveDraft, changeDraft, discardDraft, addToBo
   function buildPending(item) {
     const el = document.createElement('article');
     el.className = 'inbox-item is-pending';
-    el.setAttribute('aria-label', 'Screenshot being read');
+    el.setAttribute('aria-label', item.kind === 'text' ? 'Pasted text being read' : 'Screenshot being read');
     const shot = shotBox();
     const message = document.createElement('p');
     message.className = 'inbox-reading';
@@ -371,11 +453,12 @@ export function setupInbox({ read, saveDraft, changeDraft, discardDraft, addToBo
   }
 
   function fillPending(entry, item) {
-    if (item.url) fillShot(entry.shot, item.url);
+    if (item.kind === 'text') fillText(entry.shot, item.text);
+    else if (item.url) fillShot(entry.shot, item.url);
     else entry.shot.replaceChildren();
     entry.el.classList.toggle('is-failed', item.state === 'failed');
-    entry.message.textContent =
-      item.state === 'failed' ? item.error.message : item.state === 'saving' ? 'Saving the draft…' : 'Reading the screenshot…';
+    const reading = item.kind === 'text' ? 'Reading the text…' : 'Reading the screenshot…';
+    entry.message.textContent = item.state === 'failed' ? item.error.message : item.state === 'saving' ? 'Saving the draft…' : reading;
     entry.foot.hidden = item.state !== 'failed';
     entry.again.hidden = !(item.error && item.error.retry);
   }
@@ -431,8 +514,14 @@ export function setupInbox({ read, saveDraft, changeDraft, discardDraft, addToBo
     hard.type = 'checkbox';
     hardLabel.append(hard, 'Hard deadline');
 
-    const notes = document.createElement('p');
-    notes.className = 'inbox-notes';
+    // The notes: a box you can edit, saving when you leave it (3c).
+    const notesField = document.createElement('label');
+    notesField.className = 'field';
+    const notes = document.createElement('textarea');
+    notes.className = 'field-input field-notes inbox-notes';
+    notes.maxLength = MAX_NOTES;
+    notes.rows = 2;
+    notesField.append('Notes', notes);
 
     const foot = document.createElement('div');
     foot.className = 'inbox-foot';
@@ -440,7 +529,7 @@ export function setupInbox({ read, saveDraft, changeDraft, discardDraft, addToBo
     const add = button('Add to board', 'button button-primary');
     foot.append(discard, add);
 
-    el.append(shot, titleField, titleError, row, note, hardLabel, notes, foot);
+    el.append(shot, titleField, titleError, row, note, hardLabel, notesField, foot);
     const entry = { el, id, shot, title, titleError, due, category, note, hard, notes, add, discard, stored: {} };
 
     // Each field saves when you leave it (or pick from it).
@@ -464,6 +553,11 @@ export function setupInbox({ read, saveDraft, changeDraft, discardDraft, addToBo
     hard.addEventListener('change', () => {
       save(entry, { deadlineType: hard.checked ? 'hard' : 'soft' });
     });
+    notes.addEventListener('input', () => sizeNotes(notes));
+    notes.addEventListener('change', () => {
+      const value = notes.value.replace(/\r\n?/g, '\n').replace(/\s+$/, '');
+      if (value !== entry.stored.notes) save(entry, { notes: value });
+    });
     discard.addEventListener('click', () => discardDraftItem(entry));
     add.addEventListener('click', () => addDraftItem(entry));
     return entry;
@@ -473,7 +567,7 @@ export function setupInbox({ read, saveDraft, changeDraft, discardDraft, addToBo
   // in the middle of, and any you've changed that hasn't come back yet.
   function fillDraft(entry, draft) {
     entry.draft = draft;
-    fillShot(entry.shot, previews.get(draft.id));
+    fillPreview(entry.shot, draft);
     // A field takes Firestore's value the first time, and again only when
     // that value changes (from another device, or a refused save putting it
     // back), and never while you're in it.
@@ -483,14 +577,17 @@ export function setupInbox({ read, saveDraft, changeDraft, discardDraft, addToBo
     if (fresh('dueDate') && document.activeElement !== entry.due) entry.due.value = draft.dueDate || '';
     fillCategories(entry, draft);
     if (fresh('deadlineType')) entry.hard.checked = draft.deadlineType === 'hard';
-    entry.stored = { title: draft.title, dueDate: draft.dueDate, category: draft.category, deadlineType: draft.deadlineType };
-
-    const text = draftNotes(draft);
-    entry.notes.hidden = !text;
-    const label = document.createElement('span');
-    label.className = 'inbox-notes-label';
-    label.textContent = 'Notes';
-    entry.notes.replaceChildren(label, text);
+    if (fresh('notes') && document.activeElement !== entry.notes) {
+      entry.notes.value = draftNotes(draft);
+      sizeNotes(entry.notes);
+    }
+    entry.stored = {
+      title: draft.title,
+      dueDate: draft.dueDate,
+      category: draft.category,
+      deadlineType: draft.deadlineType,
+      notes: draft.notes,
+    };
     drawNote(entry);
     drawColor(entry);
   }
@@ -520,16 +617,23 @@ export function setupInbox({ read, saveDraft, changeDraft, discardDraft, addToBo
     select.value = keep;
   }
 
+  // The notes box shows every line up to NOTES_ROWS, then scrolls.
+  function sizeNotes(box) {
+    const lines = box.value.split('\n').length;
+    box.rows = Math.max(2, Math.min(NOTES_ROWS, lines));
+  }
+
   // The note under the date: what Haiku made of it, while the date is
   // still Haiku's.
   function drawNote(entry) {
     const draft = entry.draft;
+    const words = SOURCE_WORDS[draft.source] || SOURCE_WORDS.screenshot;
     const due = entry.due.value || null;
     let text = '';
     let tone = '';
     if (draft.aiDueDate && due === draft.aiDueDate) {
       if (draft.dueDateConfidence === 'explicit') {
-        text = 'Date read directly from the screenshot.';
+        text = `Date read directly from ${words.read}.`;
         tone = 'is-explicit';
       } else {
         text = draft.dueDateQuote
@@ -538,7 +642,7 @@ export function setupInbox({ read, saveDraft, changeDraft, discardDraft, addToBo
         tone = 'is-inferred';
       }
     } else if (!draft.aiDueDate && !due) {
-      text = 'No date in the screenshot. Without one, it goes to Someday.';
+      text = `${words.none} Without one, it goes to Someday.`;
       tone = 'is-none';
     }
     entry.note.className = `inbox-note ${tone}`;
@@ -595,12 +699,13 @@ export function setupInbox({ read, saveDraft, changeDraft, discardDraft, addToBo
     clearTitleError(entry);
     hold(entry, true);
     const dueDate = isISODate(entry.due.value) ? entry.due.value : null;
+    // The notes as they are in the box, even if you haven't left it yet.
     const card = {
       ...newCard({ title, dueDate }),
-      source: 'screenshot',
+      source: entry.draft.source,
       category: entry.category.value || null,
       deadlineType: entry.hard.checked ? 'hard' : 'soft',
-      notes: draftNotes(entry.draft),
+      notes: entry.notes.value.replace(/\r\n?/g, '\n').replace(/\s+$/, ''),
     };
     const next = neighborFocus(`d${entry.id}`);
     dropPreview(entry.id);
@@ -623,7 +728,7 @@ export function setupInbox({ read, saveDraft, changeDraft, discardDraft, addToBo
     return () => {
       requestAnimationFrame(() => {
         const other = otherKey && shown.get(otherKey);
-        const target = other ? other.el.querySelector('input, button:not([hidden])') : pickButton;
+        const target = other ? other.el.querySelector('input, textarea, button:not([hidden])') : pickButton;
         if (dialog.open && target) target.focus();
       });
     };

@@ -1,5 +1,7 @@
 // The quick add field under the header. Type a title, then:
-//   Enter          open it as a new card, to add a date and details first
+//   Enter          onCompose: on the board, Haiku reads it and app.js
+//                  decides where it goes (slice 3c); on a project page, or
+//                  with no backend, it opens as a new card in the editor
 //   Ctrl+Enter     save it to Someday right away (Cmd+Enter on a Mac)
 //   Shift+Enter    save it to Today right away
 // This file only reads the field; app.js decides how the card is saved.
@@ -53,12 +55,17 @@ export function setupQuickAdd({ input, status, since, onCompose, onAdd, onEdit }
   });
 
   function showAdded(text, id) {
-    const edit = document.createElement('button');
-    edit.type = 'button';
-    edit.className = 'link-button';
-    edit.textContent = 'Edit';
-    edit.addEventListener('click', () => onEdit(id));
-    showMessage([`${text} `, edit]);
+    showAction(text, 'Edit', () => onEdit(id));
+  }
+
+  // A confirmation with one button after it ("Edit", "Review").
+  function showAction(text, label, onClick) {
+    const action = document.createElement('button');
+    action.type = 'button';
+    action.className = 'link-button';
+    action.textContent = label;
+    action.addEventListener('click', onClick);
+    showMessage([`${text} `, action]);
     deadline = performance.now() + CONFIRM_FOR;
     schedule();
   }
@@ -136,6 +143,7 @@ export function setupQuickAdd({ input, status, since, onCompose, onAdd, onEdit }
 
   return {
     showAdded,
+    showAction,
     showNote,
     // Takes away a confirmation or note at once (an error stays).
     dismissNote() {

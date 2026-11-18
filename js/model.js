@@ -7,7 +7,8 @@
 //   users/{uid}/projects/{id}    one document per project
 //
 //   users/{uid}/inbox/{draftId}  drafts waiting in the Inbox (3b: from
-//                                screenshots; later, perhaps, cards a
+//                                screenshots; 3c: from pasted text and
+//                                quick add; later, perhaps, cards a
 //                                colleague sends you)
 //
 // Shared projects, if they come, would live in a top-level projects/{id}
@@ -30,7 +31,7 @@
 //                  this card. Dragging and triage change dueDate, not this.
 //   seriesDay      1 to 31, or null: monthly only, the day of the month the
 //                  series aims for (see repeat.js)
-//   source         "manual", "quick_add", or "screenshot"
+//   source         "manual", "quick_add", "screenshot", or "pasted_text"
 //   order          number, or null: the card's place within its zone, set
 //                  when you drag it (see order.js). null means date order.
 //   createdAt, updatedAt, completedAt, letGoAt   Firestore timestamps
@@ -47,7 +48,8 @@
 //                  is "" for none, url an http(s) address (see links.js)
 //   createdAt, updatedAt   Firestore timestamps
 //
-// A draft document (the Inbox). Never holds the screenshot itself.
+// A draft document (the Inbox). Never holds the screenshot or the pasted
+// text itself.
 //   title           string
 //   notes           the notes the card will get, put together from Haiku's
 //                   answer by draftNotesFrom (below)
@@ -58,7 +60,10 @@
 //   dueDateQuote    the words the date came from, or ""
 //   category        a category id, or null
 //   deadlineType    "soft" or "hard"
-//   source          "screenshot"
+//   source          "screenshot", "pasted_text", or "quick_add"
+//   typed           quick add only: the words you typed, to check the date
+//                   against while the draft waits (your own words; gone
+//                   with the draft). "" otherwise.
 //   createdAt, updatedAt   Firestore timestamps
 //
 // The profile document also keeps the visit record that morning triage and
@@ -104,14 +109,23 @@ export function newCard({ title, dueDate = null }) {
   };
 }
 
-// A draft from the backend's answer to a screenshot (see Code.gs,
-// normalizeDraft_). The backend has already checked every field; these
-// checks are for safety. `today` is the board's today, for the notes'
-// dates.
-export function newDraft(answer, today = todayISO()) {
+// Where a draft came from, and the title it gets if Haiku gave none.
+export const DRAFT_SOURCES = {
+  screenshot: 'Look at this screenshot',
+  pasted_text: 'Look at this pasted text',
+  quick_add: 'Look at this',
+};
+
+// A draft from the backend's answer to a screenshot, pasted text, or a
+// quick add line (see Code.gs, normalizeDraft_). The backend has already
+// checked every field; these checks are for safety. `today` is the board's
+// today, for the notes' dates. `typed` is what you typed, for quick add.
+export function newDraft(answer, today = todayISO(), { source = 'screenshot', typed = '' } = {}) {
   const dueDate = isISODate(answer.due_date) ? answer.due_date : null;
+  const kind = Object.hasOwn(DRAFT_SOURCES, source) ? source : 'screenshot';
+  const fallback = kind === 'quick_add' && typed.trim() ? typed.trim() : DRAFT_SOURCES[kind];
   return {
-    title: typeof answer.title === 'string' && answer.title.trim() ? answer.title.trim() : 'Look at this screenshot',
+    title: typeof answer.title === 'string' && answer.title.trim() ? answer.title.trim() : fallback,
     notes: draftNotesFrom(answer, today),
     dueDate,
     aiDueDate: dueDate,
@@ -119,7 +133,8 @@ export function newDraft(answer, today = todayISO()) {
     dueDateQuote: dueDate && typeof answer.due_date_quote === 'string' ? answer.due_date_quote : '',
     category: typeof answer.suggested_category === 'string' ? answer.suggested_category : null,
     deadlineType: answer.deadline_type === 'hard' ? 'hard' : 'soft',
-    source: 'screenshot',
+    source: kind,
+    typed: kind === 'quick_add' ? typed.slice(0, 500) : '',
   };
 }
 
@@ -187,7 +202,8 @@ export function normalizeDraft(id, data) {
     dueDateQuote: typeof data.dueDateQuote === 'string' ? data.dueDateQuote : '',
     category: typeof data.category === 'string' && data.category ? data.category : null,
     deadlineType: data.deadlineType === 'hard' ? 'hard' : 'soft',
-    source: data.source || 'screenshot',
+    source: Object.hasOwn(DRAFT_SOURCES, data.source) ? data.source : 'screenshot',
+    typed: typeof data.typed === 'string' ? data.typed : '',
     createdAt: millis(data.createdAt),
   };
 }

@@ -2500,16 +2500,42 @@ a.link-row:focus-visible { outline-offset: -2px; }
 
 .inbox-item .check { margin-top: -6px; font-size: 14px; color: var(--ink); }
 
+/* A draft's notes: a box you can edit (3c). As tall as its lines, up to
+   ten (inbox.js), then it scrolls. */
 .inbox-notes {
-  margin: 0;
+  font-size: 13px;
+  resize: vertical;
+}
+
+/* Pasted text, for checking: shown as written, in a box that scrolls. */
+.inbox-shot.is-text {
+  display: block;
+  min-height: 0;
+  max-height: 180px;
+  overflow-y: auto;
+  padding: 10px 12px;
   font-size: 13px;
   line-height: 1.45;
-  color: var(--ink-secondary);
-  white-space: pre-line;
+  color: var(--ink);
+  background: var(--surface-soft);
+  border: 1px solid var(--border-soft);
+  white-space: pre-wrap;
   overflow-wrap: anywhere;
 }
 
-.inbox-notes[hidden] { display: none; }
+.inbox-shot.is-text:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+/* A quick add draft: what you typed. */
+.inbox-shot.is-typed {
+  display: block;
+  min-height: 0;
+  padding: 10px 12px;
+  font-size: 14px;
+  line-height: 1.45;
+  color: var(--ink);
+  background: var(--surface-soft);
+  overflow-wrap: anywhere;
+}
 
 .inbox-notes-label {
   display: block;
@@ -2555,6 +2581,19 @@ a.link-row:focus-visible { outline-offset: -2px; }
   font-size: inherit;
   color: var(--ink);
 }
+
+/* Pasted text (3c), under the drop zone. */
+.inbox-text {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.inbox-text .field { font-size: 14px; color: var(--ink); }
+
+.inbox-text-input { min-height: 96px; }
+
+.inbox-text .button { align-self: flex-end; }
 
 /* While an image file is dragged over the board. */
 .drop-overlay {

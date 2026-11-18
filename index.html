@@ -81,6 +81,8 @@
         <kbd class="quickadd-key" aria-hidden="true">Enter</kbd>
       </label>
       <span id="quickadd-help" class="visually-hidden">Enter opens it as a new card so you can add a date and details. Control and Enter adds it to Someday right away. Shift and Enter adds it to Today right away.</span>
+      <!-- The board's quick add, slice 3c: Enter goes to Claude (app.js). -->
+      <span id="quickadd-help-ai" class="visually-hidden">Enter sends it to Claude, which reads any date in it: a day you name plainly puts the card on the board, a date it has to work out sends it to the Inbox to check, and no date puts it in Someday. Control and Enter adds it to Someday right away, without Claude. Shift and Enter adds it to Today right away.</span>
       <!-- One spot, shared: the Since yesterday line normally, a quick add
            confirmation for a few seconds after you add a card. -->
       <div class="quickadd-line">
@@ -509,6 +511,13 @@
           <p id="inbox-drop-text" class="inbox-drop-text"></p>
           <button type="button" id="inbox-pick" class="button">Choose a file</button>
           <input type="file" id="inbox-file" accept="image/*" multiple hidden>
+        </div>
+        <!-- Pasted text (slice 3c): read like a screenshot, never saved. -->
+        <div class="inbox-text">
+          <label class="field" for="inbox-text-input">Or paste the text of an email</label>
+          <textarea id="inbox-text-input" class="field-input field-notes inbox-text-input" rows="4" maxlength="100000" aria-describedby="inbox-text-help"></textarea>
+          <p id="inbox-text-help" class="visually-hidden">Control and Enter reads the text, the same as the Read the text button.</p>
+          <button type="button" id="inbox-text-read" class="button">Read the text</button>
         </div>
       </div>
     </div>

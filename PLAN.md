@@ -125,12 +125,22 @@ that branch into `main` and merge it (or ask a session to). `main` can
 fast-forward: nothing on it is newer. Then point GitHub Pages back at
 `main` (Settings > Pages), if it's on the side branch.
 
-**Next: slice 3c, in a fresh session, after 3b is merged:**
-Haiku parsing for quick add, plus pasting text into the Inbox and editing
-a draft's notes there (SPEC "Quick add", "Screenshot to card", "The Inbox
-review panel", "Security", "Visual design"; `design/horizon-board.png`,
-`design/horizon-inbox-open.png`, `design/Main.dc.html`). Questions for
-3c are listed under "Slice 3b", Open for 3c.
+**Slice 3c: built, awaiting your test** (2026-11-18), on the same
+branch, `claude/nifty-mendel-uwgwln`. Haiku for quick add (Enter: a
+plainly named date goes straight on the board, a worked-out date to the
+Inbox, no date to Someday; Ctrl+Enter and Shift+Enter unchanged), pasted
+email text in the Inbox, and draft notes you can edit there. Needs a new
+Apps Script version. See "Slice 3c" below for the plan, the setup, and
+the test list.
+
+Note (2026-11-18): GitHub's `main` still ends at the 3a commit, so 3b is
+not merged yet, though the 3c request said it was. 3c is built on top of
+3b on the same branch; merging this branch into `main` after 3c is
+confirmed brings both.
+
+**Next:** test 3c (setup steps and test list under "Slice 3c"). After
+you confirm it, commit, merge the branch into `main`, then decide on the
+tuning slice ("Slice 3c", Proposals 5).
 
 Open proposals carried over: Undo for Let it go and Mark done on the board
 (the Done view's "Put back on the board" covers getting a card back), Let
@@ -140,10 +150,338 @@ and a Settings gear on the What you did page (Year starts in is only
 reachable from the board). From 3a: a total daily cap across everyone,
 and updating SPEC's line about the script's allowlist (both under "Slice
 3a", Proposals). From 3b: updating SPEC step 4's JSON shape to the one
-3b uses, paste on every page (I advised against it for now), and a tuning
-slice after 3c (under "Slice 3b", Open for 3c). Still parked: Done
+3b uses, and paste on every page (I advised against it for now). From
+3c: Haiku on the project page's quick add, Alt+Enter for the old Enter,
+a mark for pasted-text cards, SPEC's new `pasted_text` source, and the
+tuning slice (all under "Slice 3c", Proposals). Still parked: Done
 privacy and the Firebase console. (One approved list is settled: see
 "Slice 3a", question 3.)
+
+## Slice 3c: Haiku for quick add, pasted text in the Inbox, editable draft notes (built, awaiting test)
+
+Planned and built 2026-11-18 on `claude/nifty-mendel-uwgwln` (the same
+branch as 3b, since 3b isn't in `main` yet; see Status).
+
+### What it does
+
+- **Quick add, Enter:** what you type goes to Haiku, behind the same gate
+  as screenshots. A date you named plainly ("Nov 20", "tomorrow", "fri")
+  puts the card straight on the board; a date Haiku had to work out ("next
+  Friday", "end of the month") sends it to the Inbox with the yellow note;
+  no date at all puts it in Someday. The line beside the field says which
+  happened, with Edit or Review.
+- **Ctrl+Enter and Shift+Enter** stay as they were: Someday or Today at
+  once, with no Haiku, no wait, no cost.
+- **Pasted text in the Inbox:** under the drop zone, "Or paste the text of
+  an email" and a Read the text button. It comes back as a draft in the
+  same shape as a screenshot's, through the same prompt rules, and always
+  waits in the Inbox.
+- **Notes you can edit in the Inbox:** each draft's notes are a text box
+  that saves when you leave it, like Title and Due.
+
+### The open questions, settled
+
+**1. Pasted text: a `text` action sharing the screenshot's prompt and
+answer shape.**
+
+The screenshot prompt is now written once, with the word for the source
+filled in: for a screenshot it reads word for word as revision 4 (a check
+here proves it), and for pasted text "the screenshot" becomes "the pasted
+text" throughout, with its own first line ("You turn the pasted text of
+an email, chat, calendar invite, or document into one task..."). Same
+schema, same field checks, same notes put together by `draftNotesFrom`.
+The pasted text goes to Haiku inside `<pasted_text>` tags, so where your
+instructions end and the material begins is unmistakable.
+
+- **Up to 20,000 characters** (a long email thread; about 5,000 tokens,
+  under a tenth of a cent). Longer, and the site sends the first 20,000
+  and says so: in a thread the newest message is usually on top.
+- **Where you paste it:** a text box under the drop zone, with a Read the
+  text button; Ctrl+Enter in the box does the same. The box works on a
+  phone too (long-press, Paste), which makes it the easier phone path for
+  an email than a screenshot.
+- **A text paste on the board** stays a normal paste, as agreed.
+- **Never saved,** the same promise as the screenshot: the pasted text
+  stays in this tab's memory as the draft's preview, until Add to board
+  or Discard, and after a reload the draft shows "The pasted text isn't
+  kept..." It is never written to Firestore and never logged.
+- **Cards from pasted text** get `source: "pasted_text"`, a new value
+  beside SPEC's manual, quick add, and screenshot. No mark on the board
+  (a proposal, below).
+
+**2. Editing a draft's notes: a notes box, not a "More" button.**
+
+The read-only notes become a text box (as many lines as the notes have,
+up to 10, then it scrolls), saving when you leave it. Empty notes show an
+empty box, so you can add one. Add to board uses what's in the box, even
+if you press it before leaving the box. Up to 10,000 characters, like a
+project's notes.
+
+Why not "More": the card editor is built around a card that exists. It
+has Mark done, In progress, Repeats with "Move the series too", and it
+opens beside a card on the board. On a draft half of that means nothing,
+and the editor opening over the Inbox means two panels stacked, each with
+its own Escape and its own saving. Repeats, Project, and In progress are
+one click away once the card is on the board.
+
+**3. How quick add decides.**
+
+Haiku answers in the same shape as for a screenshot, with its own short
+prompt for a note you typed yourself. The site then routes by the date:
+
+| Haiku's answer | Where it goes | The line says |
+|---|---|---|
+| explicit date, today to a year out | straight onto the board | Added “Flyer draft for the Nov program” for Fri, Nov 20. **Edit** |
+| inferred date | the Inbox, panel stays closed, pill counts up | Sent to the Inbox to check the date (“next fri”). **Review** |
+| explicit date in the past, or more than a year out | the Inbox, as inferred | the same |
+| no date | Someday | Added “...” to Someday. **Edit** |
+
+**What counts as explicit in a typed note** is wider than in a
+screenshot, because "today" is certain when you're the one typing: a
+calendar date ("Nov 20", "11/20", "the 20th"), "today", "tonight",
+"tomorrow", or a weekday on its own or with "this" ("fri", "this
+Friday"), meaning the first one after today. Inferred: "next Friday"
+(this coming one, or the one after?), a weekday that is today's own,
+"next week", "end of the month", "in two weeks", "before the program". A
+date without a year is the next one on or after today. Without this
+widening, the mockup's own example ("flyer draft for nov program fri")
+would go to the Inbox every time, and quick add would feel like a form.
+
+**The title** keeps your own words: only the words that gave the date
+come out, and the first letter is capitalized. No rephrasing, no "start
+with a verb" (that rule is for someone else's email). If nothing is left
+(you typed only "fri"), the title is what you typed. Category only when
+one clearly fits; Hard deadline only when you say so ("cutoff", "hard
+deadline", "closes"). Timeline, Need to know, and Contact stay empty
+unless the note itself has them, so the card's notes are usually empty.
+
+**The keys now:**
+- **Enter:** to Haiku, as above. The field empties at once and the line
+  says "Reading “…”…", so you can type the next one while it reads.
+  Several can be reading at once.
+- **Ctrl+Enter** (Cmd+Enter on a Mac): Someday, no Haiku. Unchanged.
+- **Shift+Enter:** Today, no Haiku. Unchanged.
+- The old Enter (open as a new card in the editor) remains for a copy of
+  Horizon with no backend address in `config.js`, so a fork without Apps
+  Script still works as Phase 1 did.
+
+**When the backend refuses or can't be reached:** nothing typed is lost.
+Your text goes back in the field (unless you've started typing something
+new), and the line says the backend's own sentence and then "Your text is
+back in the box. Ctrl+Enter adds it to Someday without Claude." Enter
+again tries again; nothing retries on its own, apart from the one silent
+fresh-token try from 3b. If you sign out while it's reading, the answer is
+thrown away.
+
+**The project page's quick add doesn't change** (Enter opens the editor
+with the project chosen). You asked for the board's quick add; extending
+it is a proposal below.
+
+### What changes in the backend
+
+- Two new actions behind the gate, sharing one function: `quickadd` (up
+  to 500 characters) and `text` (up to 20,000). Both send `{ action,
+  idToken, text, today, categories }` and get back exactly what a
+  screenshot does: `{ ok, action, draft, tokens, usage }`.
+- One new refusal, checked before the gate so it costs nothing:
+  `bad-text`, "Claude couldn't read that text. It may be empty or too
+  long." (no Try again).
+- `ai-failed` now says "Claude couldn't make a draft from that." instead
+  of "from that screenshot", since it covers all three.
+- The blank-title fallback is per source: "Look at this screenshot",
+  "Look at this pasted text", or your typed words.
+- The screenshot action and its prompt are unchanged.
+
+**Cost:** a quick add is about 1,900 tokens in (the short prompt, the
+calendar, your categories) and 100 to 200 out: about $0.0003, the same
+console line as a screenshot shows. A long pasted email, up to $0.001.
+All three share the 100 calls a day; Ctrl+Enter and Shift+Enter use none.
+
+### Each security choice, and what it protects
+
+1. **The same gate, unchanged.** Quick add and pasted text sit behind 3a's
+   checks (a real sign-in, on the approved list, under today's limit),
+   and the Anthropic key is still only in Script Properties.
+2. **Junk refused before it counts.** Empty or over-long text, a date that
+   isn't one, or a bad category list is refused before the counter and
+   before Anthropic. Costs neither a call nor money.
+3. **The only path to the board without review is your own words.** A
+   pasted email is someone else's writing and could carry instructions
+   ("ignore your rules and..."), so it always waits in the Inbox, like a
+   screenshot. Quick add skips the Inbox only for text you typed, only
+   with a plainly named date, and even then the result is just a card,
+   which the line shows you with Edit.
+4. **The site double-checks Haiku's "explicit".** A date in the past or
+   more than a year out goes to the Inbox however sure Haiku was, so a
+   misread can't drop a card into Overdue or out of sight.
+5. **Text is material, never instructions.** Both prompts say so; the
+   text arrives inside tags (with any look-alike tag inside it defused);
+   the answer can only be the fixed JSON shape, checked field by field.
+6. **Pasted text is never saved or logged,** like the screenshot. Your
+   typed quick add text is saved on its draft only while the draft waits
+   (it's your own words, and the thing to check the date against), and
+   goes with the draft.
+7. **Everything shown is shown as text** (`textContent`, form values),
+   so nothing in an email can become a link or a script.
+8. **Logs stay clean:** the action, your user ID, tokens, stop reason.
+   Never the text, the draft, the token, or the key.
+9. **No automatic retries,** except the one fresh-token try.
+
+### Decisions I made that the questions didn't cover (change any of them)
+
+1. **Quick add's Inbox drafts don't open the panel.** You're typing; the
+   pill counts up and Review opens it when you want.
+2. **A quick add draft shows what you typed** where a screenshot draft
+   shows the screenshot ("You typed: “flyer draft for next fri”").
+3. **The date notes name the source:** "Date read directly from the
+   text.", "from what you typed."
+4. **The Inbox's line** now says "screenshots and pasted text are never
+   saved."
+5. **The quick add help** that screen readers hear describes the new
+   Enter (the project page keeps the old help).
+
+### Proposals (not built; say yes and I'll add them)
+
+1. **Haiku on the project page's quick add too,** the card starting in
+   that project.
+2. **A key for the old Enter** (Alt+Enter: open as a new card in the
+   editor), if you miss it.
+3. **A mark for pasted-text cards,** like the screenshot's corner
+   brackets (an envelope, say).
+4. **SPEC updates:** the card's `source` values gain `pasted_text`, and
+   step 4's JSON shape (both from 3b's list too).
+5. **The tuning slice after 3c,** carried over from 3b's "Open for 3c"
+   and still not agreed: a dozen real cases as text (no images stored)
+   with the answers you'd want; compare Haiku as now, Haiku at medium
+   effort, and Sonnet 5.5 (about a cent a screenshot); and only if
+   inferred dates go wrong, a cheap second look at just those, shown in
+   the yellow note rather than voted away. Quick add gives it a third
+   kind of case: how often "explicit" sends a card straight to the board
+   on the wrong day.
+
+### What I checked here
+
+I can't deploy Apps Script or call Anthropic from here, so:
+
+- **`Code.gs` under Node,** with stand-ins for Apps Script's services,
+  run beside the 3b revision 4 file: 14 checks, all passing. The
+  screenshot prompt is word for word revision 4's, and a screenshot's
+  request to Anthropic is byte for byte the same. Quick add and pasted
+  text each get their own prompt (the pasted text one never says
+  "screenshot"), the text inside its tags, a look-alike closing tag
+  defused, the same schema and checks; empty or over-long text is
+  refused as `bad-text` before anything is counted or sent (500 and
+  20,000 pass, 501 and 20,001 don't); the limit stops them before
+  Anthropic; Anthropic's errors map as for screenshots; a blank title
+  falls back to what you typed; no log line holds the text, the draft,
+  the token, or the key; `ping` still works.
+- **The whole site in a real browser** (headless Chrome) with a pretend
+  Firebase and a pretend backend, at `?today=2026-11-18`: 16 checks, all
+  passing. Explicit date to the board with the category; inferred to the
+  Inbox with the panel closed, the pill at 1, Review opening it, "You
+  typed", the yellow note; no date to Someday, an invented category
+  dropped; a past "explicit" date to the Inbox; hard deadline kept; two
+  quick adds reading at once both land; over-limit and offline put the
+  text back, but never over something typed meanwhile; Ctrl+Enter sends
+  nothing; pasted text read with its preview shown as text (a `<script>`
+  in it stays text), the draft saved without the pasted words, its notes
+  in an editable box; a notes edit saves on leaving the box, and Add to
+  board takes an edit you haven't left yet; after a reload the "isn't
+  kept" notes per source, and a 3b draft still reads; a pasted
+  screenshot still goes as before; at 360 pixels wide nothing scrolls
+  sideways.
+
+Not checked, and on your list: the real Haiku (how it reads typed
+dates, whether it keeps your words), the real Apps Script, a real phone.
+
+### Files
+
+```
+apps-script/Code.gs   the quickadd and text actions, the shared prompt,
+                      the quick add prompt, bad-text, ai-failed's wording
+js/backend.js         the no-address sentence covers every AI feature
+js/model.js           newDraft takes a source (and what you typed);
+                      drafts keep source and typed
+js/quickadd.js        Enter goes to Haiku when there's a backend
+js/inbox.js           the notes box, the pasted text box, text previews,
+                      quick add drafts, notes per source
+js/app.js             wiring: the quick add's route, the Inbox's text
+index.html            the quick add help, the pasted text box
+css/horizon.css       their styles
+```
+
+### Setup steps (yours)
+
+**A. Google Apps Script: the new code as a new version** (the address in
+`config.js` stays the same)
+
+1. `script.google.com`, open **Horizon backend**.
+2. In `Code.gs`, select everything, delete it, paste all of
+   `apps-script/Code.gs` from this branch. Save.
+3. Run `checkSetup`. Every line should still be OK; nothing new is asked
+   for.
+4. **Deploy > Manage deployments**, the pencil on your deployment,
+   **Version: New version**, description `3c`, **Deploy**. (Not "New
+   deployment", which would make a new address.)
+
+Both halves are needed: the old script answers the new site's quick add
+with "Horizon's backend didn't understand that request."
+
+**B. GitHub Pages:** point Pages at `claude/nifty-mendel-uwgwln` to test
+(Settings > Pages), then hard-reload the site (Cmd/Ctrl+Shift+R).
+
+**C. Firebase and the Claude Console:** nothing. The rules already cover
+drafts; glance at your credit if you like.
+
+### How to test
+
+Hard-reload first, with the console open for the cost lines.
+
+**Quick add**
+- [ ] Type `flyer draft for nov program fri`, Enter. The field empties, the
+      line says Reading..., then "Added “Flyer draft for nov program” for
+      Fri, Nov 20." The card is on the board that day. The console shows a
+      cost line.
+- [ ] `call Bonnie tomorrow`, Enter: on the board, tomorrow.
+- [ ] `order holiday DVDs by Dec 4, vendor cutoff`: Dec 4, Hard deadline.
+- [ ] `weed the 641s next friday`: not on the board; the line says it went
+      to the Inbox, Review opens it, the draft has the yellow note quoting
+      "next friday", and "You typed" shows your words.
+- [ ] `read up on Libby's new holds rules` (no date): Someday.
+- [ ] Ctrl+Enter and Shift+Enter: Someday and Today at once, no Reading,
+      no cost line.
+- [ ] Type three quickly, Enter after each: all three land.
+- [ ] Wi-Fi off, Enter: the sentence, your text back in the box. Wi-Fi on,
+      Enter: it works.
+- [ ] `DAILY_LIMIT` set to `0` in Script Properties: Enter says you've used
+      today's AI requests, text back. Ctrl+Enter still works. Delete
+      `DAILY_LIMIT`.
+- [ ] Tell me any title that rewrote your words, or any card that went
+      straight onto the board on the wrong day.
+
+**Pasted text**
+- [ ] Copy the text of an email with a date (the exam email works), open
+      the Inbox, paste into "Or paste the text of an email", press Read
+      the text. "Reading the text..." with the text shown, then a draft
+      like the screenshot's, with notes.
+- [ ] Reload: the draft is there; the text box says it isn't kept.
+- [ ] Add to board: the card has the notes.
+- [ ] On your phone: long-press, Paste, Read the text.
+
+**Notes in the Inbox**
+- [ ] Change a line of a draft's notes, click elsewhere, reload: your
+      change stayed.
+- [ ] Change the notes and press Add to board straight away: the card has
+      your change.
+- [ ] A draft with no notes: an empty box you can type in.
+
+**Screenshots, unchanged**
+- [ ] One screenshot, to be sure: same draft as before, same green or
+      yellow note.
+
+**The log**
+- [ ] Executions shows "quickadd by ..." and "text by ...", with tokens,
+      and no text.
 
 ## Slice 3b: screenshot to Inbox draft, and the Inbox review panel (confirmed)
 
