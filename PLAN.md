@@ -430,6 +430,40 @@ no Anthropic key), so:
 Not checked, and on your list: the real Haiku answer (and its cost),
 the real Apps Script, and a real phone.
 
+### What you've tested live so far (2026-11-18)
+
+- **First try:** "Horizon's backend didn't understand that request."
+  The Apps Script was still running the 3a code (the new `Code.gs` hadn't
+  been published as a new version). Once it was, screenshots worked.
+- **The first real draft** (an exam invitation email): the title, the
+  due date (Nov 13, green, read directly), Hard deadline ticked, No
+  category (right: none of yours fit), and full, accurate notes. Three
+  prompt problems, proposed below as a revision: "People" listed the
+  person the email was addressed to (you); the summary spoke of you in
+  the third person; the title repeated the deadline ("...by Friday
+  night").
+- **The real cost,** from the console:
+
+  | Screenshot sent | Body | Tokens in | Out | Cost |
+  |---|---|---|---|---|
+  | 1367×702 | 206 KB | 3,414 | 311 | $0.0005 |
+  | 525×1035 | 119 KB | 2,843 | 311 | $0.0004 |
+
+  As estimated: about two thousand screenshots per dollar. The image is
+  the smaller part (about 1,270 and 700 tokens by Anthropic's formula);
+  the instructions, the nine-week calendar, and the categories are about
+  2,100 tokens every time, twice my guess. Not worth trimming at these
+  prices. Worst case, 100 screenshots every day, is about $1.50 a month.
+  Bodies are far under every limit.
+- **Console noise,** not from Horizon's code: a 404 (most likely the
+  browser asking for a `favicon.ico` the site doesn't have) and
+  `ERR_BLOCKED_BY_CLIENT` (a browser extension, usually an ad blocker,
+  stopping a request). Harmless as long as drafts save and survive a
+  reload.
+
+Still to test: an inferred date, the reload, Add to board, the refusals,
+and the phone.
+
 ### Files
 
 ```
