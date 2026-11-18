@@ -548,6 +548,23 @@
         <select id="setting-year-start" class="field-input" aria-describedby="setting-year-note"></select>
       </label>
       <p id="setting-year-note" class="settings-note">For the Year button in What you did. Choose July for a July to June fiscal year.</p>
+      <!-- What each quick add key does (settings.js). -->
+      <fieldset class="settings-keys" aria-describedby="setting-keys-note">
+        <legend class="settings-legend">Quick add keys</legend>
+        <label class="settings-key"><span class="settings-key-name">Enter</span>
+          <select id="setting-key-enter" class="field-input"></select>
+        </label>
+        <label class="settings-key"><span class="settings-key-name" data-key="alt">Alt+Enter</span>
+          <select id="setting-key-alt" class="field-input"></select>
+        </label>
+        <label class="settings-key"><span class="settings-key-name" data-key="ctrl">Ctrl+Enter</span>
+          <select id="setting-key-ctrl" class="field-input"></select>
+        </label>
+        <label class="settings-key"><span class="settings-key-name">Shift+Enter</span>
+          <select id="setting-key-shift" class="field-input"></select>
+        </label>
+      </fieldset>
+      <p id="setting-keys-note" class="settings-note">Read with Claude: a day you name plainly goes on the board, a date it works out goes to the Inbox to check, and no date goes to Someday. On a project page it opens the editor instead.</p>
       <p class="settings-note">Saved to your account, so it follows you to your other devices.</p>
       <div class="small-foot">
         <button type="button" id="settings-done" class="button button-primary">Done</button>

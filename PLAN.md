@@ -138,7 +138,8 @@ not merged yet, though the 3c request said it was. 3c is built on top of
 3b on the same branch; merging this branch into `main` after 3c is
 confirmed brings both.
 
-**Next:** test 3c (setup steps and test list under "Slice 3c"). After
+**Next:** test 3c, plus the addition you asked for (Alt+Enter, and
+the quick add keys in Settings; under "Slice 3c"). After
 you confirm it, commit, merge the branch into `main`, then decide on the
 tuning slice ("Slice 3c", Proposals 5).
 
@@ -411,6 +412,59 @@ dates, whether it keeps your words), the real Apps Script, a real phone.
   a request.
 
 Still to hear: where each quick add landed and what its title said.
+
+### Addition you asked for: Alt+Enter, and quick add keys in Settings
+
+Asked 2026-11-18, after 3c took the board's one-key way to the editor.
+Site only: no new Apps Script version.
+
+**Settings gets a "Quick add keys" section:** four rows (Enter,
+Alt+Enter, Ctrl+Enter, Shift+Enter), each a menu with the same four
+choices:
+
+- **Read with Claude:** the 3c route (a plain date to the board, a
+  worked-out one to the Inbox, none to Someday).
+- **Open in the editor:** the old Enter, a new card with your text as its
+  title. Closing without saving puts the text back in the box.
+- **Add to Someday,** **Add to Today:** at once, as Ctrl+Enter and
+  Shift+Enter always did.
+
+**The defaults** are 3c's keys plus the new one: Enter reads with
+Claude, **Alt+Enter opens the editor**, Ctrl+Enter adds to Someday,
+Shift+Enter adds to Today. On a Mac, Alt is Option and Ctrl is also Cmd,
+and the Settings rows say so.
+
+**Decisions (change any of them):**
+1. **Any key can do any job,** two keys can share one, and no key has to
+   use Claude (that's how you turn AI off for quick add).
+2. **Saved to your account,** like the other settings, so every device
+   follows it.
+3. **The project page's quick add follows the same keys,** except that
+   Read with Claude opens the editor there (Claude on the project page is
+   still Proposal 1). The same happens on a copy of Horizon with no
+   backend, where Read with Claude isn't offered in Settings at all.
+4. **The refusal line names whichever key you've set to Someday** (or,
+   failing that, the editor), instead of always saying Ctrl+Enter.
+5. **What screen readers hear** about the keys is written from your
+   settings, so it's always true.
+6. **No "reset" button:** four menus are easy to set back by hand. Say
+   if you'd like one.
+
+**Files:** `js/model.js` (the setting and its defaults), `js/quickadd.js`
+(keys to jobs), `js/settings.js` and `index.html` (the four menus),
+`js/app.js` (wiring, the help text, the refusal line), `css/horizon.css`.
+
+**How to test** (hard-reload first):
+- [ ] Alt+Enter (Option+Enter on a Mac) with text in quick add: the
+      editor opens with it as the title, and nothing reaches Claude.
+      Close without saving: the text is back in the box.
+- [ ] Settings shows the four keys with those defaults.
+- [ ] Set Enter to Open in the editor: Enter opens the editor; set it
+      back to Read with Claude.
+- [ ] Set Shift+Enter to Read with Claude: it reads with Claude.
+- [ ] Reload, and on another device: the choices stuck.
+- [ ] On a project page, a key set to Read with Claude opens the editor
+      with the project chosen.
 
 ### Files
 

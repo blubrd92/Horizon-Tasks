@@ -439,8 +439,9 @@ async function start() {
         { categories, projects },
         { below: projectPage.quickAddField },
       ),
-    onAdd: (title, toToday) =>
+        onAdd: (title, toToday) =>
       fb.addCard(uid, { ...newCard({ title, dueDate: toToday ? todayISO() : null }), projectId: shownProjectId() }),
+    keys: () => settings.quickAddKeys,
     onEdit: openCard,
   });
 
@@ -449,22 +450,18 @@ async function start() {
     return views.project.hidden ? quickAdd : projectQuickAdd;
   }
 
-  // With a backend, the board's Enter goes to Claude; screen readers hear
-  // that instead of Phase 1's help.
-  if (backendAddress()) document.getElementById('quickadd-input').setAttribute('aria-describedby', 'quickadd-help-ai');
+  // The board's quick add. What each key does is in Settings; Read with
+  // Claude needs the backend (a copy of Horizon with no Apps Script opens
+  // the editor instead, as in Phase 1).
+  document.getElementById('quickadd-input').setAttribute('aria-describedby', 'quickadd-help-ai');
   quickAdd = setupQuickAdd({
     input: document.getElementById('quickadd-input'),
     status: document.getElementById('quickadd-status'),
     since: document.getElementById('since-line'),
-    onCompose: (title) => {
-      // With a backend, Haiku reads it (slice 3c). Without one (a copy of
-      // Horizon with no Apps Script), Enter opens the editor, as in Phase 1.
-      if (backendAddress()) {
-        readQuickAdd(title);
-        return;
-      }
-      editor.open({ id: null, ...newCard({ title }) }, { categories: latest ? latest.categories : [], projects }, { below: quickAddField });
-    },
+    onCompose: (title) =>
+      editor.open({ id: null, ...newCard({ title }) }, { categories: latest ? latest.categories : [], projects }, { below: quickAddField }),
+    onRead: backendAddress() ? readQuickAdd : undefined,
+    keys: () => settings.quickAddKeys,
     onAdd: (title, toToday) => fb.addCard(uid, newCard({ title, dueDate: toToday ? todayISO() : null })),
     onEdit: openCard,
   });
@@ -540,8 +537,7 @@ async function start() {
     if (!uid || uid !== who) return;
     if (!answer.ok) {
       console.info(`Quick add refused: ${answer.error}`);
-      const key = /Mac|iPhone|iPad/.test(navigator.platform || navigator.userAgent) ? 'Cmd' : 'Ctrl';
-      quickAdd.showText(`${answer.message} Your text is back in the box. ${key}+Enter adds it to Someday without Claude.`);
+      quickAdd.showText(`${answer.message} Your text is back in the box.${fallbackKey()}`);
       quickAdd.giveBack(typed);
       return;
     }
@@ -581,6 +577,43 @@ async function start() {
       quickAdd.giveBack(typed);
     });
   }
+
+  // The keys as they're named on this computer.
+  const onMac = /Mac|iPhone|iPad/.test(navigator.platform || navigator.userAgent);
+  const KEY_NAMES = onMac
+    ? { enter: 'Enter', alt: 'Option+Enter', ctrl: 'Cmd+Enter', shift: 'Shift+Enter' }
+    : { enter: 'Enter', alt: 'Alt+Enter', ctrl: 'Ctrl+Enter', shift: 'Shift+Enter' };
+
+  // After a refusal: the key that adds it without Claude, as you've set
+  // the keys (Someday first, then the editor), or nothing if there's none.
+  function fallbackKey() {
+    const keys = settings.quickAddKeys;
+    const someday = Object.keys(KEY_NAMES).find((k) => keys[k] === 'someday');
+    if (someday) return ` ${KEY_NAMES[someday]} adds it to Someday without Claude.`;
+    const editorKey = Object.keys(KEY_NAMES).find((k) => keys[k] === 'editor');
+    return editorKey ? ` ${KEY_NAMES[editorKey]} opens it in the editor.` : '';
+  }
+
+  // What screen readers hear about the keys, written from your settings:
+  // the board's help, and the project page's (where Claude isn't on offer).
+  function drawKeyHelp() {
+    const SAY = {
+      claude: 'sends it to Claude, which reads any date in it: a day you name plainly puts the card on the board, a date it has to work out sends it to the Inbox to check, and no date puts it in Someday',
+      editor: 'opens it as a new card, so you can add a date and details',
+      someday: 'adds it to Someday right away',
+      today: 'adds it to Today right away',
+    };
+    const describe = (withClaude) =>
+      Object.keys(KEY_NAMES)
+        .map((k) => {
+          const job = settings.quickAddKeys[k] === 'claude' && !withClaude ? 'editor' : settings.quickAddKeys[k];
+          return `${KEY_NAMES[k].replace('+', ' and ')} ${SAY[job]}.`;
+        })
+        .join(' ');
+    document.getElementById('quickadd-help-ai').textContent = describe(Boolean(backendAddress()));
+    document.getElementById('quickadd-help').textContent = describe(false);
+  }
+  drawKeyHelp();
 
   // The Inbox: screenshots and pasted text in, drafts out (see inbox.js).
   const inbox = setupInbox({
@@ -707,18 +740,21 @@ async function start() {
   const datePick = setupDatePick();
 
   const settingsBox = setupSettings({
+    withClaude: Boolean(backendAddress()),
     onChange: (name, value) => {
       if (!uid) return;
       const before = settings;
       settings = { ...settings, [name]: value };
       draw();
       refreshDone();
+      drawKeyHelp();
       fb.saveSetting(uid, name, value).catch((err) => {
         // Refused: put the setting and the board back as they were.
         settings = before;
         settingsBox.show(settings);
         draw();
         refreshDone();
+        drawKeyHelp();
         boardMessage.hidden = false;
         boardMessage.textContent = `The setting didn't save, so it's back as it was (${err.code || err.message}).`;
       });

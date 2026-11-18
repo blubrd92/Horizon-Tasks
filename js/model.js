@@ -75,6 +75,9 @@
 //   settings.foldLongZones      true to fold long zones (see board.js)
 //   settings.yearStart          1 to 12: the month the Done record's Year
 //                               starts in (see record.js)
+//   settings.quickAddKeys       what each quick add key does: { enter, alt,
+//                               ctrl, shift }, each one of QUICK_ADD_JOBS
+//                               (see quickadd.js)
 
 import { formatShort, formatTime, isISODate, toISO, todayISO } from './dates.js';
 import { normalizeLinks } from './links.js';
@@ -236,12 +239,23 @@ export function normalizeProject(id, data) {
   };
 }
 
+// The jobs a quick add key can do, and what each key does until you
+// change it in Settings.
+export const QUICK_ADD_JOBS = ['claude', 'editor', 'someday', 'today'];
+export const QUICK_ADD_KEYS = { enter: 'claude', alt: 'editor', ctrl: 'someday', shift: 'today' };
+
 // Settings with their defaults filled in. Every setting is off until you
-// turn it on, and the year starts in January.
+// turn it on, the year starts in January, and the quick add keys are the
+// ones above.
 export function normalizeSettings(data) {
   const settings = data && typeof data === 'object' ? data : {};
   const yearStart = Number.isInteger(settings.yearStart) && settings.yearStart >= 1 && settings.yearStart <= 12 ? settings.yearStart : 1;
-  return { foldLongZones: settings.foldLongZones === true, yearStart };
+  const saved = settings.quickAddKeys && typeof settings.quickAddKeys === 'object' ? settings.quickAddKeys : {};
+  const quickAddKeys = {};
+  for (const [key, job] of Object.entries(QUICK_ADD_KEYS)) {
+    quickAddKeys[key] = QUICK_ADD_JOBS.includes(saved[key]) ? saved[key] : job;
+  }
+  return { foldLongZones: settings.foldLongZones === true, yearStart, quickAddKeys };
 }
 
 // Turns a Firestore card document into a predictable object, filling in

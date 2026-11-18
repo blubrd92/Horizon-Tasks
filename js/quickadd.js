@@ -1,10 +1,15 @@
-// The quick add field under the header. Type a title, then:
-//   Enter          onCompose: on the board, Haiku reads it and app.js
-//                  decides where it goes (slice 3c); on a project page, or
-//                  with no backend, it opens as a new card in the editor
-//   Ctrl+Enter     save it to Someday right away (Cmd+Enter on a Mac)
+// The quick add field under the header. Type a title, then press Enter,
+// Alt+Enter (Option on a Mac), Ctrl+Enter (or Cmd+Enter on a Mac), or
+// Shift+Enter. What each key does is yours to set in Settings; out of the
+// box:
+//   Enter          read it with Claude (slice 3c): app.js decides where
+//                  it goes
+//   Alt+Enter      open it as a new card in the editor
+//   Ctrl+Enter     save it to Someday right away
 //   Shift+Enter    save it to Today right away
-// This file only reads the field; app.js decides how the card is saved.
+// Where Claude isn't on offer (a project page, or no backend), "read with
+// Claude" opens the editor instead. This file only reads the field;
+// app.js decides how the card is saved.
 //
 // The spot beside the field is shared. The Since yesterday line normally
 // sits there. A confirmation ("Added to Someday. Edit") takes the spot for
@@ -16,8 +21,10 @@ const FADE = 300; // milliseconds it takes to fade (matches the CSS)
 
 // onCompose(title) opens the new-card panel. onAdd(title, toToday) saves the
 // card and returns { id, saved }, where `saved` fails if the save is refused.
+// onRead(title), if given, reads it with Claude; without it, that job opens
+// the editor. keys() returns what each key does (settings.quickAddKeys).
 // onEdit(id) opens that card. `since` is the Since yesterday line.
-export function setupQuickAdd({ input, status, since, onCompose, onAdd, onEdit }) {
+export function setupQuickAdd({ input, status, since, onCompose, onAdd, onRead, keys, onEdit }) {
   let timer = 0;
   let deadline = 0;
   // A confirmation stays put while you're pointing at it or on its button.
@@ -35,15 +42,22 @@ export function setupQuickAdd({ input, status, since, onCompose, onAdd, onEdit }
     const title = input.value.trim();
     if (!title) return;
 
-    const quick = event.ctrlKey || event.metaKey || event.shiftKey;
+    // One key per press: Shift wins, then Ctrl (or Cmd), then Alt.
+    const key = event.shiftKey ? 'shift' : event.ctrlKey || event.metaKey ? 'ctrl' : event.altKey ? 'alt' : 'enter';
+    let job = keys()[key];
+    if (job === 'claude' && !onRead) job = 'editor';
     input.value = '';
-    if (!quick) {
+    if (job === 'claude') {
+      onRead(title);
+      return;
+    }
+    if (job !== 'someday' && job !== 'today') {
       clearMessage();
       onCompose(title);
       return;
     }
 
-    const toToday = event.shiftKey;
+    const toToday = job === 'today';
     const { id, saved } = onAdd(title, toToday);
     showAdded(`Added to ${toToday ? 'Today' : 'Someday'}.`, id);
 

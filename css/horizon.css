@@ -956,6 +956,44 @@ body.is-dragging .zones { align-items: stretch; }
   color: var(--ink-secondary);
 }
 
+.settings-note[hidden] { display: none; }
+
+/* The quick add keys: each key's name, then its menu. */
+.settings-keys {
+  margin: 0;
+  padding: 0;
+  border: 0;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.settings-legend {
+  padding: 0;
+  margin-bottom: 4px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--ink-secondary);
+}
+
+.settings-key {
+  display: grid;
+  grid-template-columns: 112px minmax(0, 1fr);
+  align-items: center;
+  gap: 10px;
+}
+
+.settings-key-name {
+  font-family: var(--font-mono);
+  font-size: 13px;
+  color: var(--ink);
+}
+
+@media (max-width: 420px) {
+  .settings-key { grid-template-columns: 92px minmax(0, 1fr); gap: 6px; }
+}
+
 /* The Projects list and the project form (projectlist.js). */
 .projects-dialog { width: min(460px, calc(100% - 32px)); }
 /* Wide enough for the eight colors in one row; on a phone they make two
