@@ -143,6 +143,18 @@ Pages).
 "Tuning slice" below: six questions to settle, my recommendation for
 each. Nothing is built yet.
 
+**Change you asked for, before tuning (2026-11-18, awaiting test):**
+Haiku's effort goes from `low` to `medium` for all three actions
+(screenshot, pasted text, quick add), one line in `Code.gs`. Medium is
+Haiku 5.5's own default. Expect a little more thinking per call (the
+estimate is about $0.0007 to $0.001 instead of $0.0005, and a second or
+two longer); the console's cost line will show the real figure.
+`max_tokens` stays 4,000, which leaves room. This makes "Haiku as now"
+in the tuning plan mean Haiku at `medium`, with `low` as the cheaper
+setup to compare against. Setup: paste `Code.gs`, run `checkSetup`,
+Deploy > Manage deployments > pencil > New version (description
+`medium effort`) > Deploy. The site doesn't change.
+
 **Next: settle the tuning slice's six questions** ("Tuning slice",
 "What I need from you"), then build the comparison tool and the quick
 add quote check, and stop so you can write your cases and run it.
@@ -272,10 +284,14 @@ goes live. (Live only changes when you deploy a new version, as always.)
 
 **3. The three setups, three runs each.**
 
+(Since this plan was written, live moved to Haiku at `medium`; see
+Status. So "Haiku as now" below is `medium`, and `low` is the cheaper
+setup it's measured against.)
+
 | Setup | Model | Effort |
 |---|---|---|
-| Haiku as now | `claude-haiku-5-5` | `low` |
-| Haiku medium | `claude-haiku-5-5` | `medium` |
+| Haiku low | `claude-haiku-5-5` | `low` |
+| Haiku as now | `claude-haiku-5-5` | `medium` |
 | Sonnet | `claude-sonnet-5-5` | `low` |
 
 Everything else stays exactly as live: the same prompts, calendar,

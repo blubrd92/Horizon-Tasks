@@ -305,7 +305,7 @@ function countCall_(uid, settings) {
 var MAX_IMAGE_BASE64 = 6000000; // about 4.5 MB of image; the site sends far less
 var IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
 var MAX_CATEGORIES = 40;
-var SCREENSHOT_EFFORT = 'low'; // 'medium' if dates come back wrong
+var SCREENSHOT_EFFORT = 'medium'; // Haiku 5.5's own default; used by all three actions. Was 'low' through 3c.
 var SCREENSHOT_MAX_TOKENS = 4000; // room for Haiku's thinking and the answer
 var CALENDAR_WEEKS_BACK = 2; // so "Friday" in last week's email can be looked up
 var CALENDAR_WEEKS = 9;
