@@ -119,29 +119,31 @@ $0.0005. See "Slice 3b" below.
 
 The Apps Script deployment runs the 3b code (revision 4).
 
-**Branch:** 3b was built on `claude/nifty-mendel-uwgwln` and is not
-merged into `main` yet. To merge: on GitHub, open a pull request from
-that branch into `main` and merge it (or ask a session to). `main` can
-fast-forward: nothing on it is newer. Then point GitHub Pages back at
-`main` (Settings > Pages), if it's on the side branch.
+**Slice 3c: done and confirmed** (2026-11-18), on the same branch,
+`claude/nifty-mendel-uwgwln`. Haiku for quick add (a plainly named day
+goes straight onto the board, a worked-out date to the Inbox with the
+yellow note, no date to Someday), pasted email text in the Inbox (never
+saved), and draft notes you can edit there. Then the addition you asked
+for: Alt+Enter opens the editor, and Settings sets what each quick add
+key does (Enter, Alt+Enter, Ctrl+Enter, Shift+Enter), saved to your
+account. Then a calmer Settings box: three titled sections, keycaps, and
+an on/off switch for Fold long zones. A quick add costs about $0.0005.
+See "Slice 3c" below. **Phase 3 is complete.**
 
-**Slice 3c: built, awaiting your test** (2026-11-18), on the same
-branch, `claude/nifty-mendel-uwgwln`. Haiku for quick add (Enter: a
-plainly named date goes straight on the board, a worked-out date to the
-Inbox, no date to Someday; Ctrl+Enter and Shift+Enter unchanged), pasted
-email text in the Inbox, and draft notes you can edit there. Needs a new
-Apps Script version. See "Slice 3c" below for the plan, the setup, and
-the test list.
+The Apps Script deployment runs the 3c code.
 
-Note (2026-11-18): GitHub's `main` still ends at the 3a commit, so 3b is
-not merged yet, though the 3c request said it was. 3c is built on top of
-3b on the same branch; merging this branch into `main` after 3c is
-confirmed brings both.
+**Branch:** 3b and 3c were built on `claude/nifty-mendel-uwgwln` and
+merged into `main` on 2026-11-18 (a fast-forward: nothing was
+rewritten). `main` has Phases 1, 2, and 3. If GitHub Pages was switched
+to the side branch for testing, point it back at `main` (Settings >
+Pages).
 
-**Next:** test 3c, plus the addition you asked for (Alt+Enter, and
-the quick add keys in Settings; under "Slice 3c"). After
-you confirm it, commit, merge the branch into `main`, then decide on the
-tuning slice ("Slice 3c", Proposals 5).
+**Next: the tuning slice, in a fresh session** (proposed in 3b and 3c,
+not yet agreed in detail; "Slice 3c", Proposals 5). Settle its scope
+first: a dozen real cases as text with the answers you'd want; compare
+Haiku as now, Haiku at medium effort, and Sonnet 5.5 on screenshots,
+pasted text, and quick add; and only if dates go wrong, a cheap second
+look shown in the yellow note.
 
 Open proposals carried over: Undo for Let it go and Mark done on the board
 (the Done view's "Put back on the board" covers getting a card back), Let
@@ -158,7 +160,7 @@ tuning slice (all under "Slice 3c", Proposals). Still parked: Done
 privacy and the Firebase console. (One approved list is settled: see
 "Slice 3a", question 3.)
 
-## Slice 3c: Haiku for quick add, pasted text in the Inbox, editable draft notes (built, awaiting test)
+## Slice 3c: Haiku for quick add, pasted text in the Inbox, editable draft notes (confirmed)
 
 Planned and built 2026-11-18 on `claude/nifty-mendel-uwgwln` (the same
 branch as 3b, since 3b isn't in `main` yet; see Status).
@@ -466,7 +468,7 @@ and the Settings rows say so.
 - [ ] On a project page, a key set to Read with Claude opens the editor
       with the project chosen.
 
-### Revision: a calmer Settings box (awaiting test)
+### Revision: a calmer Settings box (confirmed)
 
 You asked 2026-11-18: Settings looked janky. Now three titled sections
 (Board, What you did, Quick add keys) divided by thin rules, the way the
