@@ -596,6 +596,35 @@ the mark on a screenshot card and not on a typed one.
 - [ ] A card added from a screenshot shows the corner-brackets mark at
       its top right; one you typed doesn't.
 
+### Revision 3: date boxes that show the whole date (built, awaiting your test)
+
+You asked 2026-11-18: the date box was getting clipped. Measured: a
+date needs about 130 pixels to show its year. In the card editor beside a
+card, the Due box got 107 ("11/08/202"), because it shared a half-width
+column with the No date button.
+
+- **The card editor's menus are regrouped by meaning:** Due and Repeats
+  on one row (both about time), with Due given the wider share, so the
+  date box is now 141 pixels; then Category and Project on the next row
+  (where the card belongs), each as wide as Category was before. On a
+  phone they stack, as before. The notes under Due and Repeats now sit
+  right under that row.
+- **The Inbox draft** stacks Due above Category on phones 380 pixels wide
+  or narrower, where side by side would have cut the year off (at 320
+  wide the box was 114).
+- Every other date box (a project's Ends, What you did's Custom dates,
+  the Move to dialog) already had room.
+
+Site only: no Apps Script version. **Files:** `index.html`,
+`css/horizon.css`.
+
+**How to test** (hard-reload first):
+- [ ] Open a card on the board: the date shows its full year beside No
+      date, and Repeats sits to its right; Category and Project are on
+      the row below.
+- [ ] The same on your phone: everything stacked, nothing cut off.
+- [ ] In the Inbox on your phone, the draft's date shows its full year.
+
 ### Files
 
 ```

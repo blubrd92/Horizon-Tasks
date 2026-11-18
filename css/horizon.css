@@ -1489,6 +1489,10 @@ body.is-dragging .zones { align-items: stretch; }
   gap: 6px;
 }
 
+/* The editor's Due and Repeats: Due gets the wider share, enough for a
+   whole date beside its No date button. */
+.field-row.field-row-time { grid-template-columns: minmax(0, 1.45fr) minmax(0, 1fr); }
+
 .field-due .field-date { flex: 1; min-width: 0; }
 
 .button-small {
@@ -1548,6 +1552,7 @@ body.is-dragging .zones { align-items: stretch; }
 @media (max-width: 520px) {
   .quickadd-bar { padding: 0 16px 14px; }
   .field-row { grid-template-columns: 1fr; }
+  .field-row.field-row-time { grid-template-columns: 1fr; }
 }
 
 /* A link that looks like a button: Done in the header, Back to the board.
@@ -2469,9 +2474,13 @@ a.link-row:focus-visible { outline-offset: -2px; }
 
 .inbox-item.is-failed .inbox-reading { color: var(--overdue-ink); }
 
-/* The panel is narrow, so Due and Category stay side by side on every
-   screen, as in the mockup. */
+/* Due and Category side by side, as in the mockup, except on the smallest
+   phones, where side by side would cut off the date's year. */
 .inbox-row.field-row { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+
+@media (max-width: 380px) {
+  .inbox-row.field-row { grid-template-columns: 1fr; }
+}
 
 .inbox-item .field-error { margin: -6px 0 0; }
 

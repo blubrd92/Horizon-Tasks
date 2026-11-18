@@ -413,7 +413,9 @@
           <textarea id="editor-notes" class="field-input field-notes" rows="4"></textarea>
         </label>
 
-        <div class="field-row">
+        <!-- Time on one row (Due gets the wider share, so the whole date
+             shows beside its No date button), then where the card belongs. -->
+        <div class="field-row field-row-time">
           <div class="field">
             <label for="editor-due">Due</label>
             <div class="field-due">
@@ -421,13 +423,6 @@
               <button type="button" id="editor-nodate" class="button button-small">No date</button>
             </div>
           </div>
-          <label class="field">Category
-            <select id="editor-category" class="field-input"></select>
-          </label>
-        </div>
-        <p id="editor-someday" class="field-note" hidden>No date: this card lives in Someday.</p>
-
-        <div class="field-row">
           <label class="field">Repeats
             <select id="editor-repeat" class="field-input" aria-describedby="editor-repeat-note">
               <option value="none">Doesn't repeat</option>
@@ -435,11 +430,18 @@
               <option value="monthly">Monthly</option>
             </select>
           </label>
+        </div>
+        <p id="editor-someday" class="field-note" hidden>No date: this card lives in Someday.</p>
+        <p id="editor-repeat-note" class="field-note" hidden></p>
+
+        <div class="field-row">
+          <label class="field">Category
+            <select id="editor-category" class="field-input"></select>
+          </label>
           <label class="field">Project
             <select id="editor-project" class="field-input"></select>
           </label>
         </div>
-        <p id="editor-repeat-note" class="field-note" hidden></p>
         <!-- Only when "New project..." is chosen: its name. Saving the card
              makes the project. -->
         <div id="editor-newproject" class="field-new" hidden>
