@@ -474,7 +474,10 @@ board's cards label their category; "Year starts in" sits beside its
 menu; the keys are one white card with a row per key, each key drawn as a
 keycap like the quick add field's Enter hint; "Saved to your account"
 moves down beside Done. A little wider (460 pixels) than the other small
-boxes, and it scrolls on a short screen. Site only. **Files:**
+boxes, and it scrolls on a short screen. Site only. Then (you didn't like
+the Board section's look): Fold long zones is now a row like the others,
+its name on the left and an on/off switch on the right (blue when on, the
+knob's side saying it too), with a shorter note below. **Files:**
 `index.html`, `css/horizon.css`.
 
 ### Settled: "how to do" landed in Today (2026-11-18)

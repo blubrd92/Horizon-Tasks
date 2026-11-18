@@ -540,13 +540,11 @@
 
       <section class="settings-section" aria-labelledby="settings-board">
         <h3 id="settings-board" class="settings-section-title">Board</h3>
-        <div class="check-block">
-          <label class="check">
-            <input type="checkbox" id="setting-fold" aria-describedby="setting-fold-note">
-            Fold long zones
-          </label>
-          <p id="setting-fold-note" class="check-note">This Week, Next Two Weeks, and Later show their first 5 cards, with a button for the rest. Overdue and Today always show everything.</p>
-        </div>
+        <label class="settings-line settings-switch-line">
+          <span class="settings-line-name">Fold long zones</span>
+          <input type="checkbox" id="setting-fold" class="settings-switch" role="switch" aria-describedby="setting-fold-note">
+        </label>
+        <p id="setting-fold-note" class="settings-note">Long zones show their first 5 cards and a button for the rest. Overdue and Today always show everything.</p>
       </section>
 
       <section class="settings-section" aria-labelledby="settings-record">
