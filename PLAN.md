@@ -234,6 +234,33 @@ tab may show it first):
 - [ ] On What you did and a project page, clicking the icon or the name
       takes you to the board.
 
+**Addition you asked for: a menu for the header on phones (2026-11-18,
+awaiting test).** Site only. At 600 pixels wide or narrower (where the
+buttons were already icons only), Projects, What you did, Inbox,
+Settings, and Sign out fold into one menu button (three lines) at the
+right of the name; tapping it drops a list below with each item named,
+Sign out last under a rule. It closes when you choose something, press
+Escape (focus goes back to the button), tap outside, or the screen
+widens. The menu button repeats the Inbox's count pill, so waiting
+drafts still show with the menu closed (screen readers hear "Menu, 1
+draft in the Inbox"). Wider than 600, nothing changes. The project page
+and What you did keep their own short headers. **Files:**
+`js/headermenu.js` (new), `index.html`, `css/horizon.css`, `js/app.js`.
+**Checked here** (headless Chrome, pretend Firebase): 17 checks, all
+passing: hidden at 1440 and 700 wide, shown at 390 on the name's row;
+opens with all five named; Escape, a tap outside, and each choice close
+it; Settings, Inbox, and What you did still work from it; the count
+shows on the menu button; no sideways scroll.
+
+How to test, on your phone (hard-reload first):
+- [ ] The header: the mark and name on the left, the menu button on the
+      right, the strip below.
+- [ ] Tap it: the five items with names. Tap each in turn; each does its
+      job and the menu closes.
+- [ ] With a draft in the Inbox, the menu button shows the blue count.
+- [ ] Turn the phone sideways: if it's wider than 600, the row of
+      buttons comes back.
+
 **Next: settle the tuning slice's six questions** ("Tuning slice",
 "What I need from you"), then build the comparison tool and the quick
 add quote check, and stop so you can write your cases and run it.

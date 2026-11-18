@@ -34,6 +34,7 @@ import { setupProjectPage } from './projectpage.js';
 import { setupProjectNotes } from './projectnotes.js';
 import { setupRecordBox } from './recordbox.js';
 import { setupInbox } from './inbox.js';
+import { setupHeaderMenu } from './headermenu.js';
 import { backendAddress, callBackend, costLine } from './backend.js';
 
 const views = {
@@ -57,6 +58,11 @@ const signoutButton = document.getElementById('signout-button');
 const settingsButton = document.getElementById('settings-button');
 const projectsButton = document.getElementById('projects-button');
 const inboxButton = document.getElementById('inbox-button');
+const menuCount = document.getElementById('menu-count');
+const menuButton = document.getElementById('menu-button');
+
+// On a phone, the header's buttons fold into a menu (headermenu.js).
+setupHeaderMenu({ button: menuButton, menu: document.getElementById('header-menu') });
 const inboxCount = document.getElementById('inbox-count');
 const projectHeading = document.getElementById('project-heading');
 const notallowedEmail = document.getElementById('notallowed-email');
@@ -639,6 +645,11 @@ async function start() {
     inboxCount.hidden = n === 0;
     inboxCount.textContent = String(n);
     inboxButton.setAttribute('aria-label', n ? `Inbox, ${n} ${n === 1 ? 'draft' : 'drafts'}` : 'Inbox');
+    // The phone menu's button repeats the count, so drafts waiting show
+    // even with the menu closed.
+    menuCount.hidden = n === 0;
+    menuCount.textContent = String(n);
+    menuButton.setAttribute('aria-label', n ? `Menu, ${n} ${n === 1 ? 'draft' : 'drafts'} in the Inbox` : 'Menu');
   }
 
   // Marking a repeating card done, or letting it go, brings the next one in
