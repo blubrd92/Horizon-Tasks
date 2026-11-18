@@ -508,6 +508,16 @@
   <!-- The Inbox (inbox.js). Slides in from the right over the dimmed
        board. Drafts are built into #inbox-list; the screenshots in them are
        held in memory only. -->
+  <!-- A screenshot full size, opened from its draft in the Inbox
+       (inbox.js), for checking the details. It shows the copy already in
+       this tab's memory; nothing new is kept, and it goes with the draft. -->
+  <dialog id="shot-viewer" class="shot-viewer" aria-label="Your screenshot, full size">
+    <button type="button" id="shot-viewer-close" class="icon-button shot-viewer-close" aria-label="Close the screenshot">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"></path></svg>
+    </button>
+    <img id="shot-viewer-img" class="shot-viewer-img" alt="Your screenshot, full size">
+  </dialog>
+
   <dialog id="inbox" class="panel-dialog inbox-dialog" aria-labelledby="inbox-heading" aria-describedby="inbox-line">
     <div class="panel">
       <div class="panel-head">

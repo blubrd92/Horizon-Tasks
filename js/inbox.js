@@ -29,7 +29,8 @@ const MAX_AT_ONCE = 5;
 const NO_CATEGORY_COLOR = '#6B6F78';
 const MAX_TEXT = 20000; // characters of pasted text sent (the backend's limit)
 const MAX_NOTES = 10000; // the same as a project's notes
-const NOTES_ROWS = 10; // the notes box grows to this many lines, then scrolls
+const NOTES_ROWS = 14; // the notes box grows to this many lines, then scrolls
+const NOTES_MIN_ROWS = 5; // and never starts smaller than this
 
 // What each kind of draft calls its source, in the panel's notes.
 const SOURCE_WORDS = {
@@ -60,6 +61,8 @@ export function setupInbox({ read, saveDraft, changeDraft, discardDraft, addToBo
   const textInput = document.getElementById('inbox-text-input');
   const textButton = document.getElementById('inbox-text-read');
   const overlay = document.getElementById('drop-overlay');
+  const viewer = document.getElementById('shot-viewer');
+  const viewerImg = document.getElementById('shot-viewer-img');
 
   let enabled = false;
   let drafts = [];
@@ -76,6 +79,12 @@ export function setupInbox({ read, saveDraft, changeDraft, discardDraft, addToBo
   let queue = Promise.resolve();
 
   closeButton.addEventListener('click', close);
+
+  // The full-size screenshot viewer: a click anywhere in it (the X, the
+  // image, or the dark around it) or Escape (the browser's own, for the
+  // top dialog) closes it. Scrolling a tall one doesn't count as a click.
+  viewer.addEventListener('click', closeViewer);
+  viewer.addEventListener('close', () => viewerImg.removeAttribute('src'));
   pickButton.addEventListener('click', () => fileInput.click());
   fileInput.addEventListener('change', () => {
     const files = [...fileInput.files];
@@ -313,6 +322,7 @@ export function setupInbox({ read, saveDraft, changeDraft, discardDraft, addToBo
   }
 
   function forget(item) {
+    closeViewerFor(item.url);
     if (item.url) URL.revokeObjectURL(item.url);
     item.url = null;
     item.blob = null;
@@ -323,6 +333,7 @@ export function setupInbox({ read, saveDraft, changeDraft, discardDraft, addToBo
   function dropPreview(id) {
     const preview = previews.get(id);
     previews.delete(id);
+    if (preview) closeViewerFor(preview.url);
     if (preview && preview.url && !inUse(preview.url)) URL.revokeObjectURL(preview.url);
   }
 
@@ -389,19 +400,47 @@ export function setupInbox({ read, saveDraft, changeDraft, discardDraft, addToBo
     return box;
   }
 
-  // The screenshot, if this tab still has it; otherwise a note.
+  // The screenshot, if this tab still has it; otherwise a note. Clicking
+  // it opens it full size, to check the details against.
   function fillShot(box, url) {
     const img = box.querySelector('img');
     if (url) {
       if (img && img.getAttribute('src') === url) return;
+      const open = document.createElement('button');
+      open.type = 'button';
+      open.className = 'inbox-shot-open';
+      open.setAttribute('aria-label', 'Open your screenshot full size');
+      open.title = 'Open full size';
       const fresh = document.createElement('img');
       fresh.src = url;
-      fresh.alt = 'Your screenshot, for checking';
+      fresh.alt = '';
+      const hint = document.createElement('span');
+      hint.className = 'inbox-shot-hint';
+      hint.setAttribute('aria-hidden', 'true');
+      hint.textContent = 'Click to enlarge';
+      open.append(fresh, hint);
+      open.addEventListener('click', () => openViewer(url));
       box.className = 'inbox-shot';
-      box.replaceChildren(fresh);
+      box.replaceChildren(open);
     } else {
       showGone(box, SOURCE_WORDS.screenshot.gone);
     }
+  }
+
+  function openViewer(url) {
+    viewerImg.src = url;
+    if (!viewer.open) viewer.showModal();
+    viewer.scrollTop = 0;
+  }
+
+  function closeViewer() {
+    if (viewer.open) viewer.close();
+  }
+
+  // When a screenshot is let go (Add to board, Discard), its full-size view
+  // goes too.
+  function closeViewerFor(url) {
+    if (url && viewer.open && viewerImg.getAttribute('src') === url) closeViewer();
   }
 
   // The pasted text, if this tab still has it; otherwise a note. Shown as
@@ -549,7 +588,7 @@ export function setupInbox({ read, saveDraft, changeDraft, discardDraft, addToBo
     const notes = document.createElement('textarea');
     notes.className = 'field-input field-notes inbox-notes';
     notes.maxLength = MAX_NOTES;
-    notes.rows = 2;
+    notes.rows = NOTES_MIN_ROWS;
     notesField.append('Notes', notes);
 
     const foot = document.createElement('div');
@@ -646,10 +685,21 @@ export function setupInbox({ read, saveDraft, changeDraft, discardDraft, addToBo
     select.value = keep;
   }
 
-  // The notes box shows every line up to NOTES_ROWS, then scrolls.
+  // The notes box starts at NOTES_MIN_ROWS lines and grows to show
+  // everything, long lines that wrap included, up to NOTES_ROWS; past that
+  // it scrolls. (It can't measure itself while the panel is closed, so
+  // then it goes by the number of lines.)
   function sizeNotes(box) {
-    const lines = box.value.split('\n').length;
-    box.rows = Math.max(2, Math.min(NOTES_ROWS, lines));
+    box.rows = NOTES_MIN_ROWS;
+    if (!box.clientHeight) {
+      box.rows = Math.max(NOTES_MIN_ROWS, Math.min(NOTES_ROWS, box.value.split('\n').length));
+      // A box not on screen yet (just drawn): measure again once it is.
+      requestAnimationFrame(() => {
+        if (box.clientHeight) sizeNotes(box);
+      });
+      return;
+    }
+    while (box.rows < NOTES_ROWS && box.scrollHeight > box.clientHeight) box.rows += 1;
   }
 
   // The note under the date: what Haiku made of it, while the date is
@@ -774,6 +824,9 @@ export function setupInbox({ read, saveDraft, changeDraft, discardDraft, addToBo
     showStatus('');
     dialog.showModal();
     render();
+    // Notes boxes drawn while the panel was closed couldn't measure their
+    // wrapped lines; now they can.
+    for (const entry of shown.values()) if (entry.notes) sizeNotes(entry.notes);
   }
 
   function close() {

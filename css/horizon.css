@@ -2640,6 +2640,75 @@ a.link-row:focus-visible { outline-offset: -2px; }
   object-fit: contain;
 }
 
+/* The screenshot is a button that opens it full size. */
+.inbox-shot-open {
+  position: relative;
+  display: block;
+  padding: 0;
+  border: 0;
+  background: none;
+  cursor: zoom-in;
+}
+
+.inbox-shot-open:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+.inbox-shot-hint {
+  position: absolute;
+  right: 8px;
+  bottom: 8px;
+  padding: 3px 8px;
+  border-radius: 999px;
+  background: rgba(24, 25, 28, 0.72);
+  color: #FFFFFF;
+  font-size: 12px;
+  opacity: 0;
+  transition: opacity 120ms;
+}
+
+.inbox-shot-open:hover .inbox-shot-hint,
+.inbox-shot-open:focus-visible .inbox-shot-hint { opacity: 1; }
+
+/* On a touch screen there's no hover, so the hint always shows. */
+@media (hover: none) {
+  .inbox-shot-hint { opacity: 1; }
+}
+
+/* The full-size view: over everything, dark around the image, the image
+   as wide as the screen allows and scrolling if it's taller. */
+.shot-viewer {
+  width: 100vw;
+  height: 100dvh;
+  max-width: none;
+  max-height: none;
+  margin: 0;
+  padding: 56px 16px 24px;
+  border: none;
+  background: rgba(24, 25, 28, 0.9);
+  overflow: auto;
+  box-sizing: border-box;
+  cursor: zoom-out;
+}
+
+.shot-viewer[open] { display: flex; justify-content: center; align-items: flex-start; }
+
+.shot-viewer::backdrop { background: transparent; }
+
+.shot-viewer-img {
+  display: block;
+  max-width: 100%;
+  height: auto;
+  margin: auto 0;
+  border-radius: 6px;
+  background: #FFFFFF;
+}
+
+.shot-viewer-close {
+  position: fixed;
+  top: 10px;
+  right: 10px;
+  border-color: transparent;
+}
+
 .inbox-shot.is-gone {
   min-height: 0;
   padding: 12px 14px;

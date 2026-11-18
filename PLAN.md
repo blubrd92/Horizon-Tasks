@@ -273,6 +273,33 @@ width. The cost: What you did's and the project page's headers are 12
 pixels taller on a wider screen; phones are unchanged. Site only;
 `css/horizon.css`.
 
+**Additions you asked for: a taller notes box, and the screenshot full
+size (2026-11-18, awaiting test).** Site only.
+- **Notes box:** a draft's notes start at 5 lines instead of 2, and grow
+  to show everything, long lines that wrap included, up to 14 lines;
+  past that it scrolls. (It used to count only line breaks, so a long
+  wrapped line hid behind a scroll bar.)
+- **Screenshot full size:** a draft's screenshot is now a button ("Click
+  to enlarge" on hover, always shown on a touch screen). It opens over
+  everything, dark around it, as wide as the screen allows, scrolling
+  when it's tall. A click anywhere in it, its X, or Escape closes it;
+  the Inbox stays open beneath. It shows the copy already in this tab's
+  memory (the shrunk one Haiku read, up to 1,600 pixels wide), so
+  nothing new is kept: it's let go when the viewer closes, and closes by
+  itself when its draft goes (Add to board, Discard, or another device).
+  After a reload there's still no screenshot to open, as before.
+**Files:** `index.html` (the viewer), `js/inbox.js`, `css/horizon.css`.
+**Checked here** (headless Chrome, pretend Firebase and backend, a
+1400×2400 screenshot): 9 checks, all passing.
+
+How to test (hard-reload first):
+- [ ] Paste a screenshot: the draft's notes box shows all the notes
+      without a scroll bar (unless they're very long).
+- [ ] Click the screenshot: it opens big. Scroll a tall one. Click, X, or
+      Escape: it closes and the Inbox is still there.
+- [ ] Open it, then Add to board from the Inbox: nothing of it is left.
+- [ ] On your phone: tap the screenshot, pinch to zoom, tap to close.
+
 **Next: settle the tuning slice's six questions** ("Tuning slice",
 "What I need from you"), then build the comparison tool and the quick
 add quote check, and stop so you can write your cases and run it.
