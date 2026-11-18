@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="8 12 48 46" role="img" aria-label="Horizon">
+  <!-- Sunrise, Horizon's bare mark for beside the name (the tile version, icons/horizon.svg, is for the tab and phone): gold sun, blue horizon, the days ahead in soft blue. -->
+  <g fill="none" stroke="#E9A81F" stroke-linecap="round" stroke-width="4">
+    <path d="M21 38 A11 11 0 0 1 43 38"/>
+    <path d="M32 15 V19"/>
+    <path d="M17.6 21 L20.4 23.8"/>
+    <path d="M46.4 21 L43.6 23.8"/>
+  </g>
+  <path d="M10 38 H54" fill="none" stroke="#2F5BD3" stroke-linecap="round" stroke-width="4"/>
+  <g fill="none" stroke="#2F5BD3" stroke-linecap="round" stroke-width="3.5" stroke-opacity="0.4">
+    <path d="M18 46.5 H46"/>
+    <path d="M25 53.5 H39"/>
+  </g>
+</svg>

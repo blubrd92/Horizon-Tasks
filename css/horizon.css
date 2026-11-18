@@ -95,12 +95,10 @@ code { font-family: var(--font-mono); font-size: 0.92em; }
   letter-spacing: -0.02em;
   display: flex;
   align-items: center;
-  gap: 9px;
+  gap: 10px;
 }
 
-/* The Sunrise icon before the name, on every page that shows it. It's
-   decoration: the name beside it says what it is. */
-/* On the board, What you did, and project pages the icon and name are a
+/* On the board, What you did, and project pages the mark and name are a
    link home to the board. They look the same as before; the pointer and
    the focus outline say they're a link. */
 .wordmark-link {
@@ -111,12 +109,16 @@ code { font-family: var(--font-mono); font-size: 0.92em; }
 
 .wordmark-link:hover { color: inherit; }
 
+/* The Sunrise mark before the name, on every page that shows it: the bare
+   sun and horizon, no tile (the tile, icons/horizon.svg, is for the
+   browser tab and a phone's home screen). It's decoration: the name
+   beside it says what it is. */
 .wordmark::before {
   content: '';
   flex: none;
-  width: 30px;
-  height: 30px;
-  background: url('../icons/horizon.svg') center / contain no-repeat;
+  width: 40px;
+  height: 38px;
+  background: url('../icons/horizon-mark.svg') center / contain no-repeat;
 }
 
 /* Setup and sign-in */

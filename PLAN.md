@@ -209,6 +209,14 @@ sideways at 320, 360, 390, 600, 700, 761, 800, 900, 1024, 1280, and 1440
 pixels wide. On a phone the buttons were already on their own row under
 the name; they still are.
 
+Then (you said the tile looked odd and small beside the name): **the
+header uses the bare mark**, mark A from `design/logo-options/header-marks.png`:
+no tile, a gold sun (`#E9A81F`, deeper than the tile's so it holds up on
+the cream header), a blue horizon, and the days ahead in soft blue, 40
+pixels wide instead of 30 (`icons/horizon-mark.svg`). The tab and the
+phone's home screen keep the tile (`icons/horizon.svg`). Checked at 320
+to 1440 pixels wide: nothing overlaps or scrolls sideways.
+
 Then (you asked): **the icon and name are a link home** to the board on
 the board, What you did, and project pages, keeping the ?today= testing
 date. They look as before (no underline or color change); the pointer,
