@@ -191,6 +191,31 @@ How to test (hard-reload first):
       always.
 - [ ] Paste a screenshot while in the field: the Inbox opens and reads it.
 
+**The Sunrise icon (2026-11-18, awaiting test; colorway not chosen).**
+You chose Sunrise from three options (`design/logo-options/preview.png`),
+then asked for colorways: Blue, Ink, Paper, and Today tint
+(`design/logo-options/sunrise-colors.png`), all from the palette;
+orange and the category colors left out because each already means
+something. Built in Blue until you choose: the icon before "Horizon" on
+every page that shows the name (one CSS rule, `.wordmark::before`, 30
+pixels), the browser tab (`icons/horizon.svg`, with `horizon-32.png` for
+browsers that won't take an SVG), and a phone's home screen
+(`horizon-180.png`). This also ends the console's harmless favicon 404.
+Changing colorway means replacing `icons/horizon.svg` and remaking the two
+PNGs; nothing else changes. Site only. **Files:** `icons/`, `index.html`
+(three lines in the head), `css/horizon.css`. **Checked here:** the icon
+shows on the board and What you did, and nothing overlaps or scrolls
+sideways at 320, 360, 390, 600, 700, 761, 800, 900, 1024, 1280, and 1440
+pixels wide. On a phone the buttons were already on their own row under
+the name; they still are.
+
+How to test (hard-reload; a browser holds on to old tab icons, so a new
+tab may show it first):
+- [ ] The tab shows the sunrise.
+- [ ] The board, What you did, a project page, and the sign-in screen
+      show the icon before "Horizon".
+- [ ] On your phone, the header looks right.
+
 **Next: settle the tuning slice's six questions** ("Tuning slice",
 "What I need from you"), then build the comparison tool and the quick
 add quote check, and stop so you can write your cases and run it.
