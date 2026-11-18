@@ -394,6 +394,24 @@ I can't deploy Apps Script or call Anthropic from here, so:
 Not checked, and on your list: the real Haiku (how it reads typed
 dates, whether it keeps your words), the real Apps Script, a real phone.
 
+### What you've tested live so far (2026-11-18)
+
+- **The new Apps Script version is live:** three quick adds reached
+  Haiku and came back (8 to 10 of 100 that day).
+- **The real cost,** from the console: 2,508 to 2,510 tokens in, 434 to
+  517 out, about **$0.0005 a quick add**, not the $0.0003 I estimated.
+  Both halves ran over the guess: the calendar and instructions are
+  about 2,500 tokens (as 3b found), and Haiku writes 400 to 500 tokens,
+  most of it its thinking before the short answer. Still about two
+  thousand quick adds per dollar; 100 a day would be about $1.50 a month.
+  If it ever matters, the cheapest trim is a shorter calendar for quick
+  add (a tuning-slice question, not a fix).
+- **The two red console lines** are the same harmless ones as in 3b: a
+  `favicon.ico` the site doesn't have, and a browser extension blocking
+  a request.
+
+Still to hear: where each quick add landed and what its title said.
+
 ### Files
 
 ```
