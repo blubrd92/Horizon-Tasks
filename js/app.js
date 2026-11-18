@@ -461,6 +461,8 @@ async function start() {
     onCompose: (title) =>
       editor.open({ id: null, ...newCard({ title }) }, { categories: latest ? latest.categories : [], projects }, { below: quickAddField }),
     onRead: backendAddress() ? readQuickAdd : undefined,
+    // An email pasted here goes to the Inbox to read (see quickadd.js).
+    onPasteText: backendAddress() ? (text) => inbox.readText(text) : undefined,
     keys: () => settings.quickAddKeys,
     onAdd: (title, toToday) => fb.addCard(uid, newCard({ title, dueDate: toToday ? todayISO() : null })),
     onEdit: openCard,
@@ -610,7 +612,9 @@ async function start() {
           return `${KEY_NAMES[k].replace('+', ' and ')} ${SAY[job]}.`;
         })
         .join(' ');
-    document.getElementById('quickadd-help-ai').textContent = describe(Boolean(backendAddress()));
+    document.getElementById('quickadd-help-ai').textContent =
+      describe(Boolean(backendAddress())) +
+      (backendAddress() ? ' Pasting an email, several lines or a long passage, sends it to the Inbox to read.' : '');
     document.getElementById('quickadd-help').textContent = describe(false);
   }
   drawKeyHelp();

@@ -18,13 +18,26 @@
 
 const CONFIRM_FOR = 6000; // milliseconds a confirmation stays
 const FADE = 300; // milliseconds it takes to fade (matches the CSS)
+// A paste longer than this, or with more than one line, is taken for an
+// email and sent to the Inbox to read (when onPasteText is given). A
+// shorter one-line paste is ordinary typing.
+const LONG_PASTE = 200;
+
+// True if pasted text looks like an email rather than a title.
+export function looksLikeEmail(text) {
+  const trimmed = String(text || '').trim();
+  return /\n/.test(trimmed) || trimmed.length > LONG_PASTE;
+}
 
 // onCompose(title) opens the new-card panel. onAdd(title, toToday) saves the
 // card and returns { id, saved }, where `saved` fails if the save is refused.
 // onRead(title), if given, reads it with Claude; without it, that job opens
 // the editor. keys() returns what each key does (settings.quickAddKeys).
 // onEdit(id) opens that card. `since` is the Since yesterday line.
-export function setupQuickAdd({ input, status, since, onCompose, onAdd, onRead, keys, onEdit }) {
+// onPasteText(text), if given, takes a pasted email to the Inbox and
+// returns undo() (or null if it couldn't); without it, every paste is a
+// normal paste.
+export function setupQuickAdd({ input, status, since, onCompose, onAdd, onRead, keys, onEdit, onPasteText }) {
   let timer = 0;
   let deadline = 0;
   // A confirmation stays put while you're pointing at it or on its button.
@@ -65,6 +78,30 @@ export function setupQuickAdd({ input, status, since, onCompose, onAdd, onRead, 
       showText(`Couldn't save “${title}” (${err.code || err.message}).`);
       // Give the text back so nothing typed is lost.
       if (!input.value) input.value = title;
+    });
+  });
+
+  // Pasting an email here sends it to the Inbox (someone else's writing
+  // always waits for review there; quick add's straight-to-the-board path
+  // is for your own words). A screenshot is left alone: the Inbox's own
+  // paste handler takes images anywhere on the board.
+  input.addEventListener('paste', (event) => {
+    if (!onPasteText) return;
+    const data = event.clipboardData;
+    if (!data || data.files.length) return;
+    const text = data.getData('text/plain');
+    if (!looksLikeEmail(text)) return;
+    const undo = onPasteText(text);
+    if (!undo) return;
+    event.preventDefault();
+    showAction('Sent the pasted text to the Inbox to read.', 'Paste it here instead', () => {
+      undo();
+      clearMessage();
+      // The field holds one line, so line breaks become spaces.
+      const flat = text.replace(/\s+/g, ' ').trim();
+      input.value = input.value.trim() ? `${input.value.trim()} ${flat}` : flat;
+      input.focus();
+      input.setSelectionRange(input.value.length, input.value.length);
     });
   });
 

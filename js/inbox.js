@@ -189,6 +189,32 @@ export function setupInbox({ read, saveDraft, changeDraft, discardDraft, addToBo
       return;
     }
     textInput.value = '';
+    startText(raw);
+  }
+
+  // Text pasted somewhere else (an email pasted into quick add): read it
+  // the same way, without opening the panel. The pill counts it, and the
+  // draft waits here like any other. Returns undo(), which takes it back:
+  // the item while it's being read, or its draft once one is made. Null if
+  // the Inbox isn't on (signed out).
+  function readText(raw) {
+    if (!enabled) return null;
+    const text = String(raw).replace(/\r\n?/g, '\n').trim();
+    if (!text) return null;
+    const item = startText(text);
+    return () => {
+      item.undone = true;
+      pending.delete(item.pid);
+      if (item.draftId) {
+        dropPreview(item.draftId);
+        discardDraft(item.draftId).catch((err) => showStatus(`The draft wasn't discarded (${err.code || err.message}).`));
+      }
+      forget(item);
+      render();
+    };
+  }
+
+  function startText(raw) {
     // In a thread the newest message is usually on top, so the start is kept.
     const text = raw.slice(0, MAX_TEXT);
     showStatus(raw.length > MAX_TEXT ? `Only the first ${MAX_TEXT.toLocaleString()} characters are read.` : '');
@@ -197,6 +223,7 @@ export function setupInbox({ read, saveDraft, changeDraft, discardDraft, addToBo
     scrollTo = `p${item.pid}`;
     queue = queue.then(() => process(item));
     render();
+    return item;
   }
 
   async function process(item) {
@@ -260,6 +287,8 @@ export function setupInbox({ read, saveDraft, changeDraft, discardDraft, addToBo
     item.state = 'saving';
     render();
     saved.catch((err) => {
+      // Taken back (undo from quick add) before Firestore answered.
+      if (item.undone) return;
       // Firestore refused the draft: back to a failed screenshot, which
       // still has its image, so Try again works.
       previews.delete(id);
@@ -756,6 +785,7 @@ export function setupInbox({ read, saveDraft, changeDraft, discardDraft, addToBo
     open,
     close,
     take,
+    readText,
     setEnabled(on) {
       enabled = on;
     },

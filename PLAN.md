@@ -159,6 +159,38 @@ medium for screenshots and pasted text, low for quick add. Setup: paste `Code.gs
 Deploy > Manage deployments > pencil > New version (description
 `medium effort`) > Deploy. The site doesn't change.
 
+**Addition you asked for: paste an email into quick add (2026-11-18,
+awaiting test).** Site only, no Apps Script version. A paste into the
+board's quick add field that looks like an email (more than one line, or
+over 200 characters) goes to the Inbox's pasted-text reader, exactly as
+if pasted in the Inbox's box: the panel stays closed, the pill counts it,
+and the line says "Sent the pasted text to the Inbox to read. **Paste it
+here instead**", which takes it back (while it's read, or after its draft
+arrived) and puts the text in the field on one line, after anything you
+had typed. A short one-line paste is a normal paste; a screenshot pasted
+there goes to the Inbox as before. Why the Inbox and not quick add: a
+pasted email is someone else's writing, and only your own words may skip
+review (3c, security choice 3). The project page's quick add is
+unchanged. If a read fails, the failed item waits in the Inbox with Try
+again, and the pill counts it. Screen readers hear the new behavior in
+the field's help. **Files:** `js/quickadd.js` (the paste, the 200-character
+line, the undo), `js/inbox.js` (`readText`, reading without opening the
+panel), `js/app.js` (wiring, the help). **Checked here** (headless Chrome,
+pretend Firebase and backend): 19 checks, all passing, including undo
+during the read and after the draft, a late answer after undo making no
+draft, exactly 200 characters staying a normal paste, and the line
+fitting at 360 pixels wide.
+
+How to test (hard-reload first):
+- [ ] Copy an email's text (several lines), click in quick add, paste.
+      The field stays empty, the line says it went to the Inbox, the pill
+      counts up, and a draft arrives like one pasted in the Inbox.
+- [ ] Paste another and click **Paste it here instead**: the text is in
+      the field on one line, and no draft appears.
+- [ ] Copy a short title (one line) and paste: it lands in the field as
+      always.
+- [ ] Paste a screenshot while in the field: the Inbox opens and reads it.
+
 **Next: settle the tuning slice's six questions** ("Tuning slice",
 "What I need from you"), then build the comparison tool and the quick
 add quote check, and stop so you can write your cases and run it.
