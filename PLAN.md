@@ -105,31 +105,50 @@ merged into `main` on 2026-11-08 (a fast-forward: nothing was rewritten).
 `main` has Phases 1 and 2 and slice 3a. If GitHub Pages was switched to
 the side branch for testing, point it back at `main` (Settings > Pages).
 
-**Slice 3b: built, awaiting your test** (2026-11-08), on
+**Slice 3b: done and confirmed** (2026-11-18), on
 `claude/nifty-mendel-uwgwln`. Screenshot to Inbox draft, and the Inbox
-review panel. The plan, the settled questions, the setup steps (a new
-version of the Apps Script deployment), and the test list are under
-"Slice 3b" below.
+review panel: paste, drop, or pick a screenshot; Haiku reads it behind
+3a's gate; the draft waits in the Inbox (saved in Firestore, the
+screenshot never saved) until you Add to board or Discard. Then four
+revisions after your tests: notes Horizon writes itself (a context line,
+a dated timeline, Need to know, Contact), the screenshot mark on cards
+and a phone header that never overlaps the wordmark, date boxes that
+show the whole date (the editor now pairs Due with Repeats and Category
+with Project), and a tighter prompt. A screenshot costs about $0.0004 to
+$0.0005. See "Slice 3b" below.
 
-**Next: slice 3b, in a fresh session:**
-screenshot to Inbox draft, and the Inbox review panel (SPEC "Screenshot
-to card", "The Inbox review panel", "Security", "Visual design";
-`design/horizon-inbox-open.png` and `design/Main.dc.html`). Questions for
-3b are listed under "Slice 3a", Open for 3b.
+The Apps Script deployment runs the 3b code (revision 4).
+
+**Branch:** 3b was built on `claude/nifty-mendel-uwgwln` and is not
+merged into `main` yet. To merge: on GitHub, open a pull request from
+that branch into `main` and merge it (or ask a session to). `main` can
+fast-forward: nothing on it is newer. Then point GitHub Pages back at
+`main` (Settings > Pages), if it's on the side branch.
+
+**Next: slice 3c, in a fresh session, after 3b is merged:**
+Haiku parsing for quick add, plus pasting text into the Inbox and editing
+a draft's notes there (SPEC "Quick add", "Screenshot to card", "The Inbox
+review panel", "Security", "Visual design"; `design/horizon-board.png`,
+`design/horizon-inbox-open.png`, `design/Main.dc.html`). Questions for
+3c are listed under "Slice 3b", Open for 3c.
 
 Open proposals carried over: Undo for Let it go and Mark done on the board
 (the Done view's "Put back on the board" covers getting a card back), Let
 it go in the editor, triage per device instead of per account, pinning
 zone headers on long columns, saving the sample card scripts in `tools/`,
 and a Settings gear on the What you did page (Year starts in is only
-reachable from the board). New from 3a: a total daily cap across everyone,
+reachable from the board). From 3a: a total daily cap across everyone,
 and updating SPEC's line about the script's allowlist (both under "Slice
-3a", Proposals). Still parked: Done privacy and the Firebase console. (One
-approved list is settled: see "Slice 3a", question 3.)
+3a", Proposals). From 3b: updating SPEC step 4's JSON shape to the one
+3b uses, paste on every page (I advised against it for now), and a tuning
+slice after 3c (under "Slice 3b", Open for 3c). Still parked: Done
+privacy and the Firebase console. (One approved list is settled: see
+"Slice 3a", question 3.)
 
-## Slice 3b: screenshot to Inbox draft, and the Inbox review panel (built, awaiting your test)
+## Slice 3b: screenshot to Inbox draft, and the Inbox review panel (confirmed)
 
-Planned and built 2026-11-08 on `claude/nifty-mendel-uwgwln`.
+Planned and built 2026-11-08 on `claude/nifty-mendel-uwgwln`; revised
+and confirmed 2026-11-18. Every test list below passed.
 
 ### What it does
 
@@ -472,7 +491,7 @@ the real Apps Script, and a real phone.
 Still to test: an inferred date, the reload, Add to board, the refusals,
 and the phone.
 
-### Revision 1: notes you can act on (built, awaiting your test)
+### Revision 1: notes you can act on (confirmed)
 
 You asked for the prompt fixes and for notes that make it easy to see
 what to do and when. Built 2026-11-18.
@@ -555,7 +574,7 @@ browser tests, through Add to board.
 - [ ] Add one to the board, open its card: the notes are there, one line
       each.
 
-### Revision 2: the screenshot mark, and the phone header (built, awaiting your test)
+### Revision 2: the screenshot mark, and the phone header (confirmed)
 
 Both approved 2026-11-18. Site only: no new Apps Script version needed.
 
@@ -596,7 +615,7 @@ the mark on a screenshot card and not on a typed one.
 - [ ] A card added from a screenshot shows the corner-brackets mark at
       its top right; one you typed doesn't.
 
-### Revision 3: date boxes that show the whole date (built, awaiting your test)
+### Revision 3: date boxes that show the whole date (confirmed)
 
 You asked 2026-11-18: the date box was getting clipped. Measured: a
 date needs about 130 pixels to show its year. In the card editor beside a
@@ -625,7 +644,7 @@ Site only: no Apps Script version. **Files:** `index.html`,
 - [ ] The same on your phone: everything stacked, nothing cut off.
 - [ ] In the Inbox on your phone, the draft's date shows its full year.
 
-### Revision 4: three prompt tightenings (built, awaiting your test)
+### Revision 4: three prompt tightenings (confirmed)
 
 From your live drafts of the exam email (2026-11-18), three habits the
 prompt allowed:
@@ -653,6 +672,16 @@ pencil **> New version > Deploy**, then paste the exam email once more.
 - [ ] No "(PDT)".
 
 ### Open for 3c (agreed 2026-11-18)
+
+- **Edit a draft's notes in the Inbox before adding it.** Today a
+  draft's Title, Due, Category, and Hard deadline are editable, but its
+  notes are read-only text, so a small fix means adding the card first
+  and opening the editor. My suggestion for the plan: the notes become a
+  text box in the draft, saving when you leave it, like the other
+  fields; Repeats, Project, and In progress stay in the card's editor
+  after adding, so a draft stays short. (Question for the 3c plan: is
+  the notes box enough, or do you want a "More" button that opens the
+  full editor on the draft?)
 
 - **Paste text, not just a screenshot.** In the Inbox, under the drop
   zone, a "Paste text instead" box: the copied text of an email goes to
