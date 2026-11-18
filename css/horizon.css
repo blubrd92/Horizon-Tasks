@@ -958,40 +958,93 @@ body.is-dragging .zones { align-items: stretch; }
 
 .settings-note[hidden] { display: none; }
 
-/* The quick add keys: each key's name, then its menu. */
-.settings-keys {
-  margin: 0;
-  padding: 0;
-  border: 0;
-  min-width: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
+/* Settings: three sections divided by thin rules, a little wider than the
+   other small boxes so the key menus have room. Scrolls if the screen is
+   short. */
+.settings-dialog { width: min(460px, calc(100% - 32px)); }
+
+.settings-panel {
+  gap: 0;
+  max-height: calc(100dvh - 32px);
+  overflow-y: auto;
 }
 
-.settings-legend {
-  padding: 0;
-  margin-bottom: 4px;
+.settings-panel .settings-head { margin-bottom: 8px; }
+
+.settings-section {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 14px 0;
+  border-top: 1px solid var(--border-soft);
+}
+
+.settings-section-title {
+  margin: 0;
   font-size: 12px;
   font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
   color: var(--ink-secondary);
+}
+
+.settings-section .check-block { margin: -6px 0 0; }
+
+/* A label on the left, its menu on the right. */
+.settings-line {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 200px;
+  align-items: center;
+  gap: 12px;
+  font-size: 14px;
+  color: var(--ink);
+}
+
+/* The keys: one card, a row per key, rules between rows. */
+.settings-keys {
+  display: flex;
+  flex-direction: column;
+  background: var(--surface);
+  border: 1px solid var(--border-soft);
+  border-radius: var(--radius-card, 12px);
 }
 
 .settings-key {
   display: grid;
-  grid-template-columns: 112px minmax(0, 1fr);
+  grid-template-columns: minmax(0, 1fr) 200px;
   align-items: center;
-  gap: 10px;
+  gap: 12px;
+  padding: 6px 6px 6px 14px;
 }
 
-.settings-key-name {
+.settings-key + .settings-key { border-top: 1px solid var(--border-soft); }
+
+/* Keycaps, like the quick add field's Enter hint. */
+.settings-kbd {
+  justify-self: start;
   font-family: var(--font-mono);
-  font-size: 13px;
+  font-size: 12px;
   color: var(--ink);
+  background: var(--surface-soft);
+  border: 1px solid var(--border);
+  border-bottom-width: 2px;
+  border-radius: 6px;
+  padding: 3px 8px;
+  white-space: nowrap;
+}
+
+.small-foot.settings-foot {
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding-top: 14px;
+  border-top: 1px solid var(--border-soft);
 }
 
 @media (max-width: 420px) {
-  .settings-key { grid-template-columns: 92px minmax(0, 1fr); gap: 6px; }
+  .settings-line { grid-template-columns: minmax(0, 1fr) 170px; gap: 8px; }
+  .settings-key { grid-template-columns: 92px minmax(0, 1fr); gap: 8px; padding-left: 10px; }
+  .settings-kbd { font-size: 11px; padding: 3px 6px; }
 }
 
 /* The Projects list and the project form (projectlist.js). */

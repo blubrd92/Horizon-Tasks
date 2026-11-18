@@ -529,44 +529,57 @@
   </div>
 
   <!-- Settings, from the gear beside Sign out. Changes save at once. -->
-  <dialog id="settings" class="small-dialog" aria-labelledby="settings-heading">
-    <div class="small-panel">
+  <dialog id="settings" class="small-dialog settings-dialog" aria-labelledby="settings-heading">
+    <div class="small-panel settings-panel">
       <div class="settings-head">
         <h2 id="settings-heading" class="panel-title">Settings</h2>
         <button type="button" id="settings-close" class="icon-button" aria-label="Close settings">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"></path></svg>
         </button>
       </div>
-      <div class="check-block">
-        <label class="check">
-          <input type="checkbox" id="setting-fold" aria-describedby="setting-fold-note">
-          Fold long zones
+
+      <section class="settings-section" aria-labelledby="settings-board">
+        <h3 id="settings-board" class="settings-section-title">Board</h3>
+        <div class="check-block">
+          <label class="check">
+            <input type="checkbox" id="setting-fold" aria-describedby="setting-fold-note">
+            Fold long zones
+          </label>
+          <p id="setting-fold-note" class="check-note">This Week, Next Two Weeks, and Later show their first 5 cards, with a button for the rest. Overdue and Today always show everything.</p>
+        </div>
+      </section>
+
+      <section class="settings-section" aria-labelledby="settings-record">
+        <h3 id="settings-record" class="settings-section-title">What you did</h3>
+        <label class="settings-line">
+          <span class="settings-line-name">Year starts in</span>
+          <select id="setting-year-start" class="field-input" aria-describedby="setting-year-note"></select>
         </label>
-        <p id="setting-fold-note" class="check-note">This Week, Next Two Weeks, and Later show their first 5 cards, with a button for the rest. Overdue and Today always show everything.</p>
-      </div>
-      <label class="field">Year starts in
-        <select id="setting-year-start" class="field-input" aria-describedby="setting-year-note"></select>
-      </label>
-      <p id="setting-year-note" class="settings-note">For the Year button in What you did. Choose July for a July to June fiscal year.</p>
+        <p id="setting-year-note" class="settings-note">For the Year button. Choose July for a July to June fiscal year.</p>
+      </section>
+
       <!-- What each quick add key does (settings.js). -->
-      <fieldset class="settings-keys" aria-describedby="setting-keys-note">
-        <legend class="settings-legend">Quick add keys</legend>
-        <label class="settings-key"><span class="settings-key-name">Enter</span>
-          <select id="setting-key-enter" class="field-input"></select>
-        </label>
-        <label class="settings-key"><span class="settings-key-name" data-key="alt">Alt+Enter</span>
-          <select id="setting-key-alt" class="field-input"></select>
-        </label>
-        <label class="settings-key"><span class="settings-key-name" data-key="ctrl">Ctrl+Enter</span>
-          <select id="setting-key-ctrl" class="field-input"></select>
-        </label>
-        <label class="settings-key"><span class="settings-key-name">Shift+Enter</span>
-          <select id="setting-key-shift" class="field-input"></select>
-        </label>
-      </fieldset>
-      <p id="setting-keys-note" class="settings-note">Read with Claude: a day you name plainly goes on the board, a date it works out goes to the Inbox to check, and no date goes to Someday. On a project page it opens the editor instead.</p>
-      <p class="settings-note">Saved to your account, so it follows you to your other devices.</p>
-      <div class="small-foot">
+      <section class="settings-section" aria-labelledby="settings-keys-title">
+        <h3 id="settings-keys-title" class="settings-section-title">Quick add keys</h3>
+        <div class="settings-keys" role="group" aria-labelledby="settings-keys-title" aria-describedby="setting-keys-note">
+          <label class="settings-key"><kbd class="settings-kbd">Enter</kbd>
+            <select id="setting-key-enter" class="field-input"></select>
+          </label>
+          <label class="settings-key"><kbd class="settings-kbd" data-key="alt">Alt+Enter</kbd>
+            <select id="setting-key-alt" class="field-input"></select>
+          </label>
+          <label class="settings-key"><kbd class="settings-kbd" data-key="ctrl">Ctrl+Enter</kbd>
+            <select id="setting-key-ctrl" class="field-input"></select>
+          </label>
+          <label class="settings-key"><kbd class="settings-kbd">Shift+Enter</kbd>
+            <select id="setting-key-shift" class="field-input"></select>
+          </label>
+        </div>
+        <p id="setting-keys-note" class="settings-note">Read with Claude puts a plainly named day on the board, sends a date it works out to the Inbox, and puts no date in Someday. On a project page, it opens the editor.</p>
+      </section>
+
+      <div class="small-foot settings-foot">
+        <p class="settings-note">Saved to your account, on every device.</p>
         <button type="button" id="settings-done" class="button button-primary">Done</button>
       </div>
     </div>

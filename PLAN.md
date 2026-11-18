@@ -466,6 +466,27 @@ and the Settings rows say so.
 - [ ] On a project page, a key set to Read with Claude opens the editor
       with the project chosen.
 
+### Revision: a calmer Settings box (awaiting test)
+
+You asked 2026-11-18: Settings looked janky. Now three titled sections
+(Board, What you did, Quick add keys) divided by thin rules, the way the
+board's cards label their category; "Year starts in" sits beside its
+menu; the keys are one white card with a row per key, each key drawn as a
+keycap like the quick add field's Enter hint; "Saved to your account"
+moves down beside Done. A little wider (460 pixels) than the other small
+boxes, and it scrolls on a short screen. Site only. **Files:**
+`index.html`, `css/horizon.css`.
+
+### Open: "how to do" landed in Today (2026-11-18)
+
+Two ways that could happen, which look the same on the board: Shift+Enter
+(Today, no Claude), or Enter where Claude gave it today's date with no
+date in the words. The console tells them apart: a "Quick add:" cost line
+means Claude read it. If it was Claude, the fix I'd propose is a check on
+the site: a date Claude calls plain must come from words you actually
+typed (its quote has to appear in your text); otherwise the card goes to
+the Inbox with the yellow note instead of onto the board.
+
 ### Files
 
 ```
