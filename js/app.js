@@ -35,6 +35,7 @@ import { setupProjectNotes } from './projectnotes.js';
 import { setupRecordBox } from './recordbox.js';
 import { setupInbox } from './inbox.js';
 import { setupHeaderMenu } from './headermenu.js';
+import { setupNotesPeek } from './notespeek.js';
 import { backendAddress, callBackend, costLine } from './backend.js';
 
 const views = {
@@ -1190,6 +1191,16 @@ async function start() {
   function findCard(cardId) {
     return latest ? latest.cards.find((c) => c.id === cardId) : undefined;
   }
+
+  // Notes on hover (notespeek.js): the board, the Someday drawer, and a
+  // project page's open cards.
+  setupNotesPeek({
+    roots: [zonesEl, somedayCardsEl, views.project],
+    getNotes: (cardId) => {
+      const card = findCard(cardId);
+      return card ? card.notes : '';
+    },
+  });
 
   fb.watchAuth(async (user) => {
     const thisChange = ++authChange;

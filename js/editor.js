@@ -261,6 +261,15 @@ export function setupEditor({ onSave, onDone, onCreate, onClose }) {
     dialog.close();
   }
 
+  // Ctrl+Enter (Cmd+Enter on a Mac) saves from anywhere in the panel, the
+  // notes box included, where Enter alone starts a new line. (Enter in the
+  // title box already saves, as a form does.)
+  form.addEventListener('keydown', (event) => {
+    if (event.key !== 'Enter' || !(event.ctrlKey || event.metaKey) || event.isComposing) return;
+    event.preventDefault();
+    form.requestSubmit(saveButton);
+  });
+
   form.addEventListener('submit', (event) => {
     event.preventDefault();
     if (!card.id) {

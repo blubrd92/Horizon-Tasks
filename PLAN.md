@@ -143,7 +143,7 @@ Pages).
 "Tuning slice" below: six questions to settle, my recommendation for
 each. Nothing is built yet.
 
-**Change you asked for, before tuning (2026-11-18, awaiting test):**
+**Change you asked for, before tuning (2026-11-18; the new Apps Script version is deployed, cost lines still to hear):**
 Haiku's effort is now set per action in `Code.gs` (`EFFORT`):
 screenshots and pasted text go from `low` to `medium` (Haiku 5.5's own
 default), where the mistakes so far came from; quick add stays `low`,
@@ -299,6 +299,35 @@ How to test (hard-reload first):
       Escape: it closes and the Inbox is still there.
 - [ ] Open it, then Add to board from the Inbox: nothing of it is left.
 - [ ] On your phone: tap the screenshot, pinch to zoom, tap to close.
+
+**Additions you asked for: save with the keyboard, and notes on hover
+(2026-11-18, awaiting test).** Site only.
+- **Ctrl+Enter** (Cmd+Enter on a Mac) saves the card from anywhere in the
+  editor, the notes box included, where Enter alone still starts a new
+  line. Enter in the title box already saved. The Save button's tooltip
+  says so, and screen readers hear the shortcut.
+- **Notes on hover:** rest the pointer on a card with notes for about half
+  a second, and a small box beside it shows them (to the right, or the
+  left, or below, never off the screen; a very long note shows its first
+  1,200 characters). It goes when the pointer leaves the card, a drag
+  starts, the page scrolls, a key is pressed, or anything is clicked; it
+  never takes a click itself. Notes show as plain text. With a mouse or
+  trackpad only: a touch screen has no hover, and a tap opens the card
+  as before. On the board, the Someday drawer, and a project page's open
+  cards.
+**Files:** `js/notespeek.js` (new), `js/editor.js`, `js/app.js`,
+`index.html`, `css/horizon.css`. **Checked here** (headless Chrome,
+pretend Firebase): 11 checks, all passing.
+
+Proposals (not built): a small notes mark on cards that have notes, so
+you know which ones are worth resting on; Ctrl+Enter for Add to board on
+an Inbox draft.
+
+How to test (hard-reload first):
+- [ ] Open a card, type in its notes, press Ctrl+Enter: saved and closed.
+- [ ] Rest the pointer on a card with notes: they appear beside it after
+      a moment, and go when you move away. A card without notes shows
+      nothing.
 
 **Next: settle the tuning slice's six questions** ("Tuning slice",
 "What I need from you"), then build the comparison tool and the quick

@@ -2947,3 +2947,27 @@ a.link-row:focus-visible { outline-offset: -2px; }
     border-radius: 0 0 var(--radius-button) var(--radius-button);
   }
 }
+
+/* Notes on hover (notespeek.js): a small reading box beside a card. It
+   never takes a click. */
+.notes-peek {
+  position: fixed;
+  z-index: 40;
+  width: max-content;
+  max-width: 300px;
+  max-height: 260px;
+  overflow: hidden;
+  padding: 10px 12px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-card);
+  box-shadow: 0 8px 24px rgba(24, 25, 28, 0.14);
+  font-size: 13px;
+  line-height: 1.45;
+  color: var(--ink);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  pointer-events: none;
+}
+
+.notes-peek[hidden] { display: none; }
