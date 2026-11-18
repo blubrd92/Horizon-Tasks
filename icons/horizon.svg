@@ -1,8 +1,8 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="Horizon">
-  <!-- Sunrise, Blue: a sun coming up over the horizon line, with two
+  <!-- Sunrise (Gold sun on blue), Horizon's icon: a sun coming up over the horizon line, with two
        shorter lines below for the days ahead. -->
   <rect width="64" height="64" rx="14" fill="#2F5BD3"/>
-  <g fill="none" stroke="#FFFFFF" stroke-linecap="round" stroke-width="4">
+  <g fill="none" stroke="#F6C343" stroke-linecap="round" stroke-width="4">
     <path d="M21 38 A11 11 0 0 1 43 38"/>
     <path d="M32 15 V19"/>
     <path d="M17.6 21 L20.4 23.8"/>

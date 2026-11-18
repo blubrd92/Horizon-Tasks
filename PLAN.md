@@ -191,12 +191,12 @@ How to test (hard-reload first):
       always.
 - [ ] Paste a screenshot while in the field: the Inbox opens and reads it.
 
-**The Sunrise icon (2026-11-18, awaiting test; colorway not chosen).**
+**The Sunrise icon (2026-11-18, awaiting test; colorway chosen: Gold sun on blue).**
 You chose Sunrise from three options (`design/logo-options/preview.png`),
 then asked for colorways: Blue, Ink, Paper, and Today tint
 (`design/logo-options/sunrise-colors.png`), all from the palette;
 orange and the category colors left out because each already means
-something. Built in Blue until you choose: the icon before "Horizon" on
+something. Then gold (`design/logo-options/sunrise-gold.png`): you chose **Gold sun on blue** (`sunrise-y1-blue-gold.svg`), the accent blue with a gold sun (`#F6C343`). Gold is a brand color only: it lives in the icon and never on the board, so it can't be read as a deadline or a category. Built: the icon before "Horizon" on
 every page that shows the name (one CSS rule, `.wordmark::before`, 30
 pixels), the browser tab (`icons/horizon.svg`, with `horizon-32.png` for
 browsers that won't take an SVG), and a phone's home screen
@@ -211,7 +211,7 @@ the name; they still are.
 
 How to test (hard-reload; a browser holds on to old tab icons, so a new
 tab may show it first):
-- [ ] The tab shows the sunrise.
+- [ ] The tab shows the sunrise, blue with a gold sun.
 - [ ] The board, What you did, a project page, and the sign-in screen
       show the icon before "Horizon".
 - [ ] On your phone, the header looks right.
