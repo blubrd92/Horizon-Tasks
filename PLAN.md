@@ -477,15 +477,13 @@ moves down beside Done. A little wider (460 pixels) than the other small
 boxes, and it scrolls on a short screen. Site only. **Files:**
 `index.html`, `css/horizon.css`.
 
-### Open: "how to do" landed in Today (2026-11-18)
+### Settled: "how to do" landed in Today (2026-11-18)
 
-Two ways that could happen, which look the same on the board: Shift+Enter
-(Today, no Claude), or Enter where Claude gave it today's date with no
-date in the words. The console tells them apart: a "Quick add:" cost line
-means Claude read it. If it was Claude, the fix I'd propose is a check on
-the site: a date Claude calls plain must come from words you actually
-typed (its quote has to appear in your text); otherwise the card goes to
-the Inbox with the yellow note instead of onto the board.
+It was Shift+Enter, which adds to Today without Claude, so Horizon did
+what the key says. Nothing to fix. Still available as a proposal if a
+quick add ever does land on a day you never wrote: a check that a date
+Claude calls plain comes from words you actually typed (its quote has to
+appear in your text), sending anything else to the Inbox.
 
 ### Files
 
