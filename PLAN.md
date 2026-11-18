@@ -384,7 +384,7 @@ nothing else from your board does.
 
 ### Proposals (not built; say yes and I'll add them)
 
-1. **The mockup's "Added from screenshot" icon on board cards** (the
+1. **(Approved and built: Revision 2.)** **The mockup's "Added from screenshot" icon on board cards** (the
    small corner-brackets icon top right of a card in `Main.dc.html`).
    Cards will carry `source: "screenshot"` from this slice on, so it's
    a few lines in `board.js`. Left out because you asked for the Inbox,
@@ -394,7 +394,7 @@ nothing else from your board does.
 3. From 3a, still open: a total daily cap across everyone, and updating
    SPEC's line about the script's allowlist. New: SPEC step 4's shape
    gains `due_date_quote`; I'd add it to SPEC too.
-4. **The header on a phone.** In my stand-in page at 390 pixels wide,
+4. **(Approved and built: Revision 2.)** **The header on a phone.** In my stand-in page at 390 pixels wide,
    the header's buttons wrap into two rows and sit over the "Horizon"
    wordmark. That was already so before the Inbox button (Projects, What
    you did, the gear, and Sign out don't fit beside the wordmark); the
@@ -520,8 +520,8 @@ The notes stay plain text, so the editor, What you did, and Copy as text
 work as they do. No new card fields. Drafts already in your Inbox keep
 their old notes (summary, then People).
 
-**Not in this revision** (still waiting on your yes or no): the "Added
-from screenshot" icon on cards, and the phone header.
+**Not in this revision:** the screenshot icon and the phone header,
+which you approved next (Revision 2).
 
 **Files:** `apps-script/Code.gs` (the prompt, the schema, the checks,
 the calendar), `js/model.js` (the draft keeps `notes`; `draftNotesFrom`
@@ -554,6 +554,47 @@ browser tests, through Add to board.
       it was sent.
 - [ ] Add one to the board, open its card: the notes are there, one line
       each.
+
+### Revision 2: the screenshot mark, and the phone header (built, awaiting your test)
+
+Both approved 2026-11-18. Site only: no new Apps Script version needed.
+
+**The mark.** A card with `source: "screenshot"` shows the mockup's
+corner-brackets icon at the top right, across from its category, on the
+board, in Someday, and on project pages. Screen readers hear "Added from
+screenshot". Cards you type have none, and so do cards made before 3b.
+
+**The phone header.** I first proposed always giving the buttons their
+own row on a phone. Measuring changed that: from about 600 to 760 pixels
+wide (a small tablet, a phone sideways), the labeled buttons fit beside
+the wordmark, and a forced extra row would waste space. So:
+
+- Up to 760 pixels wide, the buttons sit beside the wordmark when they
+  fit and move to a row of their own when they don't. They can't overlap
+  the wordmark any more, at any width.
+- Up to 600 pixels wide, Projects, What you did, and Inbox show just
+  their icons (folder, check mark, tray), so the five buttons fit one row.
+  The Inbox pill stays. Their names stay for screen readers.
+- The 14-day strip keeps the last row, swiping sideways as before.
+- Wider than 760: unchanged.
+
+**Files:** `js/board.js` (the mark), `index.html` (the three labels
+wrapped so they can hide), `css/horizon.css`.
+
+**Checked here:** at 360, 390, 600, 601, 700, 760, 761, and 1024 pixels
+wide, no button overlaps the wordmark, the buttons fit one row, and
+nothing scrolls sideways; the end-to-end test (pretend Firebase) shows
+the mark on a screenshot card and not on a typed one.
+
+**How to test** (hard-reload first):
+- [ ] On your phone, the header: wordmark, then one row of buttons (three
+      icons with the Inbox pill, the gear, Sign out), then the strip.
+      Nothing overlaps.
+- [ ] Each icon button does what its name says.
+- [ ] Turn the phone sideways: the labeled buttons come back, beside the
+      wordmark if they fit.
+- [ ] A card added from a screenshot shows the corner-brackets mark at
+      its top right; one you typed doesn't.
 
 ### Files
 

@@ -52,18 +52,18 @@
       <nav class="header-nav" aria-label="Views and account">
         <button type="button" id="projects-button" class="button button-link" data-open-projects disabled>
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path></svg>
-          Projects
+          <span class="nav-label">Projects</span>
         </button>
         <!-- SPEC's "Done" button: it opens the Done record at #done. -->
         <a href="#done" class="button button-link">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"></circle><path d="M8 12.5l2.8 2.8L16 10"></path></svg>
-          What you did
+          <span class="nav-label">What you did</span>
         </a>
         <!-- The Inbox (inbox.js): drafts from screenshots. The pill counts
              them and hides at zero. -->
         <button type="button" id="inbox-button" class="button button-link inbox-button" aria-haspopup="dialog" disabled>
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 13l2.2-7.1A2 2 0 0 1 8.1 4.5h7.8a2 2 0 0 1 1.9 1.4L20 13"></path><path d="M4 13v5a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-5h-4.5l-1.5 2.5h-4L8.5 13z"></path></svg>
-          <span id="inbox-button-label">Inbox</span>
+          <span class="nav-label">Inbox</span>
           <span id="inbox-count" class="count-pill" aria-hidden="true" hidden>0</span>
         </button>
         <button type="button" id="settings-button" class="icon-button header-icon" aria-label="Settings" disabled>

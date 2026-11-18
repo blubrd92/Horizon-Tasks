@@ -433,6 +433,21 @@ code { font-family: var(--font-mono); font-size: 0.92em; }
   box-shadow: 0 1px 2px rgba(24, 25, 28, 0.06);
 }
 
+/* The category, and on the right, the screenshot mark when there is one. */
+.card-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  min-width: 0;
+}
+
+.card-source {
+  flex: none;
+  display: flex;
+  color: var(--ink-secondary);
+}
+
 .card-category {
   font-size: 11px;
   font-weight: 600;
@@ -783,19 +798,25 @@ body.is-dragging .zones { align-items: stretch; }
   .site-header { padding: 14px 16px 10px; }
   .pretend-bar { padding: 8px 16px; }
 
-  /* The strip gets its own row under the wordmark and Sign out, and swipes
-     sideways inside itself; 14 tiles don't fit a phone. */
+  /* The wordmark, then the buttons: beside it when they fit, on a row of
+     their own when they don't (they never overlap it). The strip gets the
+     last row to itself and swipes sideways inside itself; 14 tiles don't
+     fit a phone. */
   .site-header {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) auto;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    column-gap: 16px;
     row-gap: 12px;
   }
 
   .header-start { display: contents; }
+  .site-header .wordmark { flex: none; }
+  .site-header .header-nav { margin-left: auto; }
 
   .strip {
-    grid-column: 1 / -1;
-    grid-row: 2;
+    order: 3;
+    flex: 0 0 calc(100% + 32px);
     flex-wrap: nowrap;
     overflow-x: auto;
     /* Room above and below for a tile's outline, which the scrolling box
@@ -2548,4 +2569,20 @@ a.link-row:focus-visible { outline-offset: -2px; }
   font-size: 26px;
   font-weight: 700;
   color: var(--accent-dark);
+}
+
+/* On a narrow phone, Projects, What you did, and Inbox show just their
+   icons, so the header's buttons fit on one row. Their names stay for
+   screen readers (the Inbox button's name also gives its count). */
+@media (max-width: 600px) {
+  .header-nav .nav-label {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+  }
+
+  .header-nav .button-link { gap: 6px; }
 }

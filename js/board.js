@@ -198,12 +198,22 @@ function cardHTML(card, today, categoryById, { triage = false, highlight = null,
   const project = projectById && card.projectId ? projectById.get(card.projectId) : null;
   const projectTag = project ? projectTagHTML(project) : '';
   const triageSection = triage && offersTriage(card, today) ? triageHTML(card, today) : '';
+  // The mockup's corner brackets: this card began as a screenshot (slice 3b).
+  const source =
+    card.source === 'screenshot'
+      ? `<span class="card-source">
+           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 8V6a2 2 0 0 1 2-2h2M16 4h2a2 2 0 0 1 2 2v2M20 16v2a2 2 0 0 1-2 2h-2M8 20H6a2 2 0 0 1-2-2v-2"></path></svg>
+           <span class="visually-hidden">Added from screenshot</span>
+         </span>`
+      : '';
 
   // The title is a real button; CSS stretches its click area over the whole
   // card. app.js finds the card by data-card-id; drag.js by data-drag-id.
   return `
     <article class="card${highlight && card.dueDate === highlight ? ' is-match' : ''}" style="--band: ${escapeHTML(color)}" data-drag-id="${escapeHTML(card.id)}">
-      <span class="card-category">${escapeHTML(categoryName)}</span>
+      <div class="card-top">
+        <span class="card-category">${escapeHTML(categoryName)}</span>${source}
+      </div>
       <h3 class="card-title">
         <button type="button" class="card-open" data-card-id="${escapeHTML(card.id)}">${escapeHTML(card.title)}</button>
       </h3>
