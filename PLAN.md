@@ -209,12 +209,22 @@ sideways at 320, 360, 390, 600, 700, 761, 800, 900, 1024, 1280, and 1440
 pixels wide. On a phone the buttons were already on their own row under
 the name; they still are.
 
+Then (you asked): **the icon and name are a link home** to the board on
+the board, What you did, and project pages, keeping the ?today= testing
+date. They look as before (no underline or color change); the pointer,
+the focus outline, and a "Back to the board" tooltip say they're a link.
+The sign-in, setup, and not-approved screens keep a plain name, since
+there's no board to go to there. Checked: from What you did, a click
+lands on the board; on the board, a click stays put.
+
 How to test (hard-reload; a browser holds on to old tab icons, so a new
 tab may show it first):
 - [ ] The tab shows the sunrise, blue with a gold sun.
 - [ ] The board, What you did, a project page, and the sign-in screen
       show the icon before "Horizon".
 - [ ] On your phone, the header looks right.
+- [ ] On What you did and a project page, clicking the icon or the name
+      takes you to the board.
 
 **Next: settle the tuning slice's six questions** ("Tuning slice",
 "What I need from you"), then build the comparison tool and the quick
