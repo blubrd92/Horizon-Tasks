@@ -337,6 +337,10 @@ How to test (hard-reload first):
 - [ ] In the Inbox, change a draft's notes and press Ctrl+Enter: it's on
       the board with your change.
 
+**Planned, not built: your own categories (2026-11-18).** See
+"Categories you set yourself" below: seven questions, my recommendation
+for each. Waiting on your answers.
+
 **Next: settle the tuning slice's six questions** ("Tuning slice",
 "What I need from you"), then build the comparison tool and the quick
 add quote check, and stop so you can write your cases and run it.
@@ -355,6 +359,66 @@ a mark for pasted-text cards, SPEC's new `pasted_text` source, and the
 tuning slice (all under "Slice 3c", Proposals). Still parked: Done
 privacy and the Firebase console. (One approved list is settled: see
 "Slice 3a", question 3.)
+
+## Categories you set yourself (planned, not built)
+
+Asked 2026-11-18. Each person's categories already live on their own
+profile (`users/{uid}`, `categories: [{ id, name, color }]`), copied
+from `config.js`'s starter list at first sign-in, and cards point at a
+category by its id. So a rename already touches no card, and Haiku is
+already sent your current names. What's missing is a way to change them
+inside Horizon: today that means the Firebase console.
+
+### What it would do
+
+A **Categories** section in Settings, under Quick add keys: one row per
+category, in your order, each with its color, its name, and buttons to
+rename, recolor, move up or down, and retire. An **Add a category** row
+at the bottom. Changes save as you make them, to your account, so every
+device follows (like your other settings).
+
+### Questions, with my recommendation for each
+
+1. **Where it lives.** A section in Settings (my recommendation; it's
+   where your other settings are), or its own panel opened from
+   Settings, which would give rows more room.
+2. **Colors.** A set of about ten swatches to choose from, not a free
+   color picker: your five, plus about five more, each dark enough for
+   the band and the small-caps name to read clearly. Left out on
+   purpose: the accent blue (Today), the overdue rose, and the
+   hard-deadline orange, since each already means something. A free
+   picker would let a category look like an overdue card.
+3. **Removing a category: retire, don't delete.** A retired category
+   leaves the menus (the editor, the Inbox, Haiku's list) but cards that
+   have it keep showing its name and color, and What you did keeps it in
+   your history. It can be brought back. A category no card has ever
+   used can simply be deleted. Why: today a card whose category is gone
+   shows its raw id ("saturday-pic") in gray, and What you did loses the
+   name. Retiring is how projects already work (archive).
+4. **Cards on a retired category:** they keep it until you change them
+   (my recommendation), or Horizon offers "Move its open cards to..."
+   when you retire one.
+5. **How many.** Up to 12 (my recommendation: enough for anyone's work,
+   few enough that colors stay tellable apart). The backend takes 40.
+6. **Order.** Up and down buttons on each row; the order is the order in
+   every menu and in What you did. Dragging rows could come later.
+7. **Names.** 1 to 40 characters, no two alike (ignoring capitals), as
+   with projects.
+
+### What else changes (no questions)
+
+- **Live updates:** today categories are read once at sign-in. They'd
+  be watched, so a change shows at once on the board and on your other
+  devices.
+- **Haiku** gets your active categories, renamed ones included, with no
+  backend change; retired ones aren't offered.
+- **New users** still start with `config.js`'s starter list.
+- **Firestore rules** don't change: your profile is already yours alone.
+  Each change is checked in the browser before it's saved.
+- **Files (estimate):** `js/categories.js` (new: the list's rules),
+  `js/settings.js`, `index.html`, `css/horizon.css`, `js/firebase.js`
+  (watch the profile, save the list), `js/app.js`, `js/board.js` and
+  `js/record.js` (retired categories still named).
 
 ## Tuning slice: real cases, three models side by side (planned, not built)
 
