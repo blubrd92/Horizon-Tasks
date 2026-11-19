@@ -555,89 +555,105 @@
 
   <!-- Settings, from the gear beside Sign out. Changes save at once. -->
   <dialog id="settings" class="small-dialog settings-dialog" aria-labelledby="settings-heading">
-    <div class="small-panel settings-panel">
-      <div class="settings-head">
-        <h2 id="settings-heading" class="panel-title">Settings</h2>
-        <button type="button" id="settings-close" class="icon-button" aria-label="Close settings">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"></path></svg>
-        </button>
+    <div class="settings-panel">
+      <!-- The title and the tabs stay put; only the pane below scrolls. -->
+      <div class="settings-top">
+        <div class="settings-head">
+          <h2 id="settings-heading" class="panel-title">Settings</h2>
+          <button type="button" id="settings-close" class="icon-button" aria-label="Close settings">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"></path></svg>
+          </button>
+        </div>
+        <div class="settings-tabs" role="tablist" aria-label="Settings sections">
+          <button type="button" role="tab" id="settings-tab-general" class="settings-tab" aria-controls="settings-pane-general" aria-selected="true">General</button>
+          <button type="button" role="tab" id="settings-tab-keys" class="settings-tab" aria-controls="settings-pane-keys" aria-selected="false" tabindex="-1">Quick add</button>
+          <button type="button" role="tab" id="settings-tab-categories" class="settings-tab" aria-controls="settings-pane-categories" aria-selected="false" tabindex="-1">Categories</button>
+        </div>
       </div>
 
-      <section class="settings-section" aria-labelledby="settings-board">
-        <h3 id="settings-board" class="settings-section-title">Board</h3>
-        <label class="settings-line settings-switch-line">
-          <span class="settings-line-name">Fold long zones</span>
-          <input type="checkbox" id="setting-fold" class="settings-switch" role="switch" aria-describedby="setting-fold-note">
-        </label>
-        <p id="setting-fold-note" class="settings-note">Long zones show their first 5 cards and a button for the rest. Overdue and Today always show everything.</p>
-      </section>
+      <div id="settings-body" class="settings-body">
+        <div role="tabpanel" id="settings-pane-general" class="settings-pane" aria-labelledby="settings-tab-general">
+          <section class="settings-section" aria-labelledby="settings-board">
+            <h3 id="settings-board" class="settings-section-title">Board</h3>
+            <label class="settings-line settings-switch-line">
+              <span class="settings-line-name">Fold long zones</span>
+              <input type="checkbox" id="setting-fold" class="settings-switch" role="switch" aria-describedby="setting-fold-note">
+            </label>
+            <p id="setting-fold-note" class="settings-note">Long zones show their first 5 cards and a button for the rest. Overdue and Today always show everything.</p>
+          </section>
 
-      <section class="settings-section" aria-labelledby="settings-record">
-        <h3 id="settings-record" class="settings-section-title">What you did</h3>
-        <label class="settings-line">
-          <span class="settings-line-name">Year starts in</span>
-          <select id="setting-year-start" class="field-input" aria-describedby="setting-year-note"></select>
-        </label>
-        <p id="setting-year-note" class="settings-note">For the Year button. Choose July for a July to June fiscal year.</p>
-      </section>
-
-      <!-- What each quick add key does (settings.js). -->
-      <section class="settings-section" aria-labelledby="settings-keys-title">
-        <h3 id="settings-keys-title" class="settings-section-title">Quick add keys</h3>
-        <div class="settings-keys" role="group" aria-labelledby="settings-keys-title" aria-describedby="setting-keys-note">
-          <label class="settings-key"><kbd class="settings-kbd">Enter</kbd>
-            <select id="setting-key-enter" class="field-input"></select>
-          </label>
-          <label class="settings-key"><kbd class="settings-kbd" data-key="alt">Alt+Enter</kbd>
-            <select id="setting-key-alt" class="field-input"></select>
-          </label>
-          <label class="settings-key"><kbd class="settings-kbd" data-key="ctrl">Ctrl+Enter</kbd>
-            <select id="setting-key-ctrl" class="field-input"></select>
-          </label>
-          <label class="settings-key"><kbd class="settings-kbd">Shift+Enter</kbd>
-            <select id="setting-key-shift" class="field-input"></select>
-          </label>
+          <section class="settings-section" aria-labelledby="settings-record">
+            <h3 id="settings-record" class="settings-section-title">What you did</h3>
+            <label class="settings-line">
+              <span class="settings-line-name">Year starts in</span>
+              <select id="setting-year-start" class="field-input" aria-describedby="setting-year-note"></select>
+            </label>
+            <p id="setting-year-note" class="settings-note">For the Year button. Choose July for a July to June fiscal year.</p>
+          </section>
         </div>
-        <p id="setting-keys-note" class="settings-note">Read with Claude puts a plainly named day on the board, sends a date it works out to the Inbox, and puts no date in Someday. On a project page, it opens the editor.</p>
-      </section>
 
-      <!-- Your categories (settings.js draws the rows; categories.js has the rules). -->
-      <section class="settings-section" aria-labelledby="settings-categories-title">
-        <h3 id="settings-categories-title" class="settings-section-title">Categories</h3>
-        <ul id="category-list" class="category-list" aria-labelledby="settings-categories-title"></ul>
-        <div class="category-add-line">
-          <button type="button" id="category-add" class="button button-small" aria-describedby="category-count">Add a category</button>
-          <span id="category-count" class="category-count"></span>
+        <!-- What each quick add key does (settings.js). -->
+        <div role="tabpanel" id="settings-pane-keys" class="settings-pane" aria-labelledby="settings-tab-keys" hidden>
+          <section class="settings-section">
+            <p class="settings-note">What each key does when you press it in the quick add field.</p>
+            <div class="settings-keys" role="group" aria-labelledby="settings-tab-keys" aria-describedby="setting-keys-note">
+              <label class="settings-key"><kbd class="settings-kbd">Enter</kbd>
+                <select id="setting-key-enter" class="field-input"></select>
+              </label>
+              <label class="settings-key"><kbd class="settings-kbd" data-key="alt">Alt+Enter</kbd>
+                <select id="setting-key-alt" class="field-input"></select>
+              </label>
+              <label class="settings-key"><kbd class="settings-kbd" data-key="ctrl">Ctrl+Enter</kbd>
+                <select id="setting-key-ctrl" class="field-input"></select>
+              </label>
+              <label class="settings-key"><kbd class="settings-kbd">Shift+Enter</kbd>
+                <select id="setting-key-shift" class="field-input"></select>
+              </label>
+            </div>
+            <p id="setting-keys-note" class="settings-note">Read with Claude puts a plainly named day on the board, sends a date it works out to the Inbox, and puts no date in Someday. On a project page, it opens the editor.</p>
+          </section>
         </div>
-        <div id="category-retired" class="category-retired" hidden>
-          <div class="category-retired-head">
-            <span id="category-retired-count"></span>
-            <button type="button" id="category-retired-toggle" class="button button-small" aria-expanded="false" aria-controls="category-retired-list">Show</button>
-          </div>
-          <ul id="category-retired-list" class="category-list is-retired" hidden></ul>
-        </div>
-        <p id="category-status" class="settings-note category-status" role="status"></p>
-        <p class="settings-note">Retired categories leave the menus and Claude's list. Cards that have one keep its name and color, here and in What you did.</p>
 
-        <!-- The box for adding or changing one category. settings.js moves
-             it into the list, in place of the row being changed. -->
-        <form id="category-form" class="category-form" novalidate hidden>
-          <label class="field">Name
-            <input type="text" id="category-name" class="field-input" maxlength="40" autocomplete="off" aria-describedby="category-name-error">
-          </label>
-          <p id="category-name-error" class="field-error" hidden></p>
-          <fieldset class="field swatch-field">
-            <legend>Color</legend>
-            <div id="category-colors" class="swatch-choices"></div>
-          </fieldset>
-          <div class="category-form-foot">
-            <button type="button" id="category-retire" class="button button-small">Retire</button>
-            <span class="category-form-gap"></span>
-            <button type="button" id="category-cancel" class="button">Cancel</button>
-            <button type="submit" id="category-save" class="button button-primary">Save</button>
-          </div>
-        </form>
-      </section>
+        <!-- Your categories (settings.js draws the rows; categories.js has the rules). -->
+        <div role="tabpanel" id="settings-pane-categories" class="settings-pane" aria-labelledby="settings-tab-categories" hidden>
+          <section class="settings-section">
+            <p class="settings-note">The name and color across the top of each card. Click a name to change it; the arrows set the order of every menu.</p>
+            <ul id="category-list" class="category-list" aria-labelledby="settings-tab-categories"></ul>
+            <div class="category-add-line">
+              <button type="button" id="category-add" class="button button-small" aria-describedby="category-count">Add a category</button>
+              <span id="category-count" class="category-count"></span>
+            </div>
+            <div id="category-retired" class="category-retired" hidden>
+              <div class="category-retired-head">
+                <span id="category-retired-count"></span>
+                <button type="button" id="category-retired-toggle" class="button button-small" aria-expanded="false" aria-controls="category-retired-list">Show</button>
+              </div>
+              <ul id="category-retired-list" class="category-list is-retired" hidden></ul>
+            </div>
+            <p id="category-status" class="settings-note category-status" role="status"></p>
+            <p class="settings-note">Retired categories leave the menus and Claude's list. Cards that have one keep its name and color, here and in What you did.</p>
+
+            <!-- The box for adding or changing one category. settings.js moves
+                 it into the list, in place of the row being changed. -->
+            <form id="category-form" class="category-form" novalidate hidden>
+              <label class="field">Name
+                <input type="text" id="category-name" class="field-input" maxlength="40" autocomplete="off" aria-describedby="category-name-error">
+              </label>
+              <p id="category-name-error" class="field-error" hidden></p>
+              <fieldset class="field swatch-field">
+                <legend>Color</legend>
+                <div id="category-colors" class="swatch-choices"></div>
+              </fieldset>
+              <div class="category-form-foot">
+                <button type="button" id="category-retire" class="button button-small">Retire</button>
+                <span class="category-form-gap"></span>
+                <button type="button" id="category-cancel" class="button">Cancel</button>
+                <button type="submit" id="category-save" class="button button-primary">Save</button>
+              </div>
+            </form>
+          </section>
+        </div>
+      </div>
 
       <div class="small-foot settings-foot">
         <p class="settings-note">Saved to your account, on every device.</p>

@@ -346,6 +346,10 @@ Firestore rules change. See "Categories you set yourself" below for the
 settled questions, the build plan, the decisions I made, what I checked
 here, and the test list.
 
+Then, after your first look (two scroll bars, and cut-off keycaps):
+**Settings in three tabs with one scroll area** (Revision 1 in that
+section), awaiting your test.
+
 **Next: test "Categories you set yourself"** (the list under "How to
 test" in that section). Once you confirm it, commit, merge, and start
 the card ticks revision in a fresh session.
@@ -618,8 +622,8 @@ stand-ins): 45 checks, all passing. Among them:
 
 ### How to test (hard-reload first)
 
-- [ ] Open Settings: a **Categories** section under Quick add keys
-      lists your five, in order, "5 of 12".
+- [ ] Open Settings, then the **Categories** tab: your five, in order,
+      "5 of 12".
 - [ ] Click a name: the row opens. Rename it and pick another color,
       Save. The board's cards on it change at once.
 - [ ] Add a category; try a name you already have, with different
@@ -641,6 +645,54 @@ stand-ins): 45 checks, all passing. Among them:
 
 When you're done, rename things back if you like; nothing here touches
 a card.
+
+### Revision 1: Settings in three tabs, one scroll area (2026-11-19, awaiting test)
+
+**What you saw:** two scroll bars, one inside the other, and the Quick
+add keycaps cut off ("Shift+Ente"). **Why:** the Categories section made
+Settings taller than the window. Both the dialog and the panel inside
+it could scroll, so both showed a bar. On Windows a scroll bar takes
+about 15 pixels of width, and the keys box gave its menus a fixed 200
+pixels, so the keycaps' column was what shrank. My first build didn't
+touch the keys' styles; it made the box tall enough to expose that
+fixed width. Headless Chrome's scroll bars take no width, which is why
+my checks missed it.
+
+**What changed** (you said Settings could change if it looked good and
+helped):
+- **Three tabs** under the title: **General** (Fold long zones, Year
+  starts in), **Quick add** (the four keys), **Categories**. They look
+  like What you did's Week / Month / Year buttons; the chosen one is
+  white and bold. Settings opens on the tab you used last (until the
+  page reloads). The arrow keys, Home, and End move between tabs.
+- **One scroll area.** The title, the tabs, and the footer with Done
+  stay put; only the pane between them scrolls. The dialog itself never
+  scrolls.
+- **One height** (640 pixels, or the window's height if that's less),
+  so switching tabs doesn't make the box jump. General has room to
+  spare; that's the price.
+- **Keycaps always whole.** The keycaps' column is as wide as the
+  longest keycap ("Option+Enter" on a Mac), every row shares it so the
+  menus line up, and the menus take what's left.
+- Each of Quick add and Categories gets a one-line note at the top in
+  place of its section title, which the tab now gives. The box is 20
+  pixels wider (480).
+
+**Files:** `index.html`, `css/horizon.css`, `js/settings.js`.
+
+**Checked here:** the 45 earlier checks plus 6 new ones, all passing:
+Settings opens on General; the arrow key moves to Categories; the dialog
+never scrolls, and Done stays in view with 12 categories; no keycap is
+cut off at 1280, 429 (your window), and 360 pixels wide, including with
+"Option+Enter". Then once more with real 15-pixel scroll bars switched
+on (the Windows kind): one bar, on the pane only, nothing sideways.
+
+How to test (hard-reload first):
+- [ ] Open Settings with a long Categories list: one scroll bar, and
+      Done stays at the bottom.
+- [ ] Quick add tab: all four keycaps whole, the menus lined up.
+- [ ] Switch tabs: the box stays the same size.
+- [ ] On your phone, the three tabs fit and read well.
 
 ### Carried over (not part of this slice)
 

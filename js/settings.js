@@ -60,9 +60,40 @@ export function setupSettings({ onChange, withClaude = true, onCategories, categ
 
   const categoryList = setupCategories({ dialog, onCategories, categoryInUse });
 
+  // The tabs: General, Quick add, Categories. Only the chosen one's pane
+  // shows; the arrow keys, Home, and End move between tabs, as screen
+  // reader users expect. Settings opens on the tab you last used.
+  const body = document.getElementById('settings-body');
+  const tabs = [...dialog.querySelectorAll('[role="tab"]')];
+  let tabId = tabs[0].id;
+
+  function selectTab(id, { focus = false } = {}) {
+    tabId = id;
+    for (const tab of tabs) {
+      const on = tab.id === id;
+      tab.setAttribute('aria-selected', String(on));
+      tab.tabIndex = on ? 0 : -1;
+      document.getElementById(tab.getAttribute('aria-controls')).hidden = !on;
+      if (on && focus) tab.focus();
+    }
+    body.scrollTop = 0;
+  }
+
+  for (const tab of tabs) {
+    tab.addEventListener('click', () => selectTab(tab.id));
+    tab.addEventListener('keydown', (event) => {
+      const at = tabs.indexOf(tab);
+      const to = { ArrowRight: at + 1, ArrowLeft: at - 1, Home: 0, End: tabs.length - 1 }[event.key];
+      if (to === undefined) return;
+      event.preventDefault();
+      selectTab(tabs[(to + tabs.length) % tabs.length].id, { focus: true });
+    });
+  }
+
   function open(settings, categories) {
     show(settings);
     categoryList.show(categories);
+    selectTab(tabId);
     dialog.showModal();
   }
 
@@ -357,7 +388,8 @@ function setupCategories({ dialog, onCategories, categoryInUse }) {
     }
   });
   dialog.addEventListener('cancel', (event) => {
-    if (editing) {
+    // Only when the box is on screen (its tab is showing).
+    if (editing && form.getClientRects().length) {
       event.preventDefault();
       cancelForm();
     }
