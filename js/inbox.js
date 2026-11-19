@@ -20,6 +20,7 @@
 // from the panel's text box. app.js decides how drafts are saved and how
 // the backend is called.
 
+import { activeOf } from './categories.js';
 import { canRetry, costLine } from './backend.js';
 import { isISODate } from './dates.js';
 import { draftNotes, newCard, newDraft } from './model.js';
@@ -673,9 +674,13 @@ export function setupInbox({ read, saveDraft, changeDraft, discardDraft, addToBo
     const select = entry.category;
     if (document.activeElement === select) return;
     const mine = categories();
-    const options = [{ value: '', label: 'No category' }, ...mine.map((c) => ({ value: c.id, label: c.name }))];
-    // A category id that isn't yours any more stays, so it isn't lost.
-    if (draft.category && !mine.some((c) => c.id === draft.category)) {
+    const options = [{ value: '', label: 'No category' }, ...activeOf(mine).map((c) => ({ value: c.id, label: c.name }))];
+    // A retired category, or an id that isn't yours any more, stays, so it
+    // isn't lost.
+    const own = draft.category ? mine.find((c) => c.id === draft.category) : null;
+    if (own && own.retired) {
+      options.push({ value: own.id, label: `${own.name} (retired)` });
+    } else if (draft.category && !own) {
       options.push({ value: draft.category, label: `${draft.category} (not in your categories)` });
     }
     const keep = 'category' in entry.stored && draft.category === entry.stored.category ? select.value : draft.category || '';
@@ -850,6 +855,15 @@ export function setupInbox({ read, saveDraft, changeDraft, discardDraft, addToBo
     readText,
     setEnabled(on) {
       enabled = on;
+    },
+    // Your categories changed (Settings, here or on another device): each
+    // draft's menu and color follow, leaving a menu you're in alone.
+    refreshCategories() {
+      for (const [key, entry] of shown) {
+        if (!key.startsWith('d') || !entry.draft) continue;
+        fillCategories(entry, entry.draft);
+        drawColor(entry);
+      }
     },
     // The drafts from Firestore, now and whenever they change.
     setDrafts(next) {

@@ -3,6 +3,9 @@
 // Firestore layout (everything a person owns sits under their own user ID):
 //
 //   users/{uid}                  profile: createdAt, categories, visits
+//                                (categories: [{ id, name, color }], in
+//                                your order, `retired: true` on a retired
+//                                one; see categories.js)
 //   users/{uid}/cards/{cardId}   one document per card, in every status
 //   users/{uid}/projects/{id}    one document per project
 //

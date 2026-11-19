@@ -26,6 +26,7 @@ import { setupDrag } from './drag.js';
 import { setupSomeday } from './someday.js';
 import { setupDatePick } from './datepick.js';
 import { setupSettings } from './settings.js';
+import { activeOf, sameCategories } from './categories.js';
 import { setupDone } from './done.js';
 import { copyText, putBackChanges, rangeFor, rangeTimes } from './record.js';
 import { NEW_PROJECT, findByName, finishedOf, nextColor, openCounts, projectIdFromHash } from './projects.js';
@@ -111,7 +112,9 @@ let settings = normalizeSettings(null);
 const openZones = new Set();
 let focusFold = null;
 
-// Your categories, from your profile.
+// Your categories, from your profile, kept live: active and retired, in
+// your order (see categories.js). Menus and Haiku get activeOf(categories);
+// everything that shows a card's category looks it up in the full list.
 let categories = [];
 
 // Your projects, active and archived, kept live (see projects.js).
@@ -414,6 +417,7 @@ async function start() {
   fb = await import('./firebase.js');
   let stopWatching = null;
   let stopProjects = null;
+  let stopProfile = null;
   // Counts sign-ins and sign-outs, so a slow check left over from an earlier
   // one can tell it is out of date and stop.
   let authChange = 0;
@@ -466,7 +470,7 @@ async function start() {
     status: document.getElementById('quickadd-status'),
     since: document.getElementById('since-line'),
     onCompose: (title) =>
-      editor.open({ id: null, ...newCard({ title }) }, { categories: latest ? latest.categories : [], projects }, { below: quickAddField }),
+      editor.open({ id: null, ...newCard({ title }) }, { categories, projects }, { below: quickAddField }),
     onRead: backendAddress() ? readQuickAdd : undefined,
     // An email pasted here goes to the Inbox to read (see quickadd.js).
     onPasteText: backendAddress() ? (text) => inbox.readText(text) : undefined,
@@ -523,12 +527,12 @@ async function start() {
   });
 
   // What the backend gets besides the screenshot or text: the board's
-  // today (so ?today= testing works) and your categories' ids and names,
-  // nothing else from your board.
+  // today (so ?today= testing works) and your active categories' ids and
+  // names (retired ones aren't offered), nothing else from your board.
   function aiContext() {
     return {
       today: todayISO(),
-      categories: categories.slice(0, 40).map((c) => ({ id: c.id, name: String(c.name || c.id).slice(0, 80) })),
+      categories: activeOf(categories).slice(0, 40).map((c) => ({ id: c.id, name: String(c.name || c.id).slice(0, 80) })),
     };
   }
 
@@ -554,7 +558,7 @@ async function start() {
 
     const today = todayISO();
     const draft = newDraft(answer.draft, today, { source: 'quick_add', typed });
-    if (draft.category && !categories.some((c) => c.id === draft.category)) draft.category = null;
+    if (draft.category && !activeOf(categories).some((c) => c.id === draft.category)) draft.category = null;
     const due = draft.dueDate;
     // The site's own check on Haiku's "explicit": a date in the past or
     // more than a year out waits in the Inbox however sure Haiku was.
@@ -691,7 +695,7 @@ async function start() {
     // beside, so it opens under the quick add field (or the project page's
     // heading).
     const fallback = views.project.hidden ? quickAddField : projectHeading;
-    if (card) editor.open(card, { categories: latest.categories, projects }, { cardId, fallback });
+    if (card) editor.open(card, { categories, projects }, { cardId, fallback });
   }
 
   for (const el of [zonesEl, somedayCardsEl]) {
@@ -757,6 +761,14 @@ async function start() {
 
   const settingsBox = setupSettings({
     withClaude: Boolean(backendAddress()),
+    // Your categories (Settings > Categories): shown at once, then saved.
+    // If Firestore refuses, the profile watch below sends the list back.
+    onCategories: (list) => {
+      if (!uid) return Promise.resolve();
+      setCategories(list);
+      return fb.saveCategories(uid, list);
+    },
+    categoryInUse: (id) => fb.categoryInUse(uid, id),
     onChange: (name, value) => {
       if (!uid) return;
       const before = settings;
@@ -776,7 +788,21 @@ async function start() {
       });
     },
   });
-  settingsButton.addEventListener('click', () => settingsBox.open(settings));
+  settingsButton.addEventListener('click', () => settingsBox.open(settings, categories));
+
+  // A new category list, from Settings or from Firestore (this tab or
+  // another device): everything that shows or offers categories redraws.
+  // The profile also changes when a day's first visit is recorded, so an
+  // unchanged list does nothing.
+  function setCategories(list) {
+    if (sameCategories(list, categories)) return;
+    categories = list;
+    if (latest) latest = { ...latest, categories };
+    draw();
+    drawDone();
+    inbox.refreshCategories();
+    settingsBox.showCategories(categories);
+  }
 
   // The Done record. Only the range on screen is downloaded: done cards by
   // completedAt, let-go cards by letGoAt (see record.js and firebase.js).
@@ -1233,7 +1259,12 @@ async function start() {
     projects = [];
     projectsLoaded = false;
     projectsButton.disabled = true;
+    if (stopProfile) {
+      stopProfile();
+      stopProfile = null;
+    }
     categories = [];
+    settingsBox.showCategories([]);
     settings = normalizeSettings(null);
     openZones.clear();
     settingsBox.close();
@@ -1280,6 +1311,8 @@ async function start() {
       projectQuickAdd.setEnabled(true);
       inbox.setEnabled(true);
       inboxButton.disabled = false;
+      // Your categories, live (changed in Settings here or elsewhere).
+      stopProfile = fb.watchProfile(user.uid, setCategories, (err) => console.warn('Could not watch your categories', err));
       stopInbox = fb.watchInbox(
         user.uid,
         (drafts) => inbox.setDrafts(drafts),

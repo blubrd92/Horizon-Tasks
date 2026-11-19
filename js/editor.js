@@ -3,6 +3,7 @@
 // phone it fills the screen instead. This file only fills in the form and
 // collects what changed; app.js decides how changes are saved.
 
+import { activeOf } from './categories.js';
 import { PROJECT_STATUS, STATUS } from './model.js';
 import { NEW_PROJECT, nameOrder } from './projects.js';
 import { placeBeside } from './place.js';
@@ -128,11 +129,16 @@ export function setupEditor({ onSave, onDone, onCreate, onClose }) {
     });
   }
 
+  // Your active categories. A card on a retired one keeps it as an option,
+  // "Programs (retired)", so opening the card doesn't change it.
   function fillCategories(categories) {
-    const options = categories.map((c) => ({ value: c.id, label: c.name }));
+    const options = activeOf(categories).map((c) => ({ value: c.id, label: c.name }));
+    const own = card.category ? categories.find((c) => c.id === card.category) : null;
     if (!card.category) {
       options.unshift({ value: '', label: 'No category' });
-    } else if (!categories.some((c) => c.id === card.category)) {
+    } else if (own && own.retired) {
+      options.unshift({ value: own.id, label: `${own.name} (retired)` });
+    } else if (!own) {
       // A category id that isn't on the profile (typed by hand in the
       // console, say). Kept as an option so opening the card doesn't change it.
       options.unshift({ value: card.category, label: `${card.category} (not in your categories)` });

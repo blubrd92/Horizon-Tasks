@@ -16,6 +16,8 @@ import {
   doc,
   getDoc,
   getDocs,
+  getDocsFromServer,
+  limit,
   onSnapshot,
   query,
   serverTimestamp,
@@ -27,6 +29,7 @@ import {
 } from 'https://www.gstatic.com/firebasejs/12.19.0/firebase-firestore.js';
 
 import { config } from '../config.js';
+import { normalizeCategories } from './categories.js';
 import { ACTIVE_STATUSES, PROJECT_STATUS, STATUS, normalizeCard, normalizeDraft, normalizeProject, normalizeSettings } from './model.js';
 
 const app = initializeApp(config.firebase);
@@ -75,10 +78,42 @@ export async function loadProfile(uid) {
   const data = snap.exists() ? snap.data() : {};
   const visit = readVisit(data);
   const settings = normalizeSettings(data.settings);
-  if (Array.isArray(data.categories)) return { categories: data.categories, visit, settings };
+  if (Array.isArray(data.categories)) return { categories: normalizeCategories(data.categories), visit, settings };
   const categories = config.starterCategories;
   await setDoc(ref, { createdAt: serverTimestamp(), categories }, { merge: true });
-  return { categories, visit, settings };
+  return { categories: normalizeCategories(categories), visit, settings };
+}
+
+// Your categories, now and whenever your profile changes (from this tab or
+// another device), as categories.js reads them. A profile with no list yet
+// sends nothing. Returns a function that stops listening.
+export function watchProfile(uid, onCategories, onError) {
+  return onSnapshot(
+    doc(db, 'users', uid),
+    (snap) => {
+      const data = snap.exists() ? snap.data() : {};
+      if (Array.isArray(data.categories)) onCategories(normalizeCategories(data.categories));
+    },
+    onError,
+  );
+}
+
+// Saves the whole category list, in order, replacing the one there.
+export function saveCategories(uid, categories) {
+  const list = categories.map((c) => (c.retired ? { id: c.id, name: c.name, color: c.color, retired: true } : { id: c.id, name: c.name, color: c.color }));
+  return setDoc(doc(db, 'users', uid), { categories: list }, { merge: true });
+}
+
+// Whether any card (in any status) or Inbox draft has this category, asked
+// of Firestore itself rather than this device's copy, which could be
+// missing cards. One match is enough, so at most two documents are read.
+// Fails when offline.
+export async function categoryInUse(uid, categoryId) {
+  for (const place of ['cards', 'inbox']) {
+    const snap = await getDocsFromServer(query(collection(db, 'users', uid, place), where('category', '==', categoryId), limit(1)));
+    if (!snap.empty) return true;
+  }
+  return false;
 }
 
 // Saves one setting, leaving the others alone.

@@ -601,6 +601,44 @@
         <p id="setting-keys-note" class="settings-note">Read with Claude puts a plainly named day on the board, sends a date it works out to the Inbox, and puts no date in Someday. On a project page, it opens the editor.</p>
       </section>
 
+      <!-- Your categories (settings.js draws the rows; categories.js has the rules). -->
+      <section class="settings-section" aria-labelledby="settings-categories-title">
+        <h3 id="settings-categories-title" class="settings-section-title">Categories</h3>
+        <ul id="category-list" class="category-list" aria-labelledby="settings-categories-title"></ul>
+        <div class="category-add-line">
+          <button type="button" id="category-add" class="button button-small" aria-describedby="category-count">Add a category</button>
+          <span id="category-count" class="category-count"></span>
+        </div>
+        <div id="category-retired" class="category-retired" hidden>
+          <div class="category-retired-head">
+            <span id="category-retired-count"></span>
+            <button type="button" id="category-retired-toggle" class="button button-small" aria-expanded="false" aria-controls="category-retired-list">Show</button>
+          </div>
+          <ul id="category-retired-list" class="category-list is-retired" hidden></ul>
+        </div>
+        <p id="category-status" class="settings-note category-status" role="status"></p>
+        <p class="settings-note">Retired categories leave the menus and Claude's list. Cards that have one keep its name and color, here and in What you did.</p>
+
+        <!-- The box for adding or changing one category. settings.js moves
+             it into the list, in place of the row being changed. -->
+        <form id="category-form" class="category-form" novalidate hidden>
+          <label class="field">Name
+            <input type="text" id="category-name" class="field-input" maxlength="40" autocomplete="off" aria-describedby="category-name-error">
+          </label>
+          <p id="category-name-error" class="field-error" hidden></p>
+          <fieldset class="field swatch-field">
+            <legend>Color</legend>
+            <div id="category-colors" class="swatch-choices"></div>
+          </fieldset>
+          <div class="category-form-foot">
+            <button type="button" id="category-retire" class="button button-small">Retire</button>
+            <span class="category-form-gap"></span>
+            <button type="button" id="category-cancel" class="button">Cancel</button>
+            <button type="submit" id="category-save" class="button button-primary">Save</button>
+          </div>
+        </form>
+      </section>
+
       <div class="small-foot settings-foot">
         <p class="settings-note">Saved to your account, on every device.</p>
         <button type="button" id="settings-done" class="button button-primary">Done</button>

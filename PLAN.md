@@ -337,12 +337,18 @@ How to test (hard-reload first):
 - [ ] In the Inbox, change a draft's notes and press Ctrl+Enter: it's on
       the board with your change.
 
-**Agreed, not built: your own categories (2026-11-18).** See
-"Categories you set yourself" below. You chose every recommendation.
+**Categories you set yourself: built, awaiting your test (2026-11-19),
+on `claude/affectionate-archimedes-kh11iv`.** A Categories section in
+Settings: rename, recolor (ten swatches), move up and down, add (up to
+12), retire, bring back, and delete one nothing uses. Watched live, so
+every device follows at once. Site only: no Apps Script change, no
+Firestore rules change. See "Categories you set yourself" below for the
+settled questions, the build plan, the decisions I made, what I checked
+here, and the test list.
 
-**Next: build "Categories you set yourself", in a fresh session.** Read
-that section (the seven questions are settled), plan the details into
-PLAN.md, then build and stop so you can test.
+**Next: test "Categories you set yourself"** (the list under "How to
+test" in that section). Once you confirm it, commit, merge, and start
+the card ticks revision in a fresh session.
 
 **The queue after that, in order** (asked 2026-11-19; see "Queued after
 categories" below): (1) a small revision to cards: how the In progress
@@ -366,7 +372,7 @@ tuning slice (all under "Slice 3c", Proposals). Still parked: Done
 privacy and the Firebase console. (One approved list is settled: see
 "Slice 3a", question 3.)
 
-## Categories you set yourself (agreed, not built)
+## Categories you set yourself (built, awaiting test)
 
 Asked 2026-11-18. Each person's categories already live on their own
 profile (`users/{uid}`, `categories: [{ id, name, color }]`), copied
@@ -427,6 +433,227 @@ You chose the recommendation on each, as written below.
   `js/settings.js`, `index.html`, `css/horizon.css`, `js/firebase.js`
   (watch the profile, save the list), `js/app.js`, `js/board.js` and
   `js/record.js` (retired categories still named).
+
+### The build plan (2026-11-19)
+
+**How it's stored.** The list stays where it is, on your profile
+(`users/{uid}`, `categories`), in your order. A retired category stays
+in the list with `retired: true` added; nothing else about it changes.
+That one choice does most of the work: everything that *shows* a card's
+category (the board, Someday, a project page, What you did, the record
+box, Copy as text) already looks it up by id in the full list, so a
+retired one keeps its name and color with no change to `js/board.js` or
+`js/record.js` (my estimate above listed them; reading them, they need
+nothing). Only the places that *offer* categories leave retired ones
+out: the editor's menu, the Inbox's menu, quick add's check of Haiku's
+choice, and the list sent to Haiku.
+
+**The Settings section**, under Quick add keys:
+
+```
+CATEGORIES
+┌────────────────────────────────────────────┐
+│ ● Collection Development   ✎   [ ↑ ] [ ↓ ] │
+│ ● Programs                 ✎   [ ↑ ] [ ↓ ] │
+│ ...                                          │
+└────────────────────────────────────────────┘
+[ Add a category ]                    5 of 12
+1 retired                              [Show]
+  ● Old thing          [Bring back] [Delete]
+```
+
+- Each row's name is a button (with a small pencil) that opens the row
+  in place: a Name box, the color swatches, and **Retire**, **Cancel**,
+  **Save**. Enter saves; Escape cancels (and doesn't close Settings).
+  One row open at a time.
+- **↑ and ↓** move a category one place and save at once. The top row's
+  ↑ and the bottom row's ↓ are switched off. Focus stays on the button
+  you pressed, so pressing it again keeps moving the same category.
+- **Add a category** opens the same box at the bottom, with the first
+  color no active category is using. At 12 it's switched off, with the
+  note "12 is the most. Retire one to add another."
+- **Retired**, folded like archived projects ("2 retired", Show/Hide).
+  Each retired row has **Bring back** (switched off at 12 active) and
+  **Delete**. Delete first asks Firestore whether any card, in any
+  status, or any Inbox draft has that category; if none does, it's
+  deleted, and if one does, it stays retired and the line says why.
+- A line under the section says what just happened ("Retired
+  Programs. Its cards keep it.") and is read out by screen readers.
+
+**The rules** (`js/categories.js`, new, no Firebase in it, so it's
+easy to check):
+- Names: spaces at the ends trimmed and runs of spaces made one; 1 to
+  40 characters; no two alike ignoring capitals, **retired ones
+  included** (a new "Programs" beside a retired "Programs" would make
+  What you did ambiguous). The messages: "Give the category a name.",
+  "You already have a category called Programs.", and "Programs is
+  retired. Bring it back from the retired list instead."
+- Up to 12 active. Retired ones don't count toward the 12.
+- A new category's id is made from its name ("Book Club" becomes
+  `book-club`, then `book-club-2` if that's taken, retired ones
+  included). Renaming never changes an id, so cards never need touching.
+- **The ten colors**: your five plus five new ones, checked with a
+  script. Each new one is at least 5:1 against a white card (the band
+  isn't text, so 3:1 is the floor; Gold, already Saturday PIC's, is
+  3.7:1), and all are kept well apart from the three reserved colors:
+
+  | Name | Color | Note |
+  |---|---|---|
+  | Green | `#2F7D6B` | Collection Development's |
+  | Purple | `#6A4FB3` | Programs' |
+  | Blue | `#3B6FB6` | Digital Resources' |
+  | Gold | `#B07A00` | Saturday PIC's |
+  | Gray | `#6B6F78` | Admin's |
+  | Forest | `#2F7A3F` | new |
+  | Plum | `#86478F` | new |
+  | Navy | `#2C4778` | new |
+  | Brown | `#8B5530` | new |
+  | Lagoon | `#0F7792` | new |
+
+  Left out: the accent blue `#2F5BD3`, the overdue rose `#8E2F51`, and
+  the hard-deadline orange `#9A3F06`. A category whose color isn't one
+  of the ten (set in the console) gets an extra "Its current color"
+  swatch, as projects do. Two categories may share a color: with 12
+  categories and 10 colors they'd have to. Honest limit: the color
+  wheel is crowded. Forest sits near the project color Moss, and Lagoon
+  near the project color Teal. They never play the same part (a
+  category is the band across a card's top; a project is the arrow in
+  its tag), so I judged that acceptable.
+
+**Live on every device.** Today `loadProfile` reads categories once at
+sign-in. It still does (it's what creates a new person's starter list),
+and then `watchProfile` (new, `js/firebase.js`) keeps listening to the
+profile. When the categories in it change, from this tab or another
+device, the board, Someday, the project page, What you did, the
+Settings list, and the Inbox's menus redraw. (The profile also changes
+when a day's first visit is recorded; Horizon compares the list and
+redraws only when categories really changed.) A change shows the moment
+you make it, before Firestore confirms; if Firestore refuses it, the
+list goes back as it was and the line says why.
+
+**Saving** writes the whole list in one go (`saveCategories`), built
+from the latest list Horizon has. If you changed categories on two
+devices in the very same second, the later save would win. For a list
+only you edit, I judged that fine; a transaction would rule it out but
+stops working offline.
+
+**Reading a profile safely.** The list is checked as it's read
+(`normalizeCategories`): an entry with no id is skipped, a missing name
+shows the id, and a color that isn't a plain `#RRGGBB` (or `#RGB`)
+shows gray. The color goes into the page's styles, so this keeps a
+stray value typed in the console from doing anything odd there.
+
+**Haiku** gets your active categories, at most 12, renamed ones
+included. **No Apps Script change**, confirmed in `Code.gs`: it accepts
+up to 40 categories with ids and names up to 80 characters each and
+builds Haiku's choices from whatever it's sent; an empty list is
+already handled (it answers "no category"). Quick add's check that
+Haiku picked one of your categories uses the active list, so a retired
+id can't slip through from a tab that hadn't caught up.
+
+**No Firestore rules change**, confirmed in `firestore.rules`: the
+profile and everything under `users/{you}` is readable and writable by
+you alone, which covers saving the list and the Delete check's two
+look-ups (your cards and your Inbox, both under your own path).
+
+**Files:** `js/categories.js` (new), `js/settings.js`, `index.html`,
+`css/horizon.css`, `js/firebase.js` (`watchProfile`, `saveCategories`,
+`categoryInUse`), `js/app.js`, `js/editor.js` and `js/inbox.js` (a
+retired category on a card or draft shows as "Programs (retired)" in the
+menu, kept so opening it doesn't change it), `js/model.js` (a comment on
+the profile's shape).
+
+### Decisions I made that the questions didn't cover (change any of them)
+
+- **Retire is in the open row; Delete is in the retired list.** So
+  deleting an unused category is two steps (Retire, then Delete). The
+  other way: one "Remove" button that deletes when nothing uses it and
+  retires otherwise. Fewer clicks, but you'd only learn which happened
+  afterward.
+- **Rename and recolor save with the row's Save button**, not on every
+  keystroke or swatch click; ↑ and ↓, Retire, Bring back, and Delete
+  save at once.
+- **A retired category comes back in its old place** in the order, not
+  at the bottom.
+- **No confirmation for Retire or Delete.** Retire is undone by Bring
+  back, and Delete only happens when nothing uses the category.
+- **You can retire every category.** Menus then offer only "No
+  category", and Haiku is told there are none.
+- **No "(retired)" on the board.** A card on a retired category looks
+  exactly as it did; that's the point of retiring.
+- **An editor or Inbox menu already open** when categories change on
+  another device: the Inbox's menus refresh at once; an open card
+  editor shows the new list the next time it opens.
+
+### What I checked here (2026-11-19)
+
+The rules on their own (`js/categories.js` in Node): 22 checks, all
+passing. Then the real page in headless Chrome with a pretend Firebase
+(the same files you'll load; only Firebase and the backend were
+stand-ins): 45 checks, all passing. Among them:
+- Rename and recolor keep the id; the board's card changes name and
+  band at once; focus goes back to the row.
+- "ADMIN" is refused beside Admin; "  Book   Club " is saved as "Book
+  Club" with the id `book-club`.
+- ↑ moves and saves; focus stays on ↑, so Enter again keeps moving it;
+  the ends are switched off.
+- Escape closes the open row and leaves Settings open.
+- Retire: gone from the rows and the editor's menu for other cards; its
+  own card keeps "Saturday PIC" in gold on the board, shows "Saturday
+  PIC (retired)" in its editor, and its Inbox draft does too; What you
+  did still names it.
+- Delete on a category a card has: it stays retired, and the line says
+  why. Offline: it says it couldn't check. Retire, then Delete, on an
+  unused one: gone from the profile.
+- Bring back: in its old place.
+- Haiku is sent only the active ones (a renamed one by its new name);
+  a retired id in Haiku's answer is dropped, so the card has no
+  category.
+- A change from "another device" shows at once in Settings and the
+  Inbox's menus.
+- A refused save puts the list back as it was and says so.
+- At 12, Add is switched off and says "12 is the most."
+- At 360 pixels wide, nothing scrolls sideways, with a row open or the
+  retired list showing.
+
+### How to test (hard-reload first)
+
+- [ ] Open Settings: a **Categories** section under Quick add keys
+      lists your five, in order, "5 of 12".
+- [ ] Click a name: the row opens. Rename it and pick another color,
+      Save. The board's cards on it change at once.
+- [ ] Add a category; try a name you already have, with different
+      capitals: it says so.
+- [ ] Move one up and down with the arrows; open a card's Category menu:
+      the same order.
+- [ ] Retire one that has cards: it leaves the menus, and its cards keep
+      their name and color on the board and in What you did. Open one of
+      those cards: the menu says "(retired)".
+- [ ] In the retired list, **Delete** it: it says cards have it and it
+      stays. **Bring back**: it returns to its old place.
+- [ ] Add a throwaway, retire it, Delete it: gone.
+- [ ] With Horizon open on your phone too, rename one on the computer:
+      the phone's board changes without a reload.
+- [ ] Quick add with Read with Claude something that fits a renamed
+      category: Haiku picks it (by its new name).
+- [ ] On your phone, Settings > Categories reads well and nothing
+      scrolls sideways.
+
+When you're done, rename things back if you like; nothing here touches
+a card.
+
+### Carried over (not part of this slice)
+
+Open proposals, unchanged: Undo for Let it go and Mark done on the
+board, Let it go in the editor, triage per device instead of per
+account, pinning zone headers on long columns, saving the sample card
+scripts in `tools/`, a Settings gear on the What you did page; from 3a,
+a total daily cap across everyone and SPEC's line about the script's
+allowlist; from 3b, SPEC step 4's JSON shape and paste on every page;
+from 3c, Haiku on the project page's quick add, Alt+Enter for the old
+Enter, a mark for pasted-text cards, and SPEC's `pasted_text` source.
+Parked: Done privacy and the Firebase console. The tuning slice's six
+questions stay open for its own session.
 
 ## Queued after categories (asked 2026-11-19, not planned in detail)
 
