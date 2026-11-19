@@ -342,9 +342,14 @@ How to test (hard-reload first):
 
 **Next: build "Categories you set yourself", in a fresh session.** Read
 that section (the seven questions are settled), plan the details into
-PLAN.md, then build and stop so you can test. **After that: the tuning
-slice** (its six questions still open; "Tuning slice" below), which you
-want to come back to later, not next.
+PLAN.md, then build and stop so you can test.
+
+**The queue after that, in order** (asked 2026-11-19; see "Queued after
+categories" below): (1) a small revision to cards: how the In progress
+and Hard deadline ticks look, drafted for your approval before any of it
+is built; (2) checklists on cards (sub-tasks); then (3) the tuning slice
+(its six questions still open; "Tuning slice" below), which you want to
+come back to later, not next. Each in its own session.
 
 Open proposals carried over: Undo for Let it go and Mark done on the board
 (the Done view's "Put back on the board" covers getting a card back), Let
@@ -422,6 +427,54 @@ You chose the recommendation on each, as written below.
   `js/settings.js`, `index.html`, `css/horizon.css`, `js/firebase.js`
   (watch the profile, save the list), `js/app.js`, `js/board.js` and
   `js/record.js` (retired categories still named).
+
+## Queued after categories (asked 2026-11-19, not planned in detail)
+
+Each gets its own session, in this order, after "Categories you set
+yourself" and before the tuning slice. Each session plans first and
+settles its questions with you.
+
+### 1. A small revision to cards: the In progress and Hard deadline ticks
+
+You want them to look different. **Drafts first, for your approval,
+before anything is built:** the session makes a few visual options (a
+preview sheet, as for the logo, in `design/`), you choose, and only then
+does it change the site.
+
+What they are today:
+- **In the card editor**, two plain checkboxes side by side, "In
+  progress" and "Hard deadline" (with its note "A real outside cutoff.
+  It never gets a Let it go button."), in `index.html` (`editor-progress`,
+  `editor-hard`) and `css/horizon.css` (`.checks`, `.check`).
+- **On the cards**, a blue "In progress" pill with a half-filled circle,
+  and a "Hard deadline" chip: orange when due today or overdue, a gray
+  outline otherwise (`js/board.js`, `.card-progress`, `.card-hard`).
+- **In an Inbox draft**, a Hard deadline checkbox too.
+
+Open question for that session: "ticks" most likely means the editor's
+checkboxes (one idea to draft: on/off switches like Settings' Fold long
+zones, or two toggle buttons); confirm whether the card pill and chip
+should change as well. SPEC's rule stands: orange only for a hard
+deadline due today or overdue.
+
+### 2. Checklists on cards (sub-tasks)
+
+A card gets a checklist: short items you can tick off. Questions for
+that session to settle with you, among them:
+- Where items are added and ticked: the card editor only, or also right
+  on the board (a tap on an item)?
+- What the card shows on the board: a count like "2/5", a thin progress
+  bar, the items themselves, or nothing until opened?
+- Does ticking the last item mark the card done, offer to, or do
+  nothing?
+- A repeating card's next card: the same checklist, all unticked (likely
+  right)?
+- What you did: show a done card's checklist, or just its count?
+- How many items, how long each, and reordering.
+- Could Haiku (screenshots, pasted emails) suggest checklist items from
+  the steps in an email? (A backend change; maybe later.)
+- Storage: an array of `{ id, text, done }` on the card document needs
+  no Firestore rules change; confirm.
 
 ## Tuning slice: real cases, three models side by side (planned, not built)
 
