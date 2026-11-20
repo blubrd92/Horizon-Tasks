@@ -396,7 +396,10 @@ section). See "Haiku suggests checklist items" below.
 You deployed it and began testing (2026-11-20): the volunteer chat (M6)
 and the bulletin board (M5) both picked out only your steps, faithfully.
 Then **Revision 1** (Repeats in each Inbox draft, set by you; and one
-scroll bar in the Inbox), awaiting test.
+scroll bar in the Inbox), which you've used. M3 (the forward) and M4
+(meeting notes, the one expected to fail) both passed. Then **Revision
+2:** with a checklist, the title names the job instead of listing the
+steps (needs a new Apps Script version).
 
 **Next: keep testing with `samples/haiku-checklist/`,** especially M4 (who
 you are), M2 (steps off the screen), M3 (the forward), and the one-ask
@@ -556,10 +559,17 @@ worth listing, and get no list.
 - **M5, the bulletin board:** the right notice out of six, all five steps
   word for word, the date read directly, a title naming the whole job.
   One slip: the summary mentioned the fire drill, which needs nothing.
-- **Candidate prompt changes, only if the slips recur:** with a
-  checklist, the title names the whole job, not its first step; the
-  summary adds no explanation the message doesn't give, and mentions
-  other tasks, not every other item.
+- **M3, the forward:** exactly your two steps, Lena's three left out;
+  the summary says why. One judgment call: Hard deadline on for a
+  vendor's "to keep your installation on schedule" date, which can move.
+  Watch whether that recurs.
+- **M4, meeting notes:** both "Alex M." items, not Alexis's; the date
+  read directly; no hard deadline.
+- **Titles:** listed the steps in three of four tests; changed in
+  Revision 2.
+- **Still a candidate, only if it recurs:** the summary adds no
+  explanation the message doesn't give, and mentions other tasks, not
+  every other item.
 - **Not wanted:** Haiku setting Repeats. You set it in the Inbox instead
   (Revision 1).
 
@@ -621,6 +631,35 @@ How to test (hard-reload first):
       it; change the date and it follows. Reload: still Weekly.
 - [ ] Add to board: the card shows Weekly. Mark it done: the next one
       arrives a week later, its checklist unticked.
+
+### Revision 2: titles that name the job (2026-11-20, awaiting deploy and test)
+
+In three of your first four live tests the title listed the steps
+("Draft five teen advisory survey questions and send..."). You want a
+title that's informative but not exhaustive, so one sentence joins the
+title rule for screenshots and pasted text (`Code.gs`,
+`materialPrompt_`):
+
+> When there is a checklist, the title names the job as a whole,
+> specific enough to recognize on a task board, without listing the
+> steps: "Prepare the book club kits for the Riverside branch", not
+> "Pull the books, print the guides, and pack the bags".
+
+The example is deliberately not one of the samples, so the samples stay
+real tests. Quick add is untouched. The summary rule is unchanged: its
+one real slip (the staff room, M6) hasn't recurred, and summaries naming
+what belongs to others have been accurate.
+
+**Checked here:** the backend checks, now 13, all passing (the sentence
+is in both prompts; its example matches no sample).
+
+**Setup:** the same three steps as before (paste `Code.gs`, run
+`checkSetup`, Deploy > Manage deployments > pencil > New version,
+description `titles name the job`, Deploy).
+
+How to test: rerun M4 (meeting notes) and M6 (the chat). The title
+should name the job ("Finish your Teen Space items for Priya", or
+similar), with the steps underneath.
 
 ### Files
 
