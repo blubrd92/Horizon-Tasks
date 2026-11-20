@@ -386,17 +386,20 @@ cards" below for what was built, the test list, and the decisions I made.
 you say so (or after the Haiku step, which you chose to do in the same
 session and on the same branch).
 
-**Haiku suggests checklist items: planned, questions open**
-(2026-11-20), same branch. See "Haiku suggests checklist items" below:
-ten questions, my recommendation for each. Nothing is built yet.
+**Haiku suggests checklist items: built, awaiting your test**
+(2026-11-20), same branch. You took every recommendation: screenshots
+and pasted text (not quick add) may come with the steps the message
+itself asks for, at most 8, editable in the Inbox draft before Add to
+board. **Needs a new Apps Script version** (setup steps in that
+section). See "Haiku suggests checklist items" below.
 
-**Next: answer the Haiku checklist questions,** then build (backend and
-site) and stop so you can test.
+**Next: deploy the new Apps Script version and test.** Once you confirm:
+commit, and merge this branch into `main` when you say so.
 
 **The queue after that, in order** (asked 2026-11-19; see "Queued after
 categories" below): (1) the card ticks revision, done; (2) checklists
 on cards (sub-tasks), done; (2b) Haiku suggests checklist items,
-planned, questions open; then (3) the tuning slice (its six
+built, awaiting test; then (3) the tuning slice (its six
 questions still open; "Tuning slice" below), which you want to come
 back to later, not next. Each in its own session.
 
@@ -415,11 +418,13 @@ tuning slice (all under "Slice 3c", Proposals). Still parked: Done
 privacy and the Firebase console. (One approved list is settled: see
 "Slice 3a", question 3.)
 
-## Haiku suggests checklist items (planning; questions open, nothing built)
+## Haiku suggests checklist items (built, awaiting your test)
 
 Started 2026-11-20 on `claude/determined-faraday-st14l9`, right after
-"Checklists on cards" was confirmed, as you asked. **Nothing changes
-until you answer the questions below.**
+"Checklists on cards" was confirmed, as you asked. You took every
+recommendation below; built the same day. **It needs a new Apps Script
+version before Haiku sends any steps** (see "Setup steps" below); the
+site works either way.
 
 ### What it would do
 
@@ -499,22 +504,121 @@ worth listing, and get no list.
     checklist along with everything else; its six questions are
     unchanged.
 
-### What would change (once answered)
+### What was built
 
-- `apps-script/Code.gs`: a `checklist` line in the screenshot and
-  pasted-text prompt; `checklist` (a list of strings) in the answer's
-  shape; `normalizeDraft_` keeps at most 8, each one clean line of at
-  most 120 characters, empty ones dropped. Quick add's prompt says to
-  give an empty list (the shape is shared).
-- `js/model.js`: `newDraft` turns Haiku's list into items; `normalizeDraft`
-  reads a draft's `checklist`.
-- `js/checklist.js`: the section made reusable, with an `onChange` for
-  the draft (and its help text's id passed in, since each draft needs
-  its own).
-- `js/inbox.js`, `css/horizon.css`: the list in each draft; Add to board
-  carries it.
-- Setup (yours): paste `Code.gs`, run `checkSetup`, Deploy > Manage
-  deployments > pencil > New version > Deploy.
+- **Haiku's instructions** (screenshots and pasted text; `Code.gs`,
+  `materialPrompt_`), one new line, in plain terms: list the separate
+  steps the reader must take, only when the message itself asks for two
+  or more (numbered or bulleted steps, several things to send or bring,
+  parts of a form, "do this, then that"); one item per step, in order, at
+  most 8; each a short phrase starting with a verb, using the message's
+  own specifics ("Send your headshot to Bonnie"); no dates in an item
+  (they stay in the due date and the timeline, and a dated step can be in
+  both); no clicks inside a step ("open the link"); never steps it thinks
+  up, no advice, no "read the email", no "reply" unless a reply is one of
+  several things asked for; more than 8, combine related ones so nothing
+  is lost; an empty list when the task is one action, "which is most of
+  the time". Two existing lines follow it: the summary never repeats a
+  step in the checklist, and when a message holds several tasks, the
+  checklist holds only the chosen task's steps.
+- **The answer's shape** gets `checklist` (a list of strings) right after
+  the timeline, so Haiku works out the dates before it lists the steps.
+  **Quick add's shape and instructions are unchanged,** so quick add
+  behaves exactly as before.
+- **`normalizeDraft_` cleans the list:** at most 8 steps, each one line
+  of at most 120 characters, a leading bullet or number taken off, no
+  step twice, and a list of one dropped.
+- **The Inbox draft:** a Checklist section after the notes, the same
+  look and keys as the editor's (handle, box, words, X, "Add an item",
+  Alt with the arrows, drag, pasting several lines). Each finished change
+  (a tick, an item added, removed, or moved, words changed and left)
+  saves to the draft at once, so it survives a reload and shows on your
+  other devices; a change from another device shows up unless you're
+  working in the list right then. No "Mark it done?" line. Add to board
+  (or Ctrl+Enter) carries the list onto the card, words still in "Add an
+  item" included. A draft with no steps shows only "Add an item".
+
+### Decisions I made that your answers didn't cover (change any of them)
+
+- **A list of one step is dropped** by the backend: one step is the task
+  itself, and the title already says it.
+- **Quick add gets no checklist at all,** not even an empty one in its
+  answer, so its shape isn't recompiled and its tested behavior can't
+  shift.
+- **Words in an item save to the draft when you leave the item,** not
+  on every keystroke, like the draft's notes.
+- **Item boxes measure themselves again** when the fonts finish loading
+  and whenever the list's width changes. This also fixes the editor: an
+  item measured in a stand-in font, before IBM Plex Sans arrived, kept a
+  spare blank line.
+
+### Files
+
+`apps-script/Code.gs` (the instructions, the shape, the cleanup),
+`js/model.js` (drafts carry a `checklist`), `js/checklist.js` (the
+section reusable in a draft, saving through `onChange`, measuring itself
+again), `js/inbox.js` (the list in each draft; Add to board carries it),
+`js/editor.js` (one line). No Firestore rules change; no change to
+`index.html` or `css/horizon.css`.
+
+### What I checked here (2026-11-20)
+
+- **The backend** (`Code.gs` loaded in Node, no Anthropic call): 11
+  checks, all passing. Bullets and numbers off, duplicates out, capped at
+  8, an item cut at 120, a list of one dropped, quick add never gets one,
+  a non-list answer read as none, `checklist` right after `timeline` in
+  the shape with no unsupported keywords, quick add's shape unchanged,
+  and each prompt carries (or, for quick add, doesn't carry) the line.
+- **The Inbox** (headless Chrome, the real site, a pretend Firebase and
+  a pretend backend answer): 27 checks, all passing. A draft saved with
+  three unticked steps, shown in order after the notes, "0 of 3", no
+  offer; a long step shown whole; a tick, an added item, reworded words
+  (on leaving the item, not while typing), a removal, and Alt+Up each
+  saved to the draft, with no save echoing into another; another
+  device's change followed; a refresh while typing in "Add an item"
+  keeping the words and the focus; Ctrl+Enter making a card with the
+  ticks and the unadded words; "1/5" on the board; a read with no steps
+  showing no rows and making a card with an empty list; a draft that
+  arrived with the Inbox closed measured when it opens; on a 390-wide
+  phone, no sideways scroll and a tap that ticks and saves. No console
+  errors.
+- **Checklists on cards** again: 54 checks, all passing.
+- **Not checked here:** Haiku itself. Whether it finds the steps you'd
+  want (and leaves single-action emails alone) can only be seen with the
+  real model, which only your Apps Script can call.
+
+### Setup steps (yours)
+
+1. Open your Apps Script project (script.google.com, the Horizon
+   project). Select everything in `Code.gs`, delete it, and paste in the
+   whole of `apps-script/Code.gs` from this branch. Save (Ctrl+S).
+2. In the function menu at the top, choose `checkSetup` and press Run.
+   The log should say everything is in place, as before.
+3. **Deploy > Manage deployments**, the pencil on your deployment,
+   **Version: New version**, description `checklist steps`, **Deploy**.
+   The web app's address doesn't change, so `config.js` stays as it is.
+
+Either order works: the new script with the old site makes drafts whose
+lists the site ignores, and the old script with the new site makes
+drafts with no list.
+
+### How to test (hard-reload first, after the new version is deployed)
+
+- [ ] Paste an email that asks for several things ("please send your
+      bio, a headshot, and your AV needs by Friday") into the Inbox's
+      text box. The draft arrives with those as a checklist, unticked,
+      after the notes, and the notes don't list them again.
+- [ ] Paste an email that asks for one thing ("can you send me the room
+      number?"): no list, just "Add an item".
+- [ ] A screenshot of instructions with numbered steps: the steps, in
+      order, without their numbers.
+- [ ] In a draft: tick one, add one, reword one, remove one, drag one.
+      Reload the page: the draft's list is as you left it.
+- [ ] Add to board: the card shows the count, and the editor shows the
+      list with your ticks.
+- [ ] A quick add (Enter) behaves exactly as before, with no list.
+- [ ] Open the console (F12) after a read: the cost line should be about
+      what it was, a hair more when there's a list.
 
 ## Checklists on cards (confirmed)
 

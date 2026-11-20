@@ -51,6 +51,7 @@ export function setupEditor({ onSave, onDone, onCreate, onClose, onTick }) {
   const doneButton = document.getElementById('editor-done');
   const checklist = setupChecklist({
     root: document.getElementById('editor-checklist'),
+    helpId: 'editor-cl-help',
     onTick: (itemId, done) => {
       if (!card || !card.id) return;
       // An item already saved on the card: its tick saves now, and the

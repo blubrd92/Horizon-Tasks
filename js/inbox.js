@@ -25,6 +25,7 @@ import { canRetry, costLine } from './backend.js';
 import { isISODate, todayISO } from './dates.js';
 import { draftNotes, newCard, newDraft } from './model.js';
 import { shrink, splitImages, toBase64 } from './screenshot.js';
+import { sameChecklist, sectionHTML, setupChecklist } from './checklist.js';
 
 const MAX_AT_ONCE = 5;
 const NO_CATEGORY_COLOR = '#6B6F78';
@@ -364,9 +365,13 @@ export function setupInbox({ read, saveDraft, changeDraft, discardDraft, addToBo
 
     const ordered = [...drafts].sort((a, b) => a.createdAt - b.createdAt);
     const keys = [];
+    // Drafts built just now: their checklist items are measured once
+    // they're in the panel (a box outside the page has no width to wrap to).
+    const built = [];
     for (const draft of ordered) {
       const key = `d${draft.id}`;
       keys.push(key);
+      if (!shown.has(key)) built.push(key);
       const entry = shown.get(key) || buildDraft(draft);
       shown.set(key, entry);
       fillDraft(entry, draft);
@@ -390,6 +395,7 @@ export function setupInbox({ read, saveDraft, changeDraft, discardDraft, addToBo
       const el = shown.get(key).el;
       if (list.children[i] !== el) list.insertBefore(el, list.children[i] || null);
     });
+    if (dialog.open) for (const key of built) shown.get(key).checklist.fit();
 
     if (scrollTo && shown.has(scrollTo) && dialog.open) {
       shown.get(scrollTo).el.scrollIntoView({ block: 'nearest', behavior: reducedMotion() ? 'auto' : 'smooth' });
@@ -616,14 +622,35 @@ export function setupInbox({ read, saveDraft, changeDraft, discardDraft, addToBo
     notes.rows = NOTES_MIN_ROWS;
     notesField.append('Notes', notes);
 
+    // The checklist: the steps Haiku found, if any, to edit before the card
+    // exists, the same as the editor's (checklist.js). Each change saves to
+    // the draft as it's made, so it survives a reload. A draft has no Mark
+    // done, so no offer.
+    const checks = document.createElement('div');
+    checks.className = 'cl';
+    checks.setAttribute('role', 'group');
+    checks.setAttribute('aria-labelledby', `inbox-cl-label-${n}`);
+    checks.innerHTML = sectionHTML({
+      labelId: `inbox-cl-label-${n}`,
+      helpId: `inbox-cl-help-${n}`,
+      help: 'Enter adds the item. Several lines pasted here become one item each. Alt with the up or down arrow moves the item you\u2019re typing in. The list goes onto the card with Add to board.',
+    });
+
     const foot = document.createElement('div');
     foot.className = 'inbox-foot';
     const discard = button('Discard', 'button');
     const add = button('Add to board', 'button button-primary');
     foot.append(discard, add);
 
-    el.append(shot, titleField, titleError, row, note, ticks, notesField, foot);
-    const entry = { el, id, shot, title, titleError, due, category, note, hard, hardTick, notes, add, discard, stored: {} };
+    el.append(shot, titleField, titleError, row, note, ticks, notesField, checks, foot);
+    const entry = { el, id, shot, title, titleError, due, category, note, hard, hardTick, notes, checks, add, discard, stored: {} };
+    entry.checklist = setupChecklist({
+      root: checks,
+      helpId: `inbox-cl-help-${n}`,
+      onChange: (list) => {
+        if (!sameChecklist(list, entry.stored.checklist || [])) save(entry, { checklist: list });
+      },
+    });
 
     // Each field saves when you leave it (or pick from it).
     title.addEventListener('input', () => {
@@ -684,12 +711,21 @@ export function setupInbox({ read, saveDraft, changeDraft, discardDraft, addToBo
       entry.notes.value = draftNotes(draft);
       sizeNotes(entry.notes);
     }
+    // The checklist, the same way: on arrival, then only when Firestore's
+    // list differs from the last one saved here (another device), and
+    // never while you're working in it.
+    const listFresh = !('checklist' in was) || !sameChecklist(draft.checklist, was.checklist);
+    if (listFresh && !entry.checks.contains(document.activeElement)) {
+      entry.checklist.load(draft.checklist, { finish: false });
+      if (dialog.open) entry.checklist.fit();
+    }
     entry.stored = {
       title: draft.title,
       dueDate: draft.dueDate,
       category: draft.category,
       deadlineType: draft.deadlineType,
       notes: draft.notes,
+      checklist: draft.checklist,
     };
     drawNote(entry);
     drawHardDue(entry);
@@ -832,6 +868,8 @@ export function setupInbox({ read, saveDraft, changeDraft, discardDraft, addToBo
       category: entry.category.value || null,
       deadlineType: entry.hard.checked ? 'hard' : 'soft',
       notes: entry.notes.value.replace(/\r\n?/g, '\n').replace(/\s+$/, ''),
+      // The list as it is, words still in "Add an item" included.
+      checklist: entry.checklist.values(),
     };
     const next = neighborFocus(`d${entry.id}`);
     dropPreview(entry.id);
@@ -873,7 +911,10 @@ export function setupInbox({ read, saveDraft, changeDraft, discardDraft, addToBo
     render();
     // Notes boxes drawn while the panel was closed couldn't measure their
     // wrapped lines; now they can.
-    for (const entry of shown.values()) if (entry.notes) sizeNotes(entry.notes);
+    for (const entry of shown.values()) {
+      if (entry.notes) sizeNotes(entry.notes);
+      if (entry.checklist) entry.checklist.fit();
+    }
   }
 
   function close() {

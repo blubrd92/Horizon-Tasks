@@ -63,11 +63,16 @@ const ICONS = {
     '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"></path></svg>',
 };
 
-// root: the section in the editor (index.html, #editor-checklist).
-// onTick(itemId, done) runs on every tick; onOffer() when "Mark done" in
-// the offer is pressed; onResize() when the section grows or shrinks, so
-// the editor can stay on screen.
-export function setupChecklist({ root, onTick, onOffer, onResize }) {
+// root: the section (the editor's, index.html #editor-checklist, or an
+// Inbox draft's, built from sectionHTML below). helpId: the id of its
+// hidden help text, which each item's words point to. onTick(itemId, done)
+// runs on every tick; onOffer() when "Mark done" in the offer is pressed;
+// onResize() when the section grows or shrinks, so the editor can stay on
+// screen. onChange(list), if given, runs after every change that's
+// finished (a tick, an item added, removed, or moved, words changed and
+// left) with the list as it stands, without words still in "Add an item":
+// an Inbox draft saves it then.
+export function setupChecklist({ root, helpId, onTick = () => {}, onOffer = () => {}, onResize = () => {}, onChange = null }) {
   const list = root.querySelector('.cl-list');
   const count = root.querySelector('.cl-count');
   const add = root.querySelector('.cl-add-input');
@@ -93,10 +98,18 @@ export function setupChecklist({ root, onTick, onOffer, onResize }) {
   // emptied of its words is left out.
   function values() {
     const pending = splitLines(add.value).map((text) => ({ id: newItemId(), text, done: false }));
-    return [...items, ...pending]
+    return clean([...items, ...pending]);
+  }
+
+  function clean(list) {
+    return list
       .map((item) => ({ id: item.id, text: cleanText(item.text), done: item.done }))
       .filter((item) => item.text)
       .slice(0, MAX_ITEMS);
+  }
+
+  function changed() {
+    if (onChange) onChange(clean(items));
   }
 
   // Redraws the rows. Focus returns to the same item's same control, if it
@@ -152,7 +165,7 @@ export function setupChecklist({ root, onTick, onOffer, onResize }) {
     text.value = item.text;
     text.spellcheck = true;
     text.setAttribute('aria-label', `Item ${i + 1} of ${items.length}`);
-    text.setAttribute('aria-describedby', 'editor-cl-help');
+    text.setAttribute('aria-describedby', helpId);
 
     const remove = document.createElement('button');
     remove.type = 'button';
@@ -183,6 +196,7 @@ export function setupChecklist({ root, onTick, onOffer, onResize }) {
     if (lines.length > room) status.textContent = `Added ${taken.length}. The list holds ${MAX_ITEMS} items, so ${lines.length - room} didn't fit.`;
     else status.textContent = taken.length === 1 ? `Added. ${items.length} items.` : `Added ${taken.length} items.`;
     if (!add.disabled) add.focus();
+    changed();
   }
 
   function move(item, to, part) {
@@ -192,10 +206,16 @@ export function setupChecklist({ root, onTick, onOffer, onResize }) {
     items.splice(to, 0, item);
     draw({ id: item.id, part });
     status.textContent = `Moved to ${to + 1} of ${items.length}.`;
+    changed();
   }
 
-  // Ticking: the item, the count, the offer; app.js saves it.
+  // Ticking: the item, the count, the offer; app.js saves it. Words
+  // changed and left (the box's own change event) count as a change too.
   list.addEventListener('change', (event) => {
+    if (event.target.closest('.cl-text')) {
+      changed();
+      return;
+    }
     const box = event.target.closest('.cl-check input');
     if (!box) return;
     const item = itemOf(box);
@@ -203,6 +223,7 @@ export function setupChecklist({ root, onTick, onOffer, onResize }) {
     item.done = box.checked;
     refresh();
     onTick(item.id, item.done);
+    changed();
   });
 
   list.addEventListener('input', (event) => {
@@ -227,6 +248,7 @@ export function setupChecklist({ root, onTick, onOffer, onResize }) {
     draw(next ? { id: next.id, part: '.cl-text' } : null);
     if (!next) add.focus();
     status.textContent = `Removed “${item.text}”. ${items.length} left.`;
+    changed();
   });
 
   list.addEventListener('keydown', (event) => {
@@ -346,6 +368,7 @@ export function setupChecklist({ root, onTick, onOffer, onResize }) {
     if (items.map((item) => item.id).join('\u0000') !== before) {
       draw();
       status.textContent = `Moved to ${order.indexOf(row.dataset.item) + 1} of ${items.length}.`;
+      changed();
     }
   }
 
@@ -359,7 +382,43 @@ export function setupChecklist({ root, onTick, onOffer, onResize }) {
     for (const text of list.querySelectorAll('.cl-text')) grow(text);
   }
 
+  // And by itself: when the list's width changes (a scroll bar comes or
+  // goes, a phone turns), and when the fonts finish loading, since words
+  // measured in a stand-in font wrap differently. Only a change of width
+  // counts, so the heights fit sets don't set it off again.
+  let width = 0;
+  if (window.ResizeObserver) {
+    new ResizeObserver(([entry]) => {
+      const next = Math.round(entry.contentRect.width);
+      if (next && next !== width) {
+        width = next;
+        fit();
+      }
+    }).observe(list);
+  }
+  if (document.fonts) document.fonts.addEventListener('loadingdone', () => fit());
+
   return { load, values, fit };
+}
+
+// The section's markup, for one built in code (an Inbox draft's). The
+// editor's is written out in index.html, the same. help is plain text.
+export function sectionHTML({ labelId, helpId, help }) {
+  return `
+    <div class="cl-head">
+      <span id="${labelId}">Checklist<span class="cl-label-count visually-hidden"></span></span>
+      <span class="cl-count" aria-hidden="true"></span>
+    </div>
+    <div class="cl-box">
+      <ul class="cl-list"></ul>
+      <div class="cl-add">
+        <span class="cl-add-plus" aria-hidden="true"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"></path></svg></span>
+        <input type="text" class="cl-add-input" maxlength="${MAX_TEXT}" placeholder="Add an item" aria-label="Add an item to the checklist" aria-describedby="${helpId}" autocomplete="off">
+      </div>
+    </div>
+    <p id="${helpId}" class="visually-hidden">${help}</p>
+    <div class="cl-offer" hidden><span>All ticked. Mark it done?</span><button type="button" class="button cl-offer-done">Mark done</button></div>
+    <p class="cl-status visually-hidden" role="status"></p>`;
 }
 
 // Non-empty lines, each made one clean line.

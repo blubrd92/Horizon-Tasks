@@ -66,6 +66,9 @@
 //   dueDateQuote    the words the date came from, or ""
 //   category        a category id, or null
 //   deadlineType    "soft" or "hard"
+//   checklist       list of { id, text, done }, as on a card: the steps
+//                   Haiku found (screenshots and pasted text only), as
+//                   you've edited them. [] or missing for none.
 //   source          "screenshot", "pasted_text", or "quick_add"
 //   typed           quick add only: the words you typed, to check the date
 //                   against while the draft waits (your own words; gone
@@ -87,7 +90,7 @@
 
 import { formatShort, formatTime, isISODate, toISO, todayISO } from './dates.js';
 import { normalizeLinks } from './links.js';
-import { normalizeChecklist } from './checklist.js';
+import { newItemId, normalizeChecklist } from './checklist.js';
 
 export const STATUS = {
   OPEN: 'open',
@@ -144,9 +147,21 @@ export function newDraft(answer, today = todayISO(), { source = 'screenshot', ty
     dueDateQuote: dueDate && typeof answer.due_date_quote === 'string' ? answer.due_date_quote : '',
     category: typeof answer.suggested_category === 'string' ? answer.suggested_category : null,
     deadlineType: answer.deadline_type === 'hard' ? 'hard' : 'soft',
+    // The steps Haiku found, unticked. Quick add never gets any: your line
+    // is yours.
+    checklist: kind === 'quick_add' ? [] : checklistFrom(answer.checklist),
     source: kind,
     typed: kind === 'quick_add' ? typed.slice(0, 500) : '',
   };
+}
+
+// Haiku's steps (a list of strings, already checked by the backend) as
+// checklist items.
+function checklistFrom(steps) {
+  if (!Array.isArray(steps)) return [];
+  return normalizeChecklist(
+    steps.filter((text) => typeof text === 'string').map((text) => ({ id: newItemId(), text, done: false })),
+  );
 }
 
 // The notes a screenshot's card gets, as plain text, one line each:
@@ -213,6 +228,7 @@ export function normalizeDraft(id, data) {
     dueDateQuote: typeof data.dueDateQuote === 'string' ? data.dueDateQuote : '',
     category: typeof data.category === 'string' && data.category ? data.category : null,
     deadlineType: data.deadlineType === 'hard' ? 'hard' : 'soft',
+    checklist: normalizeChecklist(data.checklist),
     source: Object.hasOwn(DRAFT_SOURCES, data.source) ? data.source : 'screenshot',
     typed: typeof data.typed === 'string' ? data.typed : '',
     createdAt: millis(data.createdAt),
