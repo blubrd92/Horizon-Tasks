@@ -374,13 +374,19 @@ into `main` on 2026-11-20 (a fast-forward: nothing was rewritten).
 If GitHub Pages was switched to the side branch for testing, point it
 back at `main` (Settings > Pages).
 
-**Next: checklists on cards (sub-tasks), in a fresh session** (item 2
-under "Queued after categories"). Plan first and settle its questions
-with you before building.
+**Checklists on cards: planned, questions open** (2026-11-20), on
+`claude/determined-faraday-st14l9`. Nine questions with my
+recommendation for each, and a preview sheet of the looks
+(`design/checklist-options/preview.png`). Nothing on the site is built
+yet. See "Checklists on cards" below.
+
+**Next: answer the checklist questions and choose the looks** (in this
+session, or a fresh one that reads "Checklists on cards" first), then
+build and stop so you can test.
 
 **The queue after that, in order** (asked 2026-11-19; see "Queued after
 categories" below): (1) the card ticks revision, done; (2) checklists
-on cards (sub-tasks), next; then (3) the tuning slice (its six
+on cards (sub-tasks), planned, questions open; then (3) the tuning slice (its six
 questions still open; "Tuning slice" below), which you want to come
 back to later, not next. Each in its own session.
 
@@ -398,6 +404,178 @@ a mark for pasted-text cards, SPEC's new `pasted_text` source, and the
 tuning slice (all under "Slice 3c", Proposals). Still parked: Done
 privacy and the Firebase console. (One approved list is settled: see
 "Slice 3a", question 3.)
+
+## Checklists on cards (planning; questions open, nothing built)
+
+Started 2026-11-20 on `claude/determined-faraday-st14l9`, from `main`
+after the card ticks revision merged. Item 2 under "Queued after
+categories". **Nothing on the site changes until you answer the
+questions below and choose the looks.**
+
+### What it would do
+
+A card gets a checklist: short items, each ticked or not, kept on the
+card itself. You add them, reword them, remove them, move them, and tick
+them in the card editor. The card on the board shows how far along it is.
+A repeating card's next card brings the same list back, all unticked.
+What you did keeps the list with the finished card. No Apps Script
+change, no Firestore rules change.
+
+### The look: drafts first
+
+`design/checklist-options/preview.html` (live: tick, add, reword,
+remove, move), with pictures: `preview.png` (desktop) and
+`preview-phone.png` (390 wide). Three choices on it:
+
+- **On the board, A to D:** A, the count ("2/5" with a small checkbox,
+  in the meta row); B, the count and a thin blue bar; C, the first three
+  unticked items themselves; D, a mark at the top right and nothing else.
+  **My recommendation: A.** It costs no height, uses the mono type every
+  count already uses, and when everything's ticked the box fills and the
+  count turns blue (shape and color both change, so never color alone).
+- **In the editor, E or F:** E, up and down arrows on each row, as in
+  Settings' categories; F, a six-dot handle to drag, and Alt with the up
+  or down arrow from the keyboard. **My recommendation: F.** The words
+  get about 250 pixels instead of 190, so items wrap less, and long
+  lists don't take nine taps to reorder. Its cost is honest: new dragging
+  code for the list, the biggest single piece of the slice. E is the
+  safer build if you'd rather.
+- **After it's done, G:** What you did's box shows the list; Copy as text
+  with "Include notes" lists the items as `[x]` and `[ ]`; notes on hover
+  shows the items too. **My recommendation: all three** (see questions 5
+  and 9).
+
+Both editors put the checklist right under Notes, before the date. The
+editor gets taller; on a wide screen it already scrolls inside itself
+when it must.
+
+### The questions, with my recommendation for each
+
+1. **Where items are added and ticked.** *Recommend: the editor only, for
+   everything, in this slice.* Ticking right on the board would need each
+   item on the card with a 44-pixel target (look C, doubled in height),
+   and every tick inside a draggable card is a tap that could start a drag
+   or open the editor instead. The editor already opens beside the card,
+   so one click opens the list, and you tick as many as you like there.
+   If that turns out slow in real use, the next step would be a small
+   list that opens from the card's count on the board, without the whole
+   editor; that's a later revision, not this slice.
+
+   **A part of this to settle: when does a tick save?** *Recommend: the
+   moment you tick it* (on a card that already exists), while adding,
+   rewording, removing, and moving wait for Save like every other edit.
+   Why: a click on the board beside the editor closes it without saving,
+   and losing six ticks that way would sting; a tick is something you
+   did, not an edit to the card. The cost is one rule to learn: Cancel
+   undoes a new item but not a tick. (A new card isn't saved until Add
+   card, so its ticks go with it.) The other way, everything with Save, is
+   simpler to explain and easier to lose.
+2. **What the card shows on the board.** *Recommend: A, the count.* See
+   the sheet. A card with no items shows nothing new. On the project page
+   the cards show the same count (they're drawn by the same code).
+3. **Ticking the last item.** *Recommend: offer, never do it on its own.*
+   When every item is ticked, a blue line appears under the list: "All
+   ticked. Mark it done?" with its own Mark done button (the same as the
+   one at the foot). Marking done on its own would surprise you, and on a
+   repeating card it would also make the next card. Doing nothing misses
+   the one moment the board can save you a click.
+4. **A repeating card's next card.** *Recommend: the same items, in the
+   same order, all unticked.* The Saturday opening checklist is the case
+   this is for. Put back on the board (What you did) brings a card back
+   with its ticks as they were.
+5. **What you did.** *Recommend: rows unchanged; the row's box shows the
+   whole list with its ticks, unticked items included* (the record stays
+   honest about what was skipped). **Copy as text** with "Include notes"
+   also lists the items, indented under the notes, `[x]` ticked and `[ ]`
+   not. The checkbox's words stay "Include notes", or become "Include
+   notes and checklists": your call (I'd keep it short and say it in its
+   tooltip).
+6. **How many, how long, reordering.** *Recommend: up to 30 items, each
+   up to 200 characters, reordered as F* (or E, question above). Enter in
+   "Add an item" adds it and stays there for the next. Pasting several
+   lines there adds one item per line (a list copied from an email). Enter
+   in an item's words jumps to "Add an item". An item emptied of words is
+   removed on Save. At 30, "Add an item" says the list is full.
+7. **Haiku suggesting items from a screenshot or email.** *Recommend: not
+   now.* It touches the prompt, the backend's answer shape, the draft
+   document, and the Inbox draft (which would need its own small list to
+   review). And the tuning slice is about to compare Haiku's answers on
+   real cases: changing what Haiku is asked for right before that muddies
+   the comparison. Park it as a proposal for after tuning. Inbox drafts
+   get no checklist in this slice; you add items in the editor once the
+   card is on the board.
+8. **Storage and the Firestore rules.** *Confirmed: no rules change.*
+   The rules let you read and write anything under `users/{your id}/` and
+   check no fields (`firestore.rules`, the one `match /users/{uid}/...`
+   block), so a new `checklist` field on a card is covered, and stays as
+   private as the card: the Done record included. Each card gets
+   `checklist: [{ id, text, done }]`, in the order shown; a card without
+   it reads as an empty list. Two things worth knowing: Firestore can't
+   change one item inside a list, so every change writes the whole list
+   (a few hundred bytes; nothing to worry about at 30 items, far under a
+   document's 1 MB limit); and if two devices change the same card's list
+   in the same moment, the later write wins for the whole list. For one
+   person, that's fine.
+9. **(Mine) Notes on hover shows the items.** *Recommend: yes,* read only,
+   under the notes, on any card with a checklist, even one with no notes.
+   It's the cheapest way to see the list without opening anything, and it
+   needs no new control.
+
+### What would change (once answered)
+
+- `js/model.js`: the `checklist` field (described in the layout comment;
+  `normalizeCard` keeps only well-formed items, at most 30, text cut at
+  200; `newCard` starts with `[]`).
+- `js/checklist.js` (new): the editor's list (draw, tick, add, paste
+  several lines, reword, remove, move, the offer), and F's dragging.
+- `index.html` and `js/editor.js`: the Checklist section under Notes;
+  its changes join the others on Save; a tick on a saved card goes
+  straight to `app.js`.
+- `js/app.js`: saving a tick at once; the offer's Mark done (the same path
+  as the foot's).
+- `js/board.js`: the count (look A) in the meta row.
+- `js/repeat.js`: `nextCard` copies the items, unticked.
+- `js/recordbox.js`, `index.html`: the list in What you did's box.
+- `js/record.js`: Copy as text lists the items.
+- `js/notespeek.js`: the items in the hover box.
+- `css/horizon.css`: the styles from the sheet.
+- No Apps Script, no Firestore rules, nothing in the Inbox.
+
+### Rules the drafts (and the build) keep
+
+- Orange only for a hard deadline due today or overdue: nothing in this
+  slice is orange.
+- Never color alone: a ticked item is struck through as well as blue; the
+  count's box fills when complete, not only turns blue.
+- 44-pixel targets: each checkbox, X, handle row, and arrow; "Add an
+  item" is 44 tall.
+- Real inputs: each item's box is a real checkbox, its words a real text
+  box, and screen readers hear "Checklist, 2 of 5 ticked" on a card.
+- Blue stays the one accent; nothing new enters the palette.
+
+### What I checked here (the drafts, 2026-11-20)
+
+Headless Chrome: no sideways scroll at 1440, 900, 390, 360, or 320
+pixels wide; the fonts load; in F, ticking the last three items brings
+the offer and the count reads 5 of 5; adding a sixth item hides the
+offer; Alt+Up moves an item; in E, the down arrow and the X work. No
+console errors. Three fixes along the way: look C's "2/5 ticked" was
+squeezed into the checkbox column, the What you did box lacked the site's
+own spacing, and the offer's button wrapped under its words.
+
+### Carried over (not part of this slice)
+
+Open proposals, unchanged: Undo for Let it go and Mark done on the
+board, Let it go in the editor, triage per device instead of per
+account, pinning zone headers on long columns, saving the sample card
+scripts in `tools/`, a Settings gear on the What you did page; from 3a,
+a total daily cap across everyone and SPEC's line about the script's
+allowlist; from 3b, SPEC step 4's JSON shape and paste on every page;
+from 3c, Haiku on the project page's quick add, Alt+Enter for the old
+Enter, a mark for pasted-text cards, and SPEC's `pasted_text` source.
+Parked: Done privacy and the Firebase console. The tuning slice keeps
+its six questions for its own session. New, if you agree with question
+7: Haiku suggesting checklist items, after tuning.
 
 ## Card ticks revision (confirmed)
 
@@ -972,7 +1150,7 @@ zones, or two toggle buttons); confirm whether the card pill and chip
 should change as well. SPEC's rule stands: orange only for a hard
 deadline due today or overdue.
 
-### 2. Checklists on cards (sub-tasks)
+### 2. Checklists on cards (sub-tasks) (planning 2026-11-20; see "Checklists on cards")
 
 A card gets a checklist: short items you can tick off. Questions for
 that session to settle with you, among them:

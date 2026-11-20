@@ -1,0 +1,421 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Horizon checklist options</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,700&amp;family=IBM+Plex+Mono:wght@400;500&amp;family=IBM+Plex+Sans:wght@400;500;600&amp;display=swap" rel="stylesheet">
+<!-- The site's own styles, so the cards, fields, and buttons around the
+     checklist look exactly as they do in Horizon. -->
+<link rel="stylesheet" href="../../css/horizon.css">
+<style>
+  body { padding: 40px; }
+  .sheet { max-width: 1340px; margin: 0 auto; }
+  h1 { font-family: var(--font-display); font-size: 30px; margin: 0 0 6px; letter-spacing: -0.01em; }
+  .part { font-family: var(--font-display); font-size: 24px; margin: 40px 0 10px; }
+  .lead { color: var(--ink-secondary); margin: 0 0 6px; max-width: 780px; font-size: 15px; line-height: 1.5; }
+  .how { color: var(--ink-secondary); margin: 0 0 28px; font-size: 13px; }
+
+  .option { background: var(--surface); border: 1px solid var(--border-soft); border-radius: var(--radius-panel); padding: 28px; margin-bottom: 24px; }
+  .option-head { display: flex; flex-wrap: wrap; align-items: baseline; gap: 12px; margin-bottom: 4px; }
+  .letter { font-family: var(--font-mono); color: var(--accent); font-size: 14px; font-weight: 500; }
+  .name { font-family: var(--font-display); font-size: 22px; margin: 0; }
+  .pick { font-size: 12px; font-weight: 600; color: var(--accent-dark); background: var(--progress-tint); padding: 2px 8px; border-radius: 10px; }
+  .why { color: var(--ink-secondary); margin: 0 0 6px; max-width: 780px; font-size: 14px; line-height: 1.5; }
+  .sr { color: var(--ink-secondary); margin: 0 0 20px; font-size: 13px; }
+  .sr code { color: var(--ink); }
+  .stage { display: flex; flex-wrap: wrap; gap: 24px; align-items: flex-start; }
+  .stage > div { min-width: 0; max-width: 100%; }
+  .caption { font-family: var(--font-mono); font-size: 12px; color: var(--ink-placeholder); margin: 0 0 8px; }
+
+  /* Cards drawn at zone widths: Today's (about 300) and Later's (about 200). */
+  .zone-wide { width: 300px; max-width: 100%; }
+  .zone-narrow { width: 200px; max-width: 100%; }
+  .stage .card { cursor: default; }
+
+  /* ================= On the card ================= */
+
+  /* A. The count, in the meta row beside the date. */
+  .card-checks { display: inline-flex; align-items: center; gap: 4px; font-family: var(--font-mono); font-size: 12px; color: var(--ink-secondary); }
+  .card-checks svg { flex: none; }
+  .card-checks.is-all { color: var(--accent-dark); font-weight: 500; }
+
+  /* B. The count plus a thin bar along the card's foot. */
+  .card-bar { height: 4px; border-radius: 2px; background: var(--strip-day); overflow: hidden; margin-top: 2px; }
+  .card-bar span { display: block; height: 100%; background: var(--accent); border-radius: 2px; }
+
+  /* C. The items themselves. */
+  .card-items { list-style: none; margin: 2px 0 0; padding: 8px 0 0; border-top: 1px dashed var(--border); display: flex; flex-direction: column; gap: 5px; }
+  .card-items li { display: grid; grid-template-columns: 14px minmax(0, 1fr); gap: 7px; align-items: start; font-size: 13px; line-height: 1.35; color: var(--ink); }
+  .card-items li svg { margin-top: 2px; color: var(--ink-secondary); }
+  .card-items li.is-done { color: var(--ink-secondary); text-decoration: line-through; }
+  .card-items li.card-items-foot { display: block; }
+  .card-items .card-items-more { display: block; font-family: var(--font-mono); font-size: 12px; color: var(--ink-secondary); text-decoration: none; padding-left: 21px; }
+
+  /* ================= In the editor ================= */
+
+  .mock-panel { width: 420px; max-width: 100%; background: var(--surface-soft); border: 1px solid var(--border-soft); border-radius: var(--radius-panel); box-shadow: 0 16px 40px rgba(24, 25, 28, 0.12); overflow: hidden; }
+  .mock-panel .panel-body { overflow: visible; }
+
+  .cl { display: flex; flex-direction: column; gap: 6px; }
+  .cl-head { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; font-size: 12px; font-weight: 600; color: var(--ink-secondary); }
+  .cl-count { font-family: var(--font-mono); font-weight: 400; font-size: 12px; }
+  .cl-list { list-style: none; margin: 0; padding: 0; background: var(--surface); border: 1px solid var(--field-border); border-radius: var(--radius-card); }
+  .cl-row { display: flex; align-items: flex-start; min-height: 44px; }
+  .cl-row + .cl-row { border-top: 1px solid var(--border-soft); }
+
+  /* The checkbox: a 44 by 44 target around a drawn 20-pixel box, the same
+     box as "Move the series too". */
+  .cl-check { flex: none; width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; cursor: pointer; }
+  .cl-check input { appearance: none; -webkit-appearance: none; margin: 0; width: 20px; height: 20px; border: 1.5px solid #8C877D; border-radius: 6px; background: var(--surface) center / 14px 14px no-repeat; cursor: pointer; }
+  .cl-check input:checked { border-color: var(--accent); background-color: var(--accent); background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23FFFFFF' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M5 12.5l4.5 4.5L19 7.5'/%3E%3C/svg%3E"); }
+  .cl-check input:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+  /* The item's words: a one-line box that grows as it wraps, editable in
+     place. Ticked: struck through and in the secondary ink. */
+  .cl-text { flex: 1 1 auto; min-width: 0; min-height: 44px; padding: 12px 4px 11px 0; border: none; background: transparent; font: inherit; font-size: 14px; line-height: 1.45; color: var(--ink); resize: none; overflow: hidden; field-sizing: content; }
+  .cl-text:focus { outline: none; }
+  .cl-row:has(.cl-text:focus) { box-shadow: inset 0 0 0 2px var(--accent); border-radius: 10px; }
+  .cl-row:has(input:checked) .cl-text { color: var(--ink-secondary); text-decoration: line-through; }
+
+  .cl-icon { flex: none; width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; border: none; background: transparent; color: var(--ink-secondary); border-radius: 10px; cursor: pointer; padding: 0; }
+  .cl-icon:hover { background: var(--surface-soft); color: var(--ink); }
+  .cl-icon:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+  .cl-icon:disabled { color: #B9B5AB; cursor: default; background: transparent; }
+  .cl-icon.cl-arrow { width: 36px; }
+  .cl-handle { flex: none; width: 28px; height: 44px; display: flex; align-items: center; justify-content: center; color: #8C877D; cursor: grab; touch-action: none; }
+
+  /* Add an item: the last row, a plus and an empty box. */
+  .cl-add { display: flex; align-items: center; min-height: 44px; border-top: 1px solid var(--border-soft); }
+  .cl-list:empty + .cl-add, .cl-add.is-first { border-top: none; }
+  .cl-add-plus { flex: none; width: 44px; display: flex; justify-content: center; color: var(--accent); }
+  .cl-add input { flex: 1; min-width: 0; min-height: 44px; border: none; background: transparent; font: inherit; font-size: 14px; color: var(--ink); padding: 0 12px 0 0; }
+  .cl-add input::placeholder { color: var(--ink-placeholder); }
+  .cl-add input:focus { outline: none; }
+  .cl-box { background: var(--surface); border: 1px solid var(--field-border); border-radius: var(--radius-card); overflow: hidden; }
+  .cl-box .cl-list { border: none; border-radius: 0; }
+  .cl-box:has(.cl-add input:focus) { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent); }
+
+  /* Every item ticked: the offer. */
+  .cl-offer { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 12px; padding: 8px 8px 8px 14px; background: var(--progress-tint); border-radius: var(--radius-card); font-size: 14px; color: var(--accent-dark); }
+  .cl-offer .button { display: inline-flex; align-items: center; gap: 6px; border-color: transparent; }
+  .cl-note { margin: 0; font-size: 13px; line-height: 1.4; color: var(--ink-secondary); }
+
+  /* ================= What you did ================= */
+  .mock-box { width: 380px; max-width: 100%; background: var(--surface-soft); border-radius: var(--radius-panel); box-shadow: 0 12px 32px rgba(24, 25, 28, 0.18); }
+  .mock-box .small-foot { display: flex; justify-content: space-between; gap: 8px; margin-top: 4px; }
+  .box-list { list-style: none; margin: -8px 0 0; padding: 0; display: flex; flex-direction: column; gap: 6px; font-size: 14px; line-height: 1.4; }
+  .box-list li { display: grid; grid-template-columns: 18px minmax(0, 1fr); gap: 8px; }
+  .box-list li svg { margin-top: 1px; }
+  .box-list li.is-done svg { color: var(--accent); }
+  .box-list li.is-open { color: var(--ink-secondary); }
+  .box-list-head { margin: 0; font-size: 12px; font-weight: 600; color: var(--ink-secondary); }
+  .copy-sample { width: 440px; max-width: 100%; margin: 0; padding: 16px 18px; background: var(--surface-soft); border: 1px solid var(--border-soft); border-radius: var(--radius-card); font-family: var(--font-mono); font-size: 12px; line-height: 1.6; white-space: pre-wrap; overflow-wrap: anywhere; }
+
+  /* Hover peek, with the checklist under the notes. */
+  .peek { position: static; display: block; width: 300px; max-width: 100%; max-height: none; white-space: normal; }
+  .peek p { margin: 0 0 8px; white-space: pre-wrap; }
+  .peek ul { list-style: none; margin: 0; padding: 8px 0 0; border-top: 1px solid var(--border-soft); display: flex; flex-direction: column; gap: 4px; }
+  .peek li { display: grid; grid-template-columns: 14px minmax(0, 1fr); gap: 7px; }
+  .peek li svg { margin-top: 2px; }
+  .peek li.is-done { color: var(--ink-secondary); text-decoration: line-through; }
+
+  @media (max-width: 600px) {
+    body { padding: 20px 16px; }
+    .option { padding: 18px 16px; }
+    h1 { font-size: 24px; }
+    .mock-box { padding: 18px 16px; }
+  }
+  @media (max-width: 420px) {
+    .mock-panel .panel-body { padding: 16px; }
+    .mock-panel .panel-head, .mock-panel .panel-foot { padding-left: 16px; padding-right: 16px; }
+  }
+</style>
+</head>
+<body>
+<div class="sheet">
+  <h1>Horizon: checklists on cards</h1>
+  <p class="lead">Three things to choose: what a card on the board shows (A to D), how the editor's checklist moves its items (E or F), and whether What you did and the hover box show the items (G). Each card is drawn at a real zone's width: Today's, about 300 pixels, and Later's, about 200.</p>
+  <p class="how">The editors work: tick a box, type in "Add an item" and press Enter, change an item's words, remove one. In E the arrows move an item; in F, Alt and the up or down arrow moves the item you're typing in (the handle is for dragging, which this sheet doesn't do). Tick every box to see the offer to mark the card done.</p>
+
+  <h2 class="part">On the board</h2>
+
+  <section class="option" data-look="A">
+    <div class="option-head"><span class="letter">A</span><h2 class="name">The count</h2><span class="pick">My recommendation</span></div>
+    <p class="why">A small checkbox and "2/5" in the meta row, in the mono type every count and date uses. When every item is ticked the box fills and the count turns blue: the shape changes, not only the color. It costs no height, so the board stays a board.</p>
+    <p class="sr">A screen reader hears <code>Checklist, 2 of 5 ticked</code>.</p>
+    <div class="stage"></div>
+  </section>
+
+  <section class="option" data-look="B">
+    <div class="option-head"><span class="letter">B</span><h2 class="name">The count and a thin bar</h2></div>
+    <p class="why">A's count, plus a 4-pixel bar under the meta row that fills in blue. Easier to read from across the room; the risk is that it rhymes with the category band at the card's top, and that a board of bars starts to feel like a progress report.</p>
+    <p class="sr">A screen reader hears <code>Checklist, 2 of 5 ticked</code>.</p>
+    <div class="stage"></div>
+  </section>
+
+  <section class="option" data-look="C">
+    <div class="option-head"><span class="letter">C</span><h2 class="name">The items themselves</h2></div>
+    <p class="why">The first three unticked items under a dashed line, then "+2 more". The most to read at a glance, and the most height: a board of these gets long fast, and folds sooner. Read only: if you later want to tick on the board, each line would need a 44-pixel target, and the cards would double in height.</p>
+    <p class="sr">A screen reader hears the list: <code>Checklist, 2 of 5 ticked, list, 3 items</code>.</p>
+    <div class="stage"></div>
+  </section>
+
+  <section class="option" data-look="D">
+    <div class="option-head"><span class="letter">D</span><h2 class="name">A mark, nothing else</h2></div>
+    <p class="why">A checklist mark at the top right, beside the notes mark. The calmest; but you can't tell 0/5 from 5/5 without opening the card, which is most of what a count is for.</p>
+    <p class="sr">A screen reader hears <code>Has a checklist</code>.</p>
+    <div class="stage"></div>
+  </section>
+
+  <h2 class="part">In the card editor</h2>
+  <p class="lead">Both put the checklist right under Notes, where content lives, before the date and the fields about the card. Ticked items stay where they are, struck through. Ticking saves at once (question 1 in PLAN.md); adding, rewording, removing, and moving save with Save, like everything else in the editor.</p>
+
+  <section class="option" data-editor="E">
+    <div class="option-head"><span class="letter">E</span><h2 class="name">Up and down arrows, as in Settings' categories</h2></div>
+    <p class="why">Each row: the box, the words, an up arrow, a down arrow, and an X. Nothing new to learn, and no dragging code. The cost is room: at the editor's width the words get about 190 pixels, so longer items wrap to two or three lines, and moving the last of ten items to the top is nine taps.</p>
+    <div class="stage"></div>
+  </section>
+
+  <section class="option" data-editor="F">
+    <div class="option-head"><span class="letter">F</span><h2 class="name">A handle to drag, Alt and arrows on the keyboard</h2><span class="pick">My recommendation</span></div>
+    <p class="why">Each row: a six-dot handle, the box, the words, and an X. Drag by the handle (mouse or finger) to move an item; with the keyboard, Alt and the up or down arrow moves the item you're typing in. The words get about 250 pixels. The cost: new dragging code for the list (a small cousin of the board's), which is the biggest single piece of this slice.</p>
+    <div class="stage"></div>
+  </section>
+
+  <h2 class="part">After it's done, and on hover</h2>
+
+  <section class="option" data-after="G">
+    <div class="option-head"><span class="letter">G</span><h2 class="name">What you did, Copy as text, and notes on hover</h2><span class="pick">My recommendation</span></div>
+    <p class="why">What you did's rows stay as they are. Opening a row's box shows the checklist under the notes, every item with its tick (left unticked items included: the record stays honest). Copy as text with "Include notes" also lists the items, [x] for ticked and [ ] for not. And resting the pointer on a card shows its items under its notes, read only, even on a card with no notes.</p>
+    <div class="stage"></div>
+  </section>
+</div>
+
+<script>
+  // Only a drawing: nothing is saved anywhere.
+  const ITEMS = [
+    ['Unlock the book drop and empty it', true],
+    ['Count the cash drawer', true],
+    ['Turn on the public computers', false],
+    ['Check the holds shelf for expired holds', false],
+    ['Set out the Saturday PIC sign', false],
+  ];
+  const BOX = (s = 13) => `<svg width="${s}" height="${s}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="3.5" width="17" height="17" rx="4"></rect><path d="M8 12.5l3 3 5-6"></path></svg>`;
+  const BOX_FULL = (s = 13) => `<svg width="${s}" height="${s}" viewBox="0 0 24 24" aria-hidden="true"><rect x="2.5" y="2.5" width="19" height="19" rx="4.5" fill="currentColor"></rect><path d="M8 12.5l3 3 5-6" fill="none" stroke="#FFFFFF" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"></path></svg>`;
+  const EMPTY = (s = 13) => `<svg width="${s}" height="${s}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="3.5" y="3.5" width="17" height="17" rx="4"></rect></svg>`;
+  const REPEAT = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17 2l4 4-4 4"></path><path d="M3 11V9a3 3 0 0 1 3-3h15"></path><path d="M7 22l-4-4 4-4"></path><path d="M21 13v2a3 3 0 0 1-3 3H3"></path></svg>';
+  const NOTES = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 3h9l4 4v13a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1z"></path><path d="M9 11h7M9 15h7M9 7h3"></path></svg>';
+  const LIST_MARK = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 6.5l1.5 1.5L8 5.5M4 12.5l1.5 1.5L8 11.5M4 18.5l1.5 1.5L8 17.5"></path><path d="M11 7h9M11 13h9M11 19h9"></path></svg>';
+  const X = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"></path></svg>';
+  const UP = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 19V5M6 11l6-6 6 6"></path></svg>';
+  const DOWN = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M6 13l6 6 6-6"></path></svg>';
+  const DOTS = '<svg width="12" height="18" viewBox="0 0 12 18" fill="currentColor" aria-hidden="true"><circle cx="3" cy="3" r="1.6"></circle><circle cx="9" cy="3" r="1.6"></circle><circle cx="3" cy="9" r="1.6"></circle><circle cx="9" cy="9" r="1.6"></circle><circle cx="3" cy="15" r="1.6"></circle><circle cx="9" cy="15" r="1.6"></circle></svg>';
+  const PLUS = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"></path></svg>';
+  const CHECK = (s = 16) => `<svg width="${s}" height="${s}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"></path></svg>`;
+  const esc = (t) => String(t).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/"/g, '&quot;');
+
+  // ---------- The cards ----------
+  const CARDS = [
+    { width: 'zone-wide', caption: 'Today, 2 of 5 ticked', band: '#B07A00', category: 'Saturday PIC', title: 'Saturday opening checklist', date: 'Sat, Nov 21', repeat: 'Weekly', items: ITEMS },
+    { width: 'zone-narrow', caption: 'Later, all 4 ticked', band: '#2F7D6B', category: 'Collection Development', title: 'Weed graphic novels, 741.5', date: 'Fri, Dec 11', notes: true, items: [['Pull worn copies', true], ['Check circ stats', true], ['Update the catalog', true], ['Order replacements', true]] },
+  ];
+
+  function cardHTML(look, c) {
+    const done = c.items.filter((i) => i[1]).length;
+    const total = c.items.length;
+    const all = done === total;
+    const count = `<span class="card-checks${all ? ' is-all' : ''}">${all ? BOX_FULL() : BOX()}<span class="visually-hidden">Checklist, </span>${done}/${total}<span class="visually-hidden"> ticked</span></span>`;
+    const repeat = c.repeat ? `<span class="card-repeat">${REPEAT}${c.repeat}</span>` : '';
+    const showCount = look === 'A' || look === 'B';
+    const meta = `<div class="card-meta"><span class="card-date">${c.date}</span>${repeat}${showCount ? count : ''}</div>`;
+    const marks = [c.notes ? `<span class="card-notes-mark">${NOTES}</span>` : '', look === 'D' ? `<span class="card-notes-mark">${LIST_MARK}</span>` : ''].join('');
+    let extra = '';
+    if (look === 'B') extra = `<div class="card-bar" aria-hidden="true"><span style="width:${Math.round((done / total) * 100)}%"></span></div>`;
+    if (look === 'C') {
+      const open = c.items.filter((i) => !i[1]);
+      const shown = open.slice(0, 3);
+      const more = open.length - shown.length;
+      extra = open.length
+        ? `<ul class="card-items" aria-label="Checklist, ${done} of ${total} ticked">${shown.map((i) => `<li>${EMPTY()}<span>${esc(i[0])}</span></li>`).join('')}<li class="card-items-foot"><span class="card-items-more">${more > 0 ? `+${more} more · ` : ''}${done}/${total} ticked</span></li></ul>`
+        : `<ul class="card-items" aria-label="Checklist, all ${total} ticked"><li class="is-done" style="text-decoration:none">${BOX_FULL()}<span>All ${total} ticked</span></li></ul>`;
+    }
+    return `<div class="${c.width}"><p class="caption">${c.caption}</p>
+      <article class="card" style="--band:${c.band}">
+        <div class="card-top"><span class="card-category">${c.category}</span>${marks ? `<span class="card-marks">${marks}</span>` : ''}</div>
+        <h3 class="card-title">${c.title}</h3>
+        ${meta}${extra}
+      </article></div>`;
+  }
+
+  document.querySelectorAll('[data-look]').forEach((section) => {
+    const look = section.dataset.look;
+    section.querySelector('.stage').innerHTML = CARDS.map((c) => cardHTML(look, c)).join('');
+  });
+
+  // ---------- The editors ----------
+  let uid = 0;
+  function rowHTML(kind, [text, done], i, n) {
+    const id = `cl${++uid}`;
+    const handle = kind === 'F' ? `<span class="cl-handle" title="Drag to move">${DOTS}</span>` : '';
+    const arrows = kind === 'E'
+      ? `<button type="button" class="cl-icon cl-arrow" data-up aria-label="Move up"${i === 0 ? ' disabled' : ''}>${UP}</button><button type="button" class="cl-icon cl-arrow" data-down aria-label="Move down"${i === n - 1 ? ' disabled' : ''}>${DOWN}</button>`
+      : '';
+    return `<li class="cl-row">${handle}<label class="cl-check"><input type="checkbox" id="${id}"${done ? ' checked' : ''} aria-label="Ticked"></label><textarea class="cl-text" rows="1" maxlength="200" aria-label="Item ${i + 1}">${esc(text)}</textarea>${arrows}<button type="button" class="cl-icon" data-remove aria-label="Remove">${X}</button></li>`;
+  }
+
+  function editorHTML(kind, items, caption) {
+    return `<div><p class="caption">${caption}</p><div class="mock-panel" data-kind="${kind}"><div class="panel">
+      <div class="panel-head"><h2 class="panel-title">Edit card</h2><button type="button" class="icon-button" aria-label="Close">${X}</button></div>
+      <div class="panel-body">
+        <label class="field">Title<input type="text" class="field-input field-title" value="Saturday opening checklist"></label>
+        <label class="field">Notes<textarea class="field-input field-notes" rows="2">Keys are in the second drawer.</textarea></label>
+        <div class="cl">
+          <div class="cl-head"><span>Checklist</span><span class="cl-count"></span></div>
+          <div class="cl-box">
+            <ul class="cl-list"></ul>
+            <div class="cl-add"><span class="cl-add-plus">${PLUS}</span><input type="text" maxlength="200" placeholder="Add an item" aria-label="Add an item"></div>
+          </div>
+          <div class="cl-offer" hidden><span>All ticked. Mark it done?</span><button type="button" class="button">${CHECK()} Mark done</button></div>
+        </div>
+        <div class="field-row field-row-time">
+          <div class="field"><label>Due</label><div class="field-due"><input type="date" class="field-input field-date" value="2026-11-21"><button type="button" class="button button-small">No date</button></div></div>
+          <label class="field">Repeats<select class="field-input"><option>Weekly</option></select></label>
+        </div>
+        <p class="cl-note">The fields below (Category, Project, the ticks) are unchanged.</p>
+      </div>
+      <div class="panel-foot">
+        <button type="button" class="button">${CHECK()} Mark done</button>
+        <div class="panel-foot-end"><button type="button" class="button">Cancel</button><button type="button" class="button button-primary">Save</button></div>
+      </div>
+    </div></div></div>`;
+  }
+
+  const lists = new Map();
+  function draw(panel) {
+    const kind = panel.dataset.kind;
+    const items = lists.get(panel);
+    const list = panel.querySelector('.cl-list');
+    list.innerHTML = items.map((it, i) => rowHTML(kind, it, i, items.length)).join('');
+    panel.querySelector('.cl-add').classList.toggle('is-first', items.length === 0);
+    const done = items.filter((i) => i[1]).length;
+    panel.querySelector('.cl-count').textContent = items.length ? `${done} of ${items.length}` : '';
+    panel.querySelector('.cl-offer').hidden = !(items.length && done === items.length);
+  }
+
+  document.querySelectorAll('[data-editor]').forEach((section) => {
+    const kind = section.dataset.editor;
+    section.querySelector('.stage').innerHTML =
+      editorHTML(kind, ITEMS, 'Partway through') + editorHTML(kind, ITEMS.map(([t]) => [t, true]), 'Every item ticked') + editorHTML(kind, [], 'A new card, no items yet');
+    const panels = section.querySelectorAll('.mock-panel');
+    const starts = [ITEMS, ITEMS.map(([t]) => [t, true]), []];
+    panels.forEach((panel, n) => {
+      lists.set(panel, starts[n].map((i) => [...i]));
+      draw(panel);
+    });
+  });
+
+  function indexOf(row) {
+    return [...row.parentElement.children].indexOf(row);
+  }
+
+  document.addEventListener('change', (e) => {
+    const box = e.target.closest('.cl-check input');
+    if (!box) return;
+    const panel = box.closest('.mock-panel');
+    lists.get(panel)[indexOf(box.closest('.cl-row'))][1] = box.checked;
+    const at = indexOf(box.closest('.cl-row'));
+    draw(panel);
+    panel.querySelectorAll('.cl-check input')[at].focus();
+  });
+
+  document.addEventListener('input', (e) => {
+    const text = e.target.closest('.cl-text');
+    if (!text) return;
+    lists.get(text.closest('.mock-panel'))[indexOf(text.closest('.cl-row'))][0] = text.value;
+  });
+
+  document.addEventListener('click', (e) => {
+    const button = e.target.closest('[data-remove], [data-up], [data-down]');
+    if (!button) return;
+    const panel = button.closest('.mock-panel');
+    const items = lists.get(panel);
+    const at = indexOf(button.closest('.cl-row'));
+    if (button.hasAttribute('data-remove')) {
+      items.splice(at, 1);
+      draw(panel);
+      const rows = panel.querySelectorAll('.cl-text');
+      (rows[Math.min(at, rows.length - 1)] || panel.querySelector('.cl-add input')).focus();
+      return;
+    }
+    const to = button.hasAttribute('data-up') ? at - 1 : at + 1;
+    [items[at], items[to]] = [items[to], items[at]];
+    draw(panel);
+    const target = panel.querySelectorAll('.cl-row')[to].querySelector(button.hasAttribute('data-up') ? '[data-up]' : '[data-down]');
+    (target.disabled ? panel.querySelectorAll('.cl-text')[to] : target).focus();
+  });
+
+  document.addEventListener('keydown', (e) => {
+    const add = e.target.closest('.cl-add input');
+    if (add && e.key === 'Enter') {
+      e.preventDefault();
+      const panel = add.closest('.mock-panel');
+      // Several lines pasted or typed: one item each.
+      const lines = add.value.split(/\r?\n/).map((s) => s.trim()).filter(Boolean);
+      if (!lines.length) return;
+      lists.get(panel).push(...lines.map((t) => [t.slice(0, 200), false]));
+      add.value = '';
+      draw(panel);
+      add.focus();
+      return;
+    }
+    const text = e.target.closest('.cl-text');
+    if (!text) return;
+    if (e.key === 'Enter') {
+      // Enter in an item goes to Add an item, ready for the next.
+      e.preventDefault();
+      text.closest('.mock-panel').querySelector('.cl-add input').focus();
+      return;
+    }
+    if (e.altKey && (e.key === 'ArrowUp' || e.key === 'ArrowDown')) {
+      const panel = text.closest('.mock-panel');
+      const items = lists.get(panel);
+      const at = indexOf(text.closest('.cl-row'));
+      const to = e.key === 'ArrowUp' ? at - 1 : at + 1;
+      if (to < 0 || to >= items.length) return;
+      e.preventDefault();
+      [items[at], items[to]] = [items[to], items[at]];
+      draw(panel);
+      panel.querySelectorAll('.cl-text')[to].focus();
+    }
+  });
+
+  // ---------- G: What you did, Copy as text, and the hover box ----------
+  const boxItems = ITEMS.map(([t], i) => [t, i !== 3]);
+  document.querySelector('[data-after="G"] .stage').innerHTML = `
+    <div><p class="caption">What you did: a row's box</p>
+      <div class="mock-box small-panel">
+        <div class="settings-head"><h2 class="panel-title record-box-title">Saturday opening checklist</h2><button type="button" class="icon-button" aria-label="Close">${X}</button></div>
+        <p class="record-box-category"><span class="swatch" style="background:#B07A00"></span>Saturday PIC</p>
+        <p class="record-box-when">Finished Nov 14. It was due Nov 14.</p>
+        <p class="record-box-notes">Keys are in the second drawer.</p>
+        <p class="box-list-head">Checklist, 4 of 5 ticked</p>
+        <ul class="box-list">${boxItems.map(([t, d]) => `<li class="${d ? 'is-done' : 'is-open'}">${d ? BOX_FULL(15) : EMPTY(15)}<span>${d ? '' : '<span class="visually-hidden">Not ticked: </span>'}${esc(t)}</span></li>`).join('')}</ul>
+        <p class="record-box-series">Part of a weekly series. It comes back on its own, as a one-off; the series already has its next card.</p>
+        <div class="small-foot"><button type="button" class="button">Put back on the board</button><button type="button" class="button button-primary">Close</button></div>
+      </div></div>
+    <div><p class="caption">Copy as text, with Include notes</p>
+<pre class="copy-sample">Nov 14 · Saturday opening checklist · Saturday PIC
+    Keys are in the second drawer.
+${boxItems.map(([t, d]) => `    [${d ? 'x' : ' '}] ${t}`).join('\n')}
+Nov 13 · Kanopy usage check · Digital Resources</pre></div>
+    <div><p class="caption">Resting the pointer on a card</p>
+      <div class="notes-peek peek">
+        <p>Keys are in the second drawer.</p>
+        <ul>${ITEMS.map(([t, d]) => `<li class="${d ? 'is-done' : ''}">${d ? BOX_FULL() : EMPTY()}<span>${esc(t)}</span></li>`).join('')}</ul>
+      </div></div>`;
+</script>
+</body>
+</html>
