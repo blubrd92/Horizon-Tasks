@@ -237,3 +237,62 @@ survey), due before the meeting on Dec 2.
 
 **S5. One ask, as a screenshot (the control)** (`s5-single-ask.png`).
 Good answer: no list.
+
+---
+
+## Messy screenshots (M1 to M6)
+
+These are the real test. Each hides the reader's asks among things that
+look like asks but aren't the reader's, or aren't on screen. The reader
+throughout is Alex Moreno (the account in the corner, "to me", or
+"(you)"). Horizon never tells Haiku your name, so these clues are all it
+has.
+
+**M1. The whole mail window** (`m1-mail-window.png`). Folders, a list of
+eight other emails with their own urgent dates (timesheets Nov 24, a
+password reset, a potluck sign-up, a grant portal), and the open email
+from Maya. Good answer: three steps from the open email only (pull the
+October attendance numbers, make the three slides, send them to Maya);
+due Dec 4. Watch for: a step or a date borrowed from a subject line in the
+list (the timesheet's Nov 24 is the trap: it's sooner).
+
+**M2. A phone screenshot cut off mid-list** (`m2-phone-cut-off.png`). A
+delivery banner covers the subject, and the list runs off the bottom of
+the screen partway through step 5. Steps 6 and 7 exist but aren't
+visible. Good answer: steps 1 to 4, and step 5 only as far as it's
+visible ("Prop the hallway door open", or left out); due Saturday,
+Nov 28. Watch for: steps that aren't on screen (stacking chairs, emailing
+a count), or anything from the delivery banner.
+
+**M3. A forward with your supervisor's note** (`m3-forward-with-note.png`).
+Lena says "you only need to do the first two" above a vendor email with
+five steps. Good answer: two steps (confirm the delivery date and dock
+hours, send the teen area floor plan); due Dec 2. Watch for: all five
+steps, especially the purchase order and the deposit, which Lena said she
+would handle.
+
+**M4. Meeting notes with everyone's items** (`m4-meeting-notes.png`). Six
+action items for five people, sent to the group. Two are "Alex M." (yours:
+draft five survey questions, send the console quote to Priya); one is
+"Alexis", a near miss. Good answer: those two steps; due Dec 3. Watch for:
+everyone's items, Alexis's item, or no list because it can't tell who you
+are. This is the one I expect could fail: the only clues are the account
+address in the corner and "to me". If it fails, that's a real gap to
+decide about, not a bug.
+
+**M5. A bulletin board** (`m5-bulletin-board.png`). Six notices, slightly
+tilted: a potluck sign-up (Dec 10), the new closing procedure (five steps,
+from Dec 1), a fire drill with nothing to do, lost and found, chair yoga,
+parking. Good answer: the closing procedure as the task (the soonest real
+one), its five steps, due Dec 1; the potluck mentioned in the summary.
+Watch for: steps from more than one notice, or "sign up for the potluck"
+in the list.
+
+**M6. A long chat** (`m6-chat-scroll.png`). A channel where Priya gives
+jobs to four people. Yours (the @mention and your "(you)" reply): print
+the volunteer shift schedule and put copies in the staff room, and bring
+the two extension cords from storage. Good answer: those two (or three,
+if printing and putting copies out are split); due before the fair,
+Tuesday Nov 24, or Monday, when Priya wants things sorted. Watch for:
+ordering pizza, updating the flyer, name tags, or the waiver (which Priya
+names Alexis and Sam for).
