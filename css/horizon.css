@@ -3309,6 +3309,58 @@ a.link-row:focus-visible { outline-offset: -2px; }
   .inbox-shot-hint { opacity: 1; }
 }
 
+/* The thumbnail whose screenshot is showing beside the Inbox: outlined,
+   and its hint says so. */
+.inbox-shot-open.is-shown { outline: 3px solid var(--accent); outline-offset: -3px; }
+.inbox-shot-open.is-shown .inbox-shot-hint { opacity: 1; }
+
+/* The screenshot beside the Inbox (wide screens, inbox.js): the whole
+   window to the Inbox's left, dark around the image, the image as wide as
+   that space allows and scrolling when it's taller. It sits inside the
+   Inbox dialog but is fixed to the window, so the draft stays usable. */
+.shot-side {
+  position: fixed;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  right: 460px;
+  display: flex;
+  flex-direction: column;
+  background: rgba(24, 25, 28, 0.97);
+  color: #FFFFFF;
+}
+
+.shot-side[hidden] { display: none; }
+
+.shot-side-head {
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 12px 10px 20px;
+}
+
+.shot-side-title { font-size: 14px; font-weight: 600; }
+
+.shot-side-close { border-color: transparent; }
+
+.shot-side-body {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  padding: 0 20px 24px;
+}
+
+.shot-side-img {
+  display: block;
+  max-width: 100%;
+  height: auto;
+  margin: 0 auto;
+  border-radius: 6px;
+  background: #FFFFFF;
+}
+
 /* The full-size view: over everything, dark around the image, the image
    as wide as the screen allows and scrolling if it's taller. */
 .shot-viewer {

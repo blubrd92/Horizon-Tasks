@@ -633,7 +633,7 @@ async function start() {
         .join(' ');
     document.getElementById('quickadd-help-ai').textContent =
       describe(Boolean(backendAddress())) +
-      (backendAddress() ? ' Pasting an email, several lines or a long passage, sends it to the Inbox to read.' : '');
+      (backendAddress() ? ' Pasting several lines or a long passage (an email, a chat, a document) sends it to the Inbox to read.' : '');
     document.getElementById('quickadd-help').textContent = describe(false);
   }
   drawKeyHelp();

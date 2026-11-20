@@ -49,6 +49,9 @@ const TICK_CHECK = '<svg class="tick-on" width="14" height="14" viewBox="0 0 24 
 const HARD_TIP = "A date someone else set. The chip turns orange when it's due today or late, and it never gets a Let it go button.";
 
 const finePointer = window.matchMedia('(any-pointer: fine)');
+// Wide enough for a screenshot beside the Inbox (460 pixels) to be worth
+// reading: the rest of the window, at least 440 pixels.
+const wide = window.matchMedia('(min-width: 900px)');
 const isMac = /Mac|iPhone|iPad/.test(navigator.platform || navigator.userAgent);
 
 // read(request) sends { action: "screenshot", image: { mediaType, data } }
@@ -72,6 +75,8 @@ export function setupInbox({ read, saveDraft, changeDraft, discardDraft, addToBo
   const overlay = document.getElementById('drop-overlay');
   const viewer = document.getElementById('shot-viewer');
   const viewerImg = document.getElementById('shot-viewer-img');
+  const side = document.getElementById('shot-side');
+  const sideImg = document.getElementById('shot-side-img');
 
   let enabled = false;
   let drafts = [];
@@ -94,6 +99,25 @@ export function setupInbox({ read, saveDraft, changeDraft, discardDraft, addToBo
   // top dialog) closes it. Scrolling a tall one doesn't count as a click.
   viewer.addEventListener('click', closeViewer);
   viewer.addEventListener('close', () => viewerImg.removeAttribute('src'));
+
+  // The screenshot beside the Inbox (wide screens): its X, Escape (which
+  // closes it before the Inbox), the Inbox closing, or the window getting
+  // too narrow put it away.
+  document.getElementById('shot-side-close').addEventListener('click', () => {
+    const url = sideImg.getAttribute('src');
+    closeSide();
+    const button = url && [...list.querySelectorAll('.inbox-shot-open')].find((b) => b.dataset.url === url);
+    if (button) button.focus();
+  });
+  dialog.addEventListener('cancel', (event) => {
+    if (side.hidden) return;
+    event.preventDefault();
+    closeSide();
+  });
+  dialog.addEventListener('close', closeSide);
+  wide.addEventListener('change', () => {
+    if (!wide.matches) closeSide();
+  });
   pickButton.addEventListener('click', () => fileInput.click());
   fileInput.addEventListener('change', () => {
     const files = [...fileInput.files];
@@ -202,7 +226,7 @@ export function setupInbox({ read, saveDraft, changeDraft, discardDraft, addToBo
     if (!enabled) return;
     const raw = textInput.value.replace(/\r\n?/g, '\n').trim();
     if (!raw) {
-      showStatus('Paste the text of an email into the box first.');
+      showStatus('Paste some text into the box first.');
       textInput.focus();
       return;
     }
@@ -423,15 +447,16 @@ export function setupInbox({ read, saveDraft, changeDraft, discardDraft, addToBo
       const open = document.createElement('button');
       open.type = 'button';
       open.className = 'inbox-shot-open';
-      open.setAttribute('aria-label', 'Open your screenshot full size');
-      open.title = 'Open full size';
+      open.dataset.url = url;
+      open.setAttribute('aria-label', 'Show your screenshot');
+      open.title = 'Show the screenshot';
       const fresh = document.createElement('img');
       fresh.src = url;
       fresh.alt = '';
       const hint = document.createElement('span');
       hint.className = 'inbox-shot-hint';
       hint.setAttribute('aria-hidden', 'true');
-      hint.textContent = 'Click to enlarge';
+      hint.textContent = 'Click to view';
       open.append(fresh, hint);
       open.addEventListener('click', () => openViewer(url));
       box.className = 'inbox-shot';
@@ -441,7 +466,20 @@ export function setupInbox({ read, saveDraft, changeDraft, discardDraft, addToBo
     }
   }
 
+  // On a wide screen, beside the Inbox (a second click on the same one
+  // puts it away); on a phone, full screen over everything.
   function openViewer(url) {
+    if (wide.matches && dialog.open) {
+      if (!side.hidden && sideImg.getAttribute('src') === url) {
+        closeSide();
+        return;
+      }
+      sideImg.src = url;
+      side.hidden = false;
+      side.querySelector('.shot-side-body').scrollTop = 0;
+      markShown(url);
+      return;
+    }
     viewerImg.src = url;
     if (!viewer.open) viewer.showModal();
     viewer.scrollTop = 0;
@@ -451,10 +489,28 @@ export function setupInbox({ read, saveDraft, changeDraft, discardDraft, addToBo
     if (viewer.open) viewer.close();
   }
 
-  // When a screenshot is let go (Add to board, Discard), its full-size view
-  // goes too.
+  function closeSide() {
+    if (side.hidden) return;
+    side.hidden = true;
+    sideImg.removeAttribute('src');
+    markShown(null);
+  }
+
+  // The thumbnail whose screenshot is showing beside the Inbox is marked,
+  // so with several drafts you know which one you're looking at.
+  function markShown(url) {
+    for (const button of list.querySelectorAll('.inbox-shot-open')) {
+      const on = Boolean(url) && button.dataset.url === url;
+      button.classList.toggle('is-shown', on);
+      button.setAttribute('aria-pressed', String(on));
+    }
+  }
+
+  // When a screenshot is let go (Add to board, Discard), its view goes too,
+  // full size or beside.
   function closeViewerFor(url) {
     if (url && viewer.open && viewerImg.getAttribute('src') === url) closeViewer();
+    if (url && !side.hidden && sideImg.getAttribute('src') === url) closeSide();
   }
 
   // The pasted text, if this tab still has it; otherwise a note. Shown as

@@ -403,9 +403,11 @@ steps; live, it didn't take. Then **Revision 3:** the answer's order
 puts the steps before the title, the title gets a self-check, and when
 Haiku isn't sure it says so in a "Check:" line in the notes (your idea)
 instead of guessing. Needs a new Apps Script version and a hard-reload. Then M2, T2, and S5
-passed, and **Revision 4** trims padding from the notes (needs a new
-Apps Script version). After a glance at its result: confirm, and merge
-into `main`.
+passed, and **Revision 4** trims padding from the notes (deployed).
+Then **Revision 5** (site only): the Inbox's text box worded for any
+text, and on a wide screen a screenshot opens beside the Inbox so you
+can read it while fixing the draft. After a look at both: confirm, and
+merge into `main`.
 
 **Next: keep testing with `samples/haiku-checklist/`,** especially M4 (who
 you are), M2 (steps off the screen), M3 (the forward), and the one-ask
@@ -668,6 +670,55 @@ How to test (hard-reload first):
       it; change the date and it follows. Reload: still Weekly.
 - [ ] Add to board: the card shows Weekly. Mark it done: the next one
       arrives a week later, its checklist unticked.
+
+### Revision 5: the Inbox's wording, and the screenshot beside the draft (2026-11-20, awaiting test)
+
+You asked for two changes to the Inbox. Site only: no Apps Script
+version needed.
+
+- **Wording for any text, not just email.** The box is now "Or paste
+  text: an email, a chat, a document"; its empty-box message says "Paste
+  some text into the box first."; and the quick add field's
+  screen-reader help says pasting several lines or a long passage (an
+  email, a chat, a document) goes to the Inbox. Haiku's instructions
+  already covered chats, documents, and web pages.
+- **On a wide screen (900 pixels or more), a screenshot opens beside the
+  Inbox,** in the whole space to its left, dark around the image, which
+  scrolls when it's tall. The draft stays usable while it shows: type,
+  pick from menus, tick the checklist. The thumbnail it came from gets a
+  blue outline (screen readers hear it as pressed). It goes with its X
+  (focus back on the thumbnail), Escape (which now closes the screenshot
+  before the Inbox), a second click on the same thumbnail, Add to board
+  or Discard, closing the Inbox, or the window getting narrower than 900.
+  Clicking another draft's thumbnail swaps it. Phones (and narrow
+  windows) keep the full-screen viewer, unchanged. The thumbnail's hint
+  now says "Click to view" (it no longer always enlarges).
+
+**Why it lives inside the Inbox:** the Inbox is a modal panel, so the
+page outside it doesn't respond while it's open; a screenshot in its own
+window would have frozen the draft. The pane is part of the Inbox,
+pinned to the window's left.
+
+**Files:** `index.html` (the pane; the box's label), `js/inbox.js`,
+`js/app.js` (the quick add help), `css/horizon.css`.
+
+**Checked here:** 20 new checks, all passing, with a real sample
+screenshot sent through the file picker: the new label; on desktop the
+pane opens to the left, exactly up to the Inbox, with no full-screen
+viewer and no sideways scroll; the thumbnail marked; the title and
+Repeats usable while it shows; scrolling it leaves the Inbox open;
+Escape, the X (focus back on the thumbnail), a second click, Add to
+board, closing the Inbox, and a narrow window each put it away, and
+reopening the Inbox shows nothing beside it; on a phone, the full-screen
+viewer as before. No console errors. The Inbox (36) and checklist (55)
+suites still pass.
+
+How to test (hard-reload first):
+- [ ] The text box reads "Or paste text: an email, a chat, a document".
+- [ ] On your computer, add a screenshot and click it in the draft: it
+      opens on the left; fix the title and tick a step while reading it.
+- [ ] Escape closes the screenshot; a second Escape closes the Inbox.
+- [ ] On your phone, tapping a screenshot opens it full screen as before.
 
 ### Revision 4: less padding in the notes (2026-11-20, awaiting deploy and test)
 

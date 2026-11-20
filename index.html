@@ -564,6 +564,20 @@
   </dialog>
 
   <dialog id="inbox" class="panel-dialog inbox-dialog" aria-labelledby="inbox-heading" aria-describedby="inbox-line">
+    <!-- On a wide screen, a draft's screenshot opens here, in the space to
+         the Inbox's left, so you can read it while you fix the draft
+         (inbox.js). It lives inside the Inbox so the draft beside it stays
+         usable; a separate window would freeze it. Phones use the
+         full-screen viewer instead. -->
+    <section id="shot-side" class="shot-side" aria-label="Your screenshot" hidden>
+      <div class="shot-side-head">
+        <span class="shot-side-title">Your screenshot</span>
+        <button type="button" id="shot-side-close" class="icon-button shot-side-close" aria-label="Close the screenshot">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"></path></svg>
+        </button>
+      </div>
+      <div class="shot-side-body"><img id="shot-side-img" class="shot-side-img" alt="Your screenshot"></div>
+    </section>
     <div class="panel">
       <div class="panel-head">
         <div class="inbox-titles">
@@ -584,7 +598,7 @@
         </div>
         <!-- Pasted text (slice 3c): read like a screenshot, never saved. -->
         <div class="inbox-text">
-          <label class="field" for="inbox-text-input">Or paste the text of an email</label>
+          <label class="field" for="inbox-text-input">Or paste text: an email, a chat, a document</label>
           <textarea id="inbox-text-input" class="field-input field-notes inbox-text-input" rows="4" maxlength="100000" aria-describedby="inbox-text-help"></textarea>
           <p id="inbox-text-help" class="visually-hidden">Control and Enter reads the text, the same as the Read the text button.</p>
           <button type="button" id="inbox-text-read" class="button">Read the text</button>
