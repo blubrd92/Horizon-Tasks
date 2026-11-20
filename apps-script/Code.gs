@@ -295,9 +295,11 @@ function countCall_(uid, settings) {
 //   { action: "text" or "quickadd", idToken, text: "...", today, categories }
 // and gets back { ok: true, action, draft: { title, summary, due_date,
 // due_date_confidence, due_date_quote, timeline, checklist, need_to_know,
-// contact, suggested_category, deadline_type }, tokens: { input, output },
-// usage }. checklist is a list of short steps, empty unless the material
-// names two or more; quick add always gets an empty one.
+// unsure, contact, suggested_category, deadline_type }, tokens: { input,
+// output }, usage }. checklist is a list of short steps, empty unless the
+// material names two or more; unsure is a sentence for you to check when
+// something that matters is unclear, usually "". Quick add always gets an
+// empty checklist and an empty unsure.
 //
 // Haiku reads; the site does the bookkeeping. The notes a card gets are
 // put together by the site from summary, timeline, need_to_know, and
@@ -337,15 +339,16 @@ function materialPrompt_(noun) {
   return [
     MATERIAL_INTROS[noun],
     '',
-    'Decide the single most important thing the reader needs to do because of it, and describe it in the JSON fields. Write to the reader as "you", and never name the reader.',
-    '- title: a short action that starts with a verb, under 80 characters, in plain words, using the names and specifics in the ' + noun + '. No dates, days, or deadline words: the due date has its own field. Example: "Send holiday closure dates for the newsletter". When there is a checklist, the title names the job as a whole, specific enough to recognize on a task board, without listing the steps: "Prepare the book club kits for the Riverside branch", not "Pull the books, print the guides, and pack the bags".',
-    '- summary: one short sentence of context the title and timeline don\'t already give, such as who is asking and why. Report only what the ' + noun + ' says: never add advice or next steps of your own, and never repeat a date, time, or step that is in the timeline or the checklist. Empty string when the title, timeline, and checklist say it all, which is often.',
+    'Decide the single most important thing the reader needs to do because of it, and describe it in the JSON fields, in the order they are listed: work out the dates and the steps first, then name the task. Write to the reader as "you", and never name the reader. Write only what the ' + noun + ' makes clear: when something that matters could be read more than one way, do not choose a reading in the timeline, checklist, title, summary, or need_to_know; say what is unclear in unsure instead.',
     '- due_date: the date the reader\'s action is due, as YYYY-MM-DD, or null if the ' + noun + ' gives no date for it. Use the calendar in the message to turn words like "next Friday" or "end of next month" into a date. Relative words count from the date the message was sent when the ' + noun + ' shows one, and from today when it does not. Never invent a date the ' + noun + ' does not support. If a task must be done before an event and no separate deadline is given, use the event date.',
     '- due_date_confidence: "explicit" when the ' + noun + ' shows the calendar date itself (for example "Nov 13", "11/13", "Friday, November 13"); "inferred" when you worked it out from relative words ("tomorrow", "next Friday", "in two weeks", "end of the month"); "none" when due_date is null.',
     '- due_date_quote: the exact words in the ' + noun + ' the date came from, kept short (for example "end of next month"), or "" when there is no date.',
     '- timeline: up to ' + MAX_TIMELINE + ' dated moments that matter for doing the task: when something arrives, opens, starts, or closes, a step to take first, and the deadline itself when it has a time or a detail worth knowing. Each has date (YYYY-MM-DD, worked out with the calendar), time (24-hour HH:MM as written, or "" when no time is given), and what: a short phrase saying what happens or what to do then, starting with a lowercase letter unless it starts with a name, for example "exam link arrives from FastTest; not there? check spam, then email Jennifer". Leave out a moment that only repeats the title and due date. Empty list when the ' + noun + ' gives no dates.',
     '- checklist: the separate steps the reader must take to get this task done, only when the ' + noun + ' itself asks for two or more of them: numbered or bulleted steps, several things to send or bring ("your bio, a headshot, and your AV needs"), parts of a form to fill in, or "do this, then that". One item per step, in the order to do them, at most ' + MAX_CHECKLIST + '. Each item is a short phrase under 80 characters that starts with a verb and uses the ' + noun + '\'s own specifics, for example "Send your headshot to Bonnie". No dates, days, or times in an item: those belong in due_date and timeline, and a dated step can be in both. A step is real work in its own right, never a click inside another step ("open the link", "scroll down"). Never add steps the ' + noun + ' does not ask for: no advice, no "read the email", no "reply" unless a reply is asked for alongside other steps. If it asks for more than ' + MAX_CHECKLIST + ', combine closely related ones so nothing is lost. Empty list when the task is one action, which is most of the time.',
+    '- title: a short action that starts with a verb, under 80 characters, in plain words, using the names and specifics in the ' + noun + '. No dates, days, or deadline words: the due date has its own field. Example: "Send holiday closure dates for the newsletter". When there is a checklist, the title names the job as a whole, specific enough to recognize on a task board, without listing the steps: "Prepare the book club kits for the Riverside branch", not "Pull the books, print the guides, and pack the bags". Check it: a title that joins two steps with "and" is listing them, so name the job they add up to instead.',
+    '- summary: one short sentence of context the title and timeline don\'t already give, such as who is asking and why. Report only what the ' + noun + ' says: never add advice or next steps of your own, and never repeat a date, time, or step that is in the timeline or the checklist. Empty string when the title, timeline, and checklist say it all, which is often.',
     '- need_to_know: one line under 15 words with the single detail that would change what the reader does, such as a rule, something to bring, or a place. Empty string unless it really matters. Never boilerplate or legal text.',
+    '- unsure: "" unless something that matters for doing the task could be read more than one way in the ' + noun + ', such as a place it only points to or which of two dates applies. Then one short sentence for the reader to check, quoting the unclear words, for example: Jamie wrote "bring them to the usual spot"; it isn\'t clear where that is. Most of the time this is "".',
     '- contact: the person to reply to or follow up with: name, email, and phone exactly as shown, each "" when not shown. Never the reader. All three "" when there is no one.',
     '- suggested_category: the id of the category from the list in the message that fits best, or null if none clearly fits.',
     '- deadline_type: "hard" only for a real outside cutoff that will not move, such as a vendor order deadline, a registration or application closing, an exam window, a print deadline, or a grant due date. "soft" for everything else, including dates someone merely asked for.',
@@ -460,16 +463,16 @@ function readText_(caller, body, props) {
 // { ok: true, action, draft, tokens, usage } or a refusal.
 function askHaiku_(caller, props, action, system, content, categories, fallbackTitle) {
   var ids = categories.map(function (c) { return c.id; });
-  // Quick add is your own line: no suggested steps, so its shape (and
-  // prompt) stay as they were.
-  var withChecklist = action !== 'quickadd';
+  // Quick add is your own line: no suggested steps and no "unsure", so its
+  // shape (and prompt) stay as they were.
+  var material = action !== 'quickadd';
   var request = {
     model: MODEL,
     max_tokens: SCREENSHOT_MAX_TOKENS,
     system: system,
     output_config: {
       effort: EFFORT[action],
-      format: { type: 'json_schema', schema: draftSchema_(ids, withChecklist) },
+      format: { type: 'json_schema', schema: draftSchema_(ids, material) },
     },
     messages: [{ role: 'user', content: content }],
   };
@@ -510,7 +513,7 @@ function askHaiku_(caller, props, action, system, content, categories, fallbackT
     console.warn('No draft: the answer was not JSON');
     return refuse_('ai-failed', null, caller.uid);
   }
-  return { ok: true, action: action, draft: normalizeDraft_(raw, ids, fallbackTitle, withChecklist), tokens: tokens, usage: caller.usage };
+  return { ok: true, action: action, draft: normalizeDraft_(raw, ids, fallbackTitle, material), tokens: tokens, usage: caller.usage };
 }
 
 // Turns a refusal from Anthropic into one of ours. Logs Anthropic's reason,
@@ -529,10 +532,10 @@ function anthropicRefusal_(status, answer, uid) {
 }
 
 // The shape Haiku must answer in. suggested_category can only be one of
-// your own category ids, or null. checklist (screenshots and pasted text
-// only) is a list of strings, placed after the timeline so Haiku has
-// worked out the dates before it lists the steps.
-function draftSchema_(ids, withChecklist) {
+// your own category ids, or null. Screenshots and pasted text (material)
+// also get checklist (a list of strings) and unsure (a sentence, usually
+// empty), in the order below; quick add's shape is unchanged.
+function draftSchema_(ids, material) {
   var schema = {
     type: 'object',
     properties: {
@@ -571,15 +574,18 @@ function draftSchema_(ids, withChecklist) {
     required: ['title', 'summary', 'due_date', 'due_date_confidence', 'due_date_quote', 'timeline', 'need_to_know', 'contact', 'suggested_category', 'deadline_type'],
     additionalProperties: false,
   };
-  if (!withChecklist) return schema;
-  // Rebuilt in order, so checklist comes right after timeline.
+  if (!material) return schema;
+  // Screenshots and pasted text: the checklist and unsure join, and the
+  // order changes so Haiku settles the dates and the steps before it names
+  // the task (it writes the fields in this order, and a title written first
+  // tended to list the steps). Nothing on the site depends on the order.
+  schema.properties.checklist = { type: 'array', items: { type: 'string' } };
+  schema.properties.unsure = { type: 'string' };
+  var order = ['due_date', 'due_date_confidence', 'due_date_quote', 'timeline', 'checklist', 'title', 'summary', 'need_to_know', 'unsure', 'contact', 'suggested_category', 'deadline_type'];
   var properties = {};
-  Object.keys(schema.properties).forEach(function (key) {
-    properties[key] = schema.properties[key];
-    if (key === 'timeline') properties.checklist = { type: 'array', items: { type: 'string' } };
-  });
+  order.forEach(function (key) { properties[key] = schema.properties[key]; });
   schema.properties = properties;
-  schema.required = schema.required.concat(['checklist']);
+  schema.required = order.slice();
   return schema;
 }
 
@@ -620,8 +626,9 @@ function screenshotContext_(today, categories, timeZone, closing) {
 // that isn't HH:MM becomes "", and an email or phone that doesn't look like
 // one becomes "". The checklist keeps at most 8 steps, each one line of at
 // most 120 characters, without a leading bullet or number, and no step
-// twice; a list of one is dropped (one step is the task itself).
-function normalizeDraft_(raw, ids, fallbackTitle, withChecklist) {
+// twice; a list of one is dropped (one step is the task itself). unsure
+// is one line of at most 240 characters, and always "" for quick add.
+function normalizeDraft_(raw, ids, fallbackTitle, material) {
   var text = function (value, max) {
     return typeof value === 'string' ? value.replace(/\s+/g, ' ').trim().slice(0, max) : '';
   };
@@ -639,7 +646,7 @@ function normalizeDraft_(raw, ids, fallbackTitle, withChecklist) {
   }
 
   var checklist = [];
-  if (withChecklist && Array.isArray(raw.checklist)) {
+  if (material && Array.isArray(raw.checklist)) {
     var seen = {};
     raw.checklist.forEach(function (step) {
       if (checklist.length >= MAX_CHECKLIST) return;
@@ -665,6 +672,7 @@ function normalizeDraft_(raw, ids, fallbackTitle, withChecklist) {
     timeline: timeline,
     checklist: checklist,
     need_to_know: text(raw.need_to_know, 240),
+    unsure: material ? text(raw.unsure, 240) : '',
     contact: {
       name: text(contact.name, 80),
       email: /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) ? email : '',

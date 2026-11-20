@@ -173,6 +173,7 @@ function checklistFrom(steps) {
 //   Tue, Nov 10, 5:00 pm: exam link arrives from FastTest.  the timeline,
 //   Fri, Nov 13, 11:59 pm: window closes.                   earliest first
 //   Need to know: no notes, outside aids, or AI.
+//   Check: "the usual spot" isn't clear.
 //   Contact: Jennifer Landgren, jennifer@example.org
 //
 // Haiku supplies the pieces; this writes them out, so every date reads the
@@ -203,6 +204,11 @@ export function draftNotesFrom(answer, today) {
 
   const need = sentence(answer.need_to_know);
   if (need) lines.push(`Need to know: ${need}`);
+
+  // Something Haiku couldn't tell from the message: yours to check, and to
+  // delete once it's settled.
+  const unsure = sentence(answer.unsure);
+  if (unsure) lines.push(`Check: ${unsure}`);
 
   const contact = answer.contact && typeof answer.contact === 'object' ? answer.contact : {};
   const reach = [contact.name, contact.email, contact.phone].map(clean).filter(Boolean);

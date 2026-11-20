@@ -399,7 +399,10 @@ Then **Revision 1** (Repeats in each Inbox draft, set by you; and one
 scroll bar in the Inbox), which you've used. M3 (the forward) and M4
 (meeting notes, the one expected to fail) both passed. Then **Revision
 2:** with a checklist, the title names the job instead of listing the
-steps (needs a new Apps Script version).
+steps; live, it didn't take. Then **Revision 3:** the answer's order
+puts the steps before the title, the title gets a self-check, and when
+Haiku isn't sure it says so in a "Check:" line in the notes (your idea)
+instead of guessing. Needs a new Apps Script version and a hard-reload.
 
 **Next: keep testing with `samples/haiku-checklist/`,** especially M4 (who
 you are), M2 (steps off the screen), M3 (the forward), and the one-ask
@@ -566,7 +569,10 @@ worth listing, and get no list.
 - **M4, meeting notes:** both "Alex M." items, not Alexis's; the date
   read directly; no hard deadline.
 - **Titles:** listed the steps in three of four tests; changed in
-  Revision 2.
+  Revision 2, which didn't take (M4 and M6 again, version confirmed);
+  Revision 3 changes the order instead.
+- **M6 again:** "in there" read as the staff room a second time, now in
+  Need to know too. Revision 3: flag what's unclear, don't guess.
 - **Still a candidate, only if it recurs:** the summary adds no
   explanation the message doesn't give, and mentions other tasks, not
   every other item.
@@ -631,6 +637,62 @@ How to test (hard-reload first):
       it; change the date and it follows. Reload: still Weekly.
 - [ ] Add to board: the card shows Weekly. Mark it done: the next one
       arrives a week later, its checklist unticked.
+
+### Revision 3: the steps before the title, and "Check:" when Haiku isn't sure (2026-11-20, awaiting deploy and test)
+
+**Why.** With Revision 2 live (you confirmed the version), M4 and M6
+still got titles that list the steps. The likely cause: Haiku writes the
+fields in the order the answer's shape lists them, and the title came
+first, before the checklist existed, so "when there's a checklist" was a
+condition on something not yet written. And M6's summary again read
+Priya's "the outlets in there are a mess" as the staff room, this time
+in both the summary and Need to know: an ambiguous line turned into a
+confident fact (partly the sample's doing; real chats are like that).
+
+**What changed** (screenshots and pasted text only; quick add's shape
+and instructions are untouched):
+1. **The order of the answer:** due date, its confidence and quote,
+   timeline, checklist, *then* title and summary, need to know, unsure,
+   contact, category, deadline type. The instructions list the fields in
+   the same order and say to work out the dates and steps first, then
+   name the task.
+2. **A self-check on the title:** a title that joins two steps with
+   "and" is listing them, so name the job they add up to.
+3. **Your idea: flag, don't guess.** A new field, `unsure`: "" most of the
+   time; when something that matters could be read more than one way,
+   one short sentence quoting the unclear words. The timeline,
+   checklist, title, summary, and need to know don't choose a reading;
+   the doubt goes there instead. The site writes it into the notes as a
+   **"Check:"** line after Need to know, so it's in front of you in the
+   Inbox and travels onto the card until you delete it.
+   (`unsure`'s example, "the usual spot", is deliberately not from any
+   sample.)
+
+**The risk to watch:** the date is now worked out before the task is
+named. Haiku still decides the task first (the instructions open with
+that), but check that dates stay as good as they were.
+
+**Files:** `apps-script/Code.gs` (the order, the self-check, the
+no-guessing rule, `unsure` in the shape and the cleanup), `js/model.js`
+(the "Check:" line). Either can go first: an old site ignores `unsure`,
+and an old script never sends it.
+
+**Checked here:** the backend, now 21 checks (the new order for
+screenshots and pasted text, quick add's unchanged with its title first
+and no `unsure`, `unsure` cleaned to one line and always empty for quick
+add, each prompt carrying the three new rules, and no prompt example
+taken from a sample); the Inbox, now 36 (the "Check:" line after Need to
+know and before Contact, and none when Haiku is sure); checklists, 55.
+All passing.
+
+**Setup:** hard-reload the site, then the usual Apps Script steps (paste
+`Code.gs`, run `checkSetup`, Deploy > Manage deployments > pencil > New
+version, description `steps before title, check line`, Deploy).
+
+How to test: rerun M6 and M4. Titles should name the job; M6's notes
+should carry a "Check:" line about which room (or simply not claim the
+staff room). Then a few with clear dates (T1, T5, S2) to make sure dates
+held up.
 
 ### Revision 2: titles that name the job (2026-11-20, awaiting deploy and test)
 
