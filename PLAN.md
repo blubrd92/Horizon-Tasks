@@ -573,6 +573,21 @@ worth listing, and get no list.
   Revision 3 changes the order instead.
 - **M6 again:** "in there" read as the staff room a second time, now in
   Need to know too. Revision 3: flag what's unclear, don't guess.
+- **After Revision 3 (M4, M6):** M4's title named the job ("Finish your
+  Teen Space planning action items"); M6's half did ("Prepare the
+  volunteer schedules and extension cords"). The staff room was stated
+  three times (timeline, summary, need to know) and no "Check:" line
+  came: a "say when you're unsure" rule needs a model that feels unsure,
+  and Haiku doesn't here. The sample is genuinely ambiguous (the fair's
+  room is the likelier reading, not a stated one). Decision: stop
+  rewording for this one sentence; keep "Check:" (quiet when unused);
+  **M6 goes to the tuning slice as a named case** (does Sonnet notice the
+  ambiguity?). New to watch: the timeline got chattier (M4 added "meeting
+  notes sent"), plausibly because it's now written before the summary;
+  if it recurs, one line limiting the timeline to moments you act on or
+  wait for.
+- **Still untested:** M2 (cut off), T2 and S5 (one ask, no list), and
+  T1, T5, S2 (dates after the reorder).
 - **Still a candidate, only if it recurs:** the summary adds no
   explanation the message doesn't give, and mentions other tasks, not
   every other item.
