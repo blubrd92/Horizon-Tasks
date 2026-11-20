@@ -393,8 +393,16 @@ itself asks for, at most 8, editable in the Inbox draft before Add to
 board. **Needs a new Apps Script version** (setup steps in that
 section). See "Haiku suggests checklist items" below.
 
-**Next: deploy the new Apps Script version and test.** Once you confirm:
-commit, and merge this branch into `main` when you say so.
+You deployed it and began testing (2026-11-20): the volunteer chat (M6)
+and the bulletin board (M5) both picked out only your steps, faithfully.
+Then **Revision 1** (Repeats in each Inbox draft, set by you; and one
+scroll bar in the Inbox), awaiting test.
+
+**Next: keep testing with `samples/haiku-checklist/`,** especially M4 (who
+you are), M2 (steps off the screen), M3 (the forward), and the one-ask
+controls (T2, S5). Only then decide on prompt changes; two candidates
+are noted under "Haiku suggests checklist items", "Live results so far".
+Once you confirm: merge this branch into `main` when you say so.
 
 **The queue after that, in order** (asked 2026-11-19; see "Queued after
 categories" below): (1) the card ticks revision, done; (2) checklists
@@ -538,6 +546,23 @@ worth listing, and get no list.
   (or Ctrl+Enter) carries the list onto the card, words still in "Add an
   item" included. A draft with no steps shows only "Add an item".
 
+### Live results so far (2026-11-20)
+
+- **M6, the volunteer chat:** only your three steps, nothing from the
+  others' jobs; worked out you from "(you)"; the date inferred and
+  flagged. Two slips: the summary invented that the cords were for the
+  staff room (Priya's "in there" meant the fair's room), and the title
+  repeated the first step instead of naming the job.
+- **M5, the bulletin board:** the right notice out of six, all five steps
+  word for word, the date read directly, a title naming the whole job.
+  One slip: the summary mentioned the fire drill, which needs nothing.
+- **Candidate prompt changes, only if the slips recur:** with a
+  checklist, the title names the whole job, not its first step; the
+  summary adds no explanation the message doesn't give, and mentions
+  other tasks, not every other item.
+- **Not wanted:** Haiku setting Repeats. You set it in the Inbox instead
+  (Revision 1).
+
 ### Decisions I made that your answers didn't cover (change any of them)
 
 - **A list of one step is dropped** by the backend: one step is the task
@@ -551,6 +576,51 @@ worth listing, and get no list.
   and whenever the list's width changes. This also fixes the editor: an
   item measured in a stand-in font, before IBM Plex Sans arrived, kept a
   spare blank line.
+
+### Revision 1: Repeats in the Inbox, and one scroll bar (2026-11-20, awaiting test)
+
+After your first live tests (the volunteer chat and the bulletin board,
+both good; notes in the chat), you asked for two things. Site only: no
+Apps Script version needed for this.
+
+- **Repeats in each Inbox draft,** set by you; Haiku never sets it (you
+  didn't want that). Due and Repeats now share a row, as in the editor,
+  with the rhythm in words under them ("Every Friday."), following the
+  date as you change it; Category moved to its own row. Your choice saves
+  to the draft like its other fields (`repeat` on the draft document; no
+  rules change). Add to board starts a real series, exactly as a new card
+  from the editor does (its `seriesId`, `seriesDate`, and, for monthly,
+  `seriesDay`), so marking it done brings the next card, with its
+  checklist unticked. The case you found: a closing procedure that
+  "starts Dec 1" is a weekly card, not a one-off.
+- **One scroll bar in the Inbox.** The second one wasn't the checklist's:
+  the hidden screen-reader help under "Or paste the text of an email"
+  (from 3c) was placed against the whole Inbox panel, below the drafts;
+  once checklists made drafts tall enough, it hung past the panel's
+  bottom and the panel itself began to scroll. It's now anchored inside
+  its own box (`.inbox-text`, `position: relative`). The checklist
+  sections and What you did's list got the same anchor, so their hidden
+  text can never do this either.
+
+**Files:** `js/inbox.js` (Repeats and its rhythm line), `js/model.js`
+(the draft's `repeat`), `js/app.js` (a repeating draft starts its series),
+`js/firebase.js` (its `seriesId`), `css/horizon.css` (the rhythm line,
+the three anchors).
+
+**Checked here:** the Inbox suite, now 34 checks, and checklists, now 55,
+all passing. New: Repeats starts at Doesn't repeat with no rhythm line;
+Weekly saves to the draft; "Every Friday." for a Friday date, "Every
+Thursday." after moving it; the card added is a weekly series from that
+Thursday with its own series id; the Inbox panel itself never scrolls
+with two tall drafts in it; the editor itself never scrolls with 30
+items.
+
+How to test (hard-reload first):
+- [ ] Open the Inbox with a draft or two: one scroll bar, for the list.
+- [ ] In a draft, set Repeats to Weekly: "Every (weekday)." appears under
+      it; change the date and it follows. Reload: still Weekly.
+- [ ] Add to board: the card shows Weekly. Mark it done: the next one
+      arrives a week later, its checklist unticked.
 
 ### Files
 

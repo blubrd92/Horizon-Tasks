@@ -66,6 +66,8 @@
 //   dueDateQuote    the words the date came from, or ""
 //   category        a category id, or null
 //   deadlineType    "soft" or "hard"
+//   repeat          "none", "weekly", or "monthly": yours to set in the
+//                   Inbox (Haiku never does). "none" or missing for none.
 //   checklist       list of { id, text, done }, as on a card: the steps
 //                   Haiku found (screenshots and pasted text only), as
 //                   you've edited them. [] or missing for none.
@@ -147,6 +149,7 @@ export function newDraft(answer, today = todayISO(), { source = 'screenshot', ty
     dueDateQuote: dueDate && typeof answer.due_date_quote === 'string' ? answer.due_date_quote : '',
     category: typeof answer.suggested_category === 'string' ? answer.suggested_category : null,
     deadlineType: answer.deadline_type === 'hard' ? 'hard' : 'soft',
+    repeat: 'none',
     // The steps Haiku found, unticked. Quick add never gets any: your line
     // is yours.
     checklist: kind === 'quick_add' ? [] : checklistFrom(answer.checklist),
@@ -228,6 +231,7 @@ export function normalizeDraft(id, data) {
     dueDateQuote: typeof data.dueDateQuote === 'string' ? data.dueDateQuote : '',
     category: typeof data.category === 'string' && data.category ? data.category : null,
     deadlineType: data.deadlineType === 'hard' ? 'hard' : 'soft',
+    repeat: data.repeat === 'weekly' || data.repeat === 'monthly' ? data.repeat : 'none',
     checklist: normalizeChecklist(data.checklist),
     source: Object.hasOwn(DRAFT_SOURCES, data.source) ? data.source : 'screenshot',
     typed: typeof data.typed === 'string' ? data.typed : '',

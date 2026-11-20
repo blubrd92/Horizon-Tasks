@@ -365,7 +365,10 @@ export function discardDraft(uid, draftId) {
 export function addCardFromDraft(uid, draftId, fields) {
   const batch = writeBatch(db);
   const ref = doc(collection(db, 'users', uid, 'cards'));
-  batch.set(ref, { ...fields, createdAt: serverTimestamp(), updatedAt: serverTimestamp() });
+  const data = { ...fields, createdAt: serverTimestamp(), updatedAt: serverTimestamp() };
+  // A repeating card starts its series, as in addCard.
+  if ((data.repeat === 'weekly' || data.repeat === 'monthly') && !data.seriesId) data.seriesId = ref.id;
+  batch.set(ref, data);
   batch.delete(doc(db, 'users', uid, 'inbox', draftId));
   return { id: ref.id, saved: batch.commit() };
 }

@@ -644,7 +644,11 @@ async function start() {
     saveDraft: (fields) => fb.addDraft(uid, fields),
     changeDraft: (id, changes) => fb.updateDraft(uid, id, changes),
     discardDraft: (id) => fb.discardDraft(uid, id),
-    addToBoard: (id, card) => fb.addCardFromDraft(uid, id, card),
+    // A draft set to repeat starts a series, as a new card from the editor
+    // does (seriesDate and seriesDay from its date; firebase.js gives it
+    // its seriesId).
+    addToBoard: (id, card) =>
+      fb.addCardFromDraft(uid, id, { ...card, ...seriesChanges({ id: null, ...newCard(card) }, card, false) }),
     categories: () => categories,
     addedText,
     onCount: drawInboxCount,

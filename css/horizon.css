@@ -2091,7 +2091,10 @@ body.is-dragging .zones { align-items: stretch; }
 /* The editor's checklist (checklist.js): rows of a drag handle, a drawn
    checkbox (the same box as "Move the series too"), the words, and an X,
    then "Add an item". Every control is a 44-pixel target. */
+/* position: relative keeps the section's hidden screen-reader text inside
+   it, so it can never stretch the panel around it (see .inbox-text). */
 .cl {
+  position: relative;
   display: flex;
   flex-direction: column;
   gap: 6px;
@@ -2766,6 +2769,7 @@ a.button:hover { color: var(--ink); }
 
 /* A finished card's checklist, every item with its tick. */
 .record-box-checklist {
+  position: relative;
   display: flex;
   flex-direction: column;
   gap: 6px;
@@ -3369,6 +3373,14 @@ a.link-row:focus-visible { outline-offset: -2px; }
 
 .inbox-item .field-error { margin: -6px 0 0; }
 
+/* "Every Friday." under a draft's Repeats, as under the editor's. */
+.inbox-rhythm {
+  margin: -6px 0 0;
+  font-size: 13px;
+  line-height: 1.4;
+  color: var(--ink-secondary);
+}
+
 .inbox-note {
   margin: 0;
   font-size: 13px;
@@ -3468,7 +3480,12 @@ a.link-row:focus-visible { outline-offset: -2px; }
 }
 
 /* Pasted text (3c), under the drop zone. */
+/* position: relative keeps its hidden help text inside this box. Without
+   it, the text is placed against the whole Inbox panel, below the drafts,
+   and once they're tall enough the panel itself scrolls: a second scroll
+   bar. */
 .inbox-text {
+  position: relative;
   display: flex;
   flex-direction: column;
   gap: 8px;

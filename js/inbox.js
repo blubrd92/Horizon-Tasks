@@ -26,6 +26,7 @@ import { isISODate, todayISO } from './dates.js';
 import { draftNotes, newCard, newDraft } from './model.js';
 import { shrink, splitImages, toBase64 } from './screenshot.js';
 import { sameChecklist, sectionHTML, setupChecklist } from './checklist.js';
+import { describeRhythm } from './repeat.js';
 
 const MAX_AT_ONCE = 5;
 const NO_CATEGORY_COLOR = '#6B6F78';
@@ -577,12 +578,31 @@ export function setupInbox({ read, saveDraft, changeDraft, discardDraft, addToBo
     due.type = 'date';
     due.className = 'field-input field-date';
     dueField.append('Due', due);
+    // Repeats, beside Due as in the editor: yours to set (Haiku never
+    // does), with the rhythm in words under it.
+    const repeatField = document.createElement('label');
+    repeatField.className = 'field';
+    const repeat = document.createElement('select');
+    repeat.className = 'field-input';
+    for (const [value, label] of [['none', "Doesn't repeat"], ['weekly', 'Weekly'], ['monthly', 'Monthly']]) {
+      const option = document.createElement('option');
+      option.value = value;
+      option.textContent = label;
+      repeat.append(option);
+    }
+    repeatField.append('Repeats', repeat);
+    row.append(dueField, repeatField);
+    const rhythm = document.createElement('p');
+    rhythm.className = 'inbox-rhythm';
+    rhythm.id = `inbox-rhythm-${n}`;
+    rhythm.hidden = true;
+    repeat.setAttribute('aria-describedby', rhythm.id);
+
     const categoryField = document.createElement('label');
     categoryField.className = 'field';
     const category = document.createElement('select');
     category.className = 'field-input';
     categoryField.append('Category', category);
-    row.append(dueField, categoryField);
 
     const note = document.createElement('p');
     note.className = 'inbox-note';
@@ -642,8 +662,8 @@ export function setupInbox({ read, saveDraft, changeDraft, discardDraft, addToBo
     const add = button('Add to board', 'button button-primary');
     foot.append(discard, add);
 
-    el.append(shot, titleField, titleError, row, note, ticks, notesField, checks, foot);
-    const entry = { el, id, shot, title, titleError, due, category, note, hard, hardTick, notes, checks, add, discard, stored: {} };
+    el.append(shot, titleField, titleError, row, note, rhythm, categoryField, ticks, notesField, checks, foot);
+    const entry = { el, id, shot, title, titleError, due, repeat, rhythm, category, note, hard, hardTick, notes, checks, add, discard, stored: {} };
     entry.checklist = setupChecklist({
       root: checks,
       helpId: `inbox-cl-help-${n}`,
@@ -664,7 +684,12 @@ export function setupInbox({ read, saveDraft, changeDraft, discardDraft, addToBo
       const value = isISODate(due.value) ? due.value : null;
       drawNote(entry);
       drawHardDue(entry);
+      drawRhythm(entry);
       if (value !== entry.stored.dueDate) save(entry, { dueDate: value });
+    });
+    repeat.addEventListener('change', () => {
+      drawRhythm(entry);
+      if (repeat.value !== entry.stored.repeat) save(entry, { repeat: repeat.value });
     });
     category.addEventListener('change', () => {
       drawColor(entry);
@@ -705,6 +730,7 @@ export function setupInbox({ read, saveDraft, changeDraft, discardDraft, addToBo
     const fresh = (prop) => !(prop in was) || draft[prop] !== was[prop];
     if (fresh('title') && document.activeElement !== entry.title) entry.title.value = draft.title;
     if (fresh('dueDate') && document.activeElement !== entry.due) entry.due.value = draft.dueDate || '';
+    if (fresh('repeat') && document.activeElement !== entry.repeat) entry.repeat.value = draft.repeat;
     fillCategories(entry, draft);
     if (fresh('deadlineType')) entry.hard.checked = draft.deadlineType === 'hard';
     if (fresh('notes') && document.activeElement !== entry.notes) {
@@ -722,6 +748,7 @@ export function setupInbox({ read, saveDraft, changeDraft, discardDraft, addToBo
     entry.stored = {
       title: draft.title,
       dueDate: draft.dueDate,
+      repeat: draft.repeat,
       category: draft.category,
       deadlineType: draft.deadlineType,
       notes: draft.notes,
@@ -729,7 +756,16 @@ export function setupInbox({ read, saveDraft, changeDraft, discardDraft, addToBo
     };
     drawNote(entry);
     drawHardDue(entry);
+    drawRhythm(entry);
     drawColor(entry);
+  }
+
+  // "Every Friday." under Repeats, from the draft's date as it stands (a
+  // new series follows its first date, as in the editor).
+  function drawRhythm(entry) {
+    const due = isISODate(entry.due.value) ? entry.due.value : null;
+    entry.rhythm.textContent = describeRhythm(entry.repeat.value, due);
+    entry.rhythm.hidden = !entry.rhythm.textContent;
   }
 
   // The Hard deadline chip is orange (when it's on) only while the draft's
@@ -867,6 +903,7 @@ export function setupInbox({ read, saveDraft, changeDraft, discardDraft, addToBo
       source: entry.draft.source,
       category: entry.category.value || null,
       deadlineType: entry.hard.checked ? 'hard' : 'soft',
+      repeat: entry.repeat.value,
       notes: entry.notes.value.replace(/\r\n?/g, '\n').replace(/\s+$/, ''),
       // The list as it is, words still in "Add an item" included.
       checklist: entry.checklist.values(),
