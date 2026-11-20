@@ -402,7 +402,10 @@ scroll bar in the Inbox), which you've used. M3 (the forward) and M4
 steps; live, it didn't take. Then **Revision 3:** the answer's order
 puts the steps before the title, the title gets a self-check, and when
 Haiku isn't sure it says so in a "Check:" line in the notes (your idea)
-instead of guessing. Needs a new Apps Script version and a hard-reload.
+instead of guessing. Needs a new Apps Script version and a hard-reload. Then M2, T2, and S5
+passed, and **Revision 4** trims padding from the notes (needs a new
+Apps Script version). After a glance at its result: confirm, and merge
+into `main`.
 
 **Next: keep testing with `samples/haiku-checklist/`,** especially M4 (who
 you are), M2 (steps off the screen), M3 (the forward), and the one-ask
@@ -597,7 +600,7 @@ worth listing, and get no list.
   when the message was sent, and Need to know repeats the summary.
   Candidate fix, two lines: the timeline holds only moments you act on
   or wait for, never when the message was sent; Need to know never
-  repeats the summary. Polish, your call.
+  repeats the summary. You chose to polish: Revision 4.
 - **Verdict so far:** every test put the right task, only your steps,
   and the right date in front of you; nothing invented. The slips were
   in the notes and titles, which you review anyway.
@@ -665,6 +668,24 @@ How to test (hard-reload first):
       it; change the date and it follows. Reload: still Weekly.
 - [ ] Add to board: the card shows Weekly. Mark it done: the next one
       arrives a week later, its checklist unticked.
+
+### Revision 4: less padding in the notes (2026-11-20, awaiting deploy and test)
+
+Seen twice (M4, S5): the timeline listed when the message was sent, and
+Need to know repeated the summary, so a card's notes said one thing
+three times. Two lines in the screenshot and pasted-text instructions
+(`Code.gs`, `materialPrompt_`; quick add untouched):
+- the timeline holds only moments the reader acts on or waits for:
+  never when the message was sent or received;
+- Need to know is never a repeat of the summary, the timeline, or the
+  checklist.
+
+**Checked here:** the backend, now 22 checks, all passing. **Setup:** the
+usual Apps Script steps, description `less padding`. No site change.
+
+How to test: rerun S5 (Tomás) and M4. The notes should lose the "emails
+you" line and the repeated Need to know, and keep what's useful (the
+shift's date and time, the next meeting).
 
 ### Revision 3: the steps before the title, and "Check:" when Haiku isn't sure (2026-11-20, awaiting deploy and test)
 
