@@ -220,7 +220,8 @@ export function putBackChanges(card) {
 // first. A repeating series with the same title is one line, at its latest
 // date, with how many times. A card in a project ends with the project's
 // name (a project that was deleted isn't named). With notes on, each
-// card's notes follow its line, indented (a series: its latest card's).
+// card's notes follow its line, indented, then its checklist, [x] for a
+// ticked item and [ ] for one left (a series: its latest card's).
 // projects is every project, active and archived.
 export function copyText(cards, categories, range, today, { notes = false, projects = [] } = {}) {
   const categoryById = new Map(categories.map((c) => [c.id, c]));
@@ -261,6 +262,9 @@ export function copyText(cards, categories, range, today, { notes = false, proje
     lines.push(`${formatShort(days[days.length - 1])} · ${latest.title}${times} · ${category}${project ? ` · ${project.name}` : ''}`);
     if (notes && latest.notes.trim()) {
       for (const line of latest.notes.trim().split(/\r?\n/)) lines.push(`    ${line}`);
+    }
+    if (notes) {
+      for (const item of latest.checklist || []) lines.push(`    [${item.done ? 'x' : ' '}] ${item.text}`);
     }
   }
   return `${lines.join('\n')}\n`;

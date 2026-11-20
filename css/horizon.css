@@ -641,6 +641,24 @@ code { font-family: var(--font-mono); font-size: 0.92em; }
   border-radius: 10px;
 }
 
+/* The checklist's count, "2/5", in the mono type every count uses. When
+   every item is ticked the box fills and the count turns blue. */
+.card-checks {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--ink-secondary);
+}
+
+.card-checks svg { flex: none; }
+
+.card-checks.is-all {
+  color: var(--accent-dark);
+  font-weight: 500;
+}
+
 /* The title button's click area stretches over the whole card. Anything
    later placed inside a card that must stay clickable on its own (triage
    buttons, project links) needs position: relative and z-index: 1. */
@@ -2070,6 +2088,216 @@ body.is-dragging .zones { align-items: stretch; }
 
 .check-card .check-note { margin-left: 30px; }
 
+/* The editor's checklist (checklist.js): rows of a drag handle, a drawn
+   checkbox (the same box as "Move the series too"), the words, and an X,
+   then "Add an item". Every control is a 44-pixel target. */
+.cl {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.cl-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--ink-secondary);
+}
+
+.cl-count {
+  font-family: var(--font-mono);
+  font-weight: 400;
+}
+
+.cl-box {
+  background: var(--surface);
+  border: 1px solid var(--field-border);
+  border-radius: var(--radius-card);
+  overflow: hidden;
+}
+
+.cl-box:has(.cl-add-input:focus) {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 1px var(--accent);
+}
+
+.cl-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.cl-row {
+  display: flex;
+  align-items: flex-start;
+  min-height: 44px;
+  background: var(--surface);
+}
+
+.cl-row + .cl-row { border-top: 1px solid var(--border-soft); }
+
+.cl-row:has(.cl-text:focus) {
+  box-shadow: inset 0 0 0 2px var(--accent);
+  border-radius: 10px;
+}
+
+.cl-handle {
+  flex: none;
+  width: 44px;
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #8C877D;
+  cursor: grab;
+  touch-action: none;
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+.cl-handle:hover { color: var(--ink); }
+
+/* While a row is dragged: it lifts, the rest stay put around it. */
+.cl-list.is-sorting { cursor: grabbing; }
+.cl-list.is-sorting .cl-handle { cursor: grabbing; }
+
+.cl-row.is-dragging {
+  position: relative;
+  z-index: 1;
+  border-radius: 10px;
+  box-shadow: 0 6px 18px rgba(24, 25, 28, 0.18);
+}
+
+.cl-check {
+  flex: none;
+  width: 44px;
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.cl-check input {
+  appearance: none;
+  -webkit-appearance: none;
+  margin: 0;
+  width: 20px;
+  height: 20px;
+  border: 1.5px solid #8C877D;
+  border-radius: 6px;
+  background: var(--surface) center / 14px 14px no-repeat;
+  cursor: pointer;
+}
+
+.cl-check input:checked {
+  border-color: var(--accent);
+  background-color: var(--accent);
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23FFFFFF' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M5 12.5l4.5 4.5L19 7.5'/%3E%3C/svg%3E");
+}
+
+.cl-check input:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+/* The words: a one-row box that grows as they wrap (checklist.js). Ticked:
+   struck through, in the secondary ink. */
+.cl-text {
+  flex: 1 1 auto;
+  min-width: 0;
+  min-height: 44px;
+  padding: 12px 4px 11px 0;
+  border: none;
+  background: transparent;
+  font: inherit;
+  font-size: 14px;
+  line-height: 1.45;
+  color: var(--ink);
+  resize: none;
+  overflow: hidden;
+}
+
+.cl-text:focus { outline: none; }
+
+.cl-row:has(input:checked) .cl-text {
+  color: var(--ink-secondary);
+  text-decoration: line-through;
+}
+
+.cl-icon {
+  flex: none;
+  width: 44px;
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border: none;
+  border-radius: 10px;
+  background: transparent;
+  color: var(--ink-secondary);
+  cursor: pointer;
+}
+
+.cl-icon:hover { background: var(--surface-soft); color: var(--ink); }
+.cl-icon:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+
+.cl-add {
+  display: flex;
+  align-items: center;
+  min-height: 44px;
+  border-top: 1px solid var(--border-soft);
+}
+
+.cl-add.is-first { border-top: none; }
+
+.cl-add-plus {
+  flex: none;
+  width: 44px;
+  display: flex;
+  justify-content: center;
+  color: var(--accent);
+}
+
+.cl-add-input {
+  flex: 1;
+  min-width: 0;
+  min-height: 44px;
+  padding: 0 12px 0 0;
+  border: none;
+  background: transparent;
+  font: inherit;
+  font-size: 14px;
+  color: var(--ink);
+}
+
+.cl-add-input::placeholder { color: var(--ink-placeholder); }
+.cl-add-input:focus { outline: none; }
+.cl-add-input:disabled { cursor: default; }
+
+/* Every item ticked, on a saved card: the offer to mark it done. */
+.cl-offer {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px 12px;
+  padding: 8px 8px 8px 14px;
+  background: var(--progress-tint);
+  border-radius: var(--radius-card);
+  font-size: 14px;
+  color: var(--accent-dark);
+}
+
+.cl-offer .button {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border-color: transparent;
+}
+
 .check-block {
   display: flex;
   flex-direction: column;
@@ -2535,6 +2763,44 @@ a.button:hover { color: var(--ink); }
   white-space: pre-wrap;
   overflow-wrap: anywhere;
 }
+
+/* A finished card's checklist, every item with its tick. */
+.record-box-checklist {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.record-box-checklist-head {
+  margin: 0;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--ink-secondary);
+}
+
+.record-box-checklist-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  max-height: 220px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 14px;
+  line-height: 1.4;
+}
+
+.record-box-checklist-list li {
+  display: grid;
+  grid-template-columns: 15px minmax(0, 1fr);
+  gap: 8px;
+  overflow-wrap: anywhere;
+}
+
+.record-box-checklist-list svg { margin-top: 2px; }
+.record-box-checklist-list .is-done svg { color: var(--accent); }
+.record-box-checklist-list .is-open { color: var(--ink-secondary); }
 
 .record-foot { flex-wrap: wrap; }
 
@@ -3337,3 +3603,32 @@ a.link-row:focus-visible { outline-offset: -2px; }
 }
 
 .notes-peek[hidden] { display: none; }
+
+.notes-peek-text { margin: 0; }
+
+/* The card's checklist, under its notes. */
+.notes-peek-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  white-space: normal;
+}
+
+.notes-peek-text + .notes-peek-list {
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px solid var(--border-soft);
+}
+
+.notes-peek-list li {
+  display: grid;
+  grid-template-columns: 13px minmax(0, 1fr);
+  gap: 7px;
+}
+
+.notes-peek-list svg { margin-top: 3px; }
+.notes-peek-list .is-done { color: var(--ink-secondary); text-decoration: line-through; }
+.notes-peek-list .notes-peek-more { display: block; color: var(--ink-secondary); }

@@ -174,10 +174,11 @@
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="12" height="12" rx="2"></rect><path d="M5 15H4a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v1"></path></svg>
             Copy as text
           </button>
-          <label class="check done-notes">
-            <input type="checkbox" id="done-notes">
+          <label class="check done-notes" title="Each card's notes and checklist, under its line">
+            <input type="checkbox" id="done-notes" aria-describedby="done-notes-help">
             Include notes
           </label>
+          <span id="done-notes-help" class="visually-hidden">Each card's notes and checklist, under its line.</span>
         </div>
       </div>
       <!-- Only with Custom: the two dates it covers. -->
@@ -402,6 +403,10 @@
       <p id="record-project" class="record-box-project" hidden></p>
       <p id="record-when" class="record-box-when"></p>
       <p id="record-notes" class="record-box-notes" hidden></p>
+      <div id="record-checklist" class="record-box-checklist" hidden>
+        <p id="record-checklist-head" class="record-box-checklist-head"></p>
+        <ul id="record-checklist-list" class="record-box-checklist-list" aria-labelledby="record-checklist-head"></ul>
+      </div>
       <p id="record-series" class="record-box-series" hidden></p>
       <div class="small-foot record-foot">
         <button type="button" id="record-putback" class="button">Put back on the board</button>
@@ -429,6 +434,34 @@
         <label class="field">Notes
           <textarea id="editor-notes" class="field-input field-notes" rows="4"></textarea>
         </label>
+
+        <!-- The checklist (checklist.js): short items to tick. A tick on a
+             saved card saves at once; adding, rewording, removing, and
+             moving wait for Save, like the rest of the editor. -->
+        <div id="editor-checklist" class="cl" role="group" aria-labelledby="editor-cl-label">
+          <div class="cl-head">
+            <span id="editor-cl-label">Checklist<span class="cl-label-count visually-hidden"></span></span>
+            <span class="cl-count" aria-hidden="true"></span>
+          </div>
+          <div class="cl-box">
+            <ul class="cl-list"></ul>
+            <div class="cl-add">
+              <span class="cl-add-plus" aria-hidden="true">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"></path></svg>
+              </span>
+              <input type="text" class="cl-add-input" maxlength="200" placeholder="Add an item" aria-label="Add an item to the checklist" aria-describedby="editor-cl-help" autocomplete="off">
+            </div>
+          </div>
+          <p id="editor-cl-help" class="visually-hidden">Enter adds the item. Several lines pasted here become one item each. Alt with the up or down arrow moves the item you're typing in. A tick saves at once; other changes save with Save.</p>
+          <div class="cl-offer" hidden>
+            <span>All ticked. Mark it done?</span>
+            <button type="button" class="button cl-offer-done">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"></path></svg>
+              Mark done
+            </button>
+          </div>
+          <p class="cl-status visually-hidden" role="status"></p>
+        </div>
 
         <!-- Time on one row (Due gets the wider share, so the whole date
              shows beside its No date button), then where the card belongs. -->

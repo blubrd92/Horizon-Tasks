@@ -16,6 +16,7 @@
 // counts from the day you finish it.
 
 import { addDays, dayOfMonth, fromISO, toISO, weekdayName } from './dates.js';
+import { unticked } from './checklist.js';
 
 export const REPEAT_NAMES = { weekly: 'Weekly', monthly: 'Monthly' };
 
@@ -85,6 +86,8 @@ export function nextCard(card, today) {
     seriesDate: dueDate,
     // An undated card's series starts from today's day of the month.
     seriesDay: card.repeat === 'monthly' ? (anchor ? aimDay(card, anchor) : dayOfMonth(today)) : null,
+    // The same checklist, in the same order, none ticked.
+    checklist: unticked(card.checklist || []),
   };
   // Sample cards stay findable by the script that removes them.
   if (card.sample) fields.sample = true;

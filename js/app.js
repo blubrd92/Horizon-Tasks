@@ -510,6 +510,14 @@ async function start() {
         line.giveBack(values.title);
       });
     },
+    // A checklist tick saves at once (checklist.js), from the card as the
+    // board has it now, so a tick made on another device meanwhile stays.
+    onTick: (cardId, itemId, done) => {
+      const card = findCard(cardId);
+      if (!card || !card.checklist.some((item) => item.id === itemId)) return;
+      const list = card.checklist.map((item) => (item.id === itemId ? { ...item, done } : item));
+      fb.updateCard(uid, cardId, { checklist: list }).catch(showSaveError);
+    },
     onClose: (card, saved) => {
       // A new card closed without saving: its title goes back into quick
       // add, so nothing typed is lost. Focus is already back there.
@@ -1219,12 +1227,12 @@ async function start() {
   }
 
   // Notes on hover (notespeek.js): the board, the Someday drawer, and a
-  // project page's open cards.
+  // project page's open cards. The checklist shows there too.
   setupNotesPeek({
     roots: [zonesEl, somedayCardsEl, views.project],
-    getNotes: (cardId) => {
+    getCard: (cardId) => {
       const card = findCard(cardId);
-      return card ? card.notes : '';
+      return card ? { notes: card.notes, checklist: card.checklist } : null;
     },
   });
 

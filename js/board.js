@@ -17,8 +17,16 @@ import { STATUS } from './model.js';
 import { compareCards } from './order.js';
 import { REPEAT_NAMES, repeats } from './repeat.js';
 import { projectHref } from './projects.js';
+import { checklistCount } from './checklist.js';
 
 const FALLBACK_COLOR = '#6B6F78';
+
+// The checklist count's box: outlined with a check while items are left,
+// filled when every one is ticked.
+const CHECKS_ICON =
+  '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="3.5" width="17" height="17" rx="4"></rect><path d="M8 12.5l3 3 5-6"></path></svg>';
+const CHECKS_FULL =
+  '<svg width="13" height="13" viewBox="0 0 24 24" aria-hidden="true"><rect x="2.5" y="2.5" width="19" height="19" rx="4.5" fill="currentColor"></rect><path d="M8 12.5l3 3 5-6" fill="none" stroke="#FFFFFF" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"></path></svg>';
 
 // Folding long zones (a setting, off by default): these zones show their
 // first FOLD_SHOW cards and a button for the rest, but only when at least
@@ -189,11 +197,19 @@ function cardHTML(card, today, categoryById, { triage = false, highlight = null,
        </span>`
     : '';
 
+  // The checklist's count, "2/5": a small box with a check, filled when
+  // every item is ticked (and the count turns blue), so done shows in shape
+  // as well as color. A card without a checklist shows nothing.
+  const { done: ticked, total } = checklistCount(card.checklist || []);
+  const checks = total
+    ? `<span class="card-checks${ticked === total ? ' is-all' : ''}">${ticked === total ? CHECKS_FULL : CHECKS_ICON}<span aria-hidden="true">${ticked}/${total}</span><span class="visually-hidden">Checklist, ${ticked} of ${total} ticked</span></span>`
+    : '';
+
   // Someday cards have no date to show.
   const date = card.dueDate ? `<span class="card-date">${formatShort(card.dueDate)}</span>` : '';
   const meta =
-    date || lateText || hard || repeat || progress
-      ? `<div class="card-meta">${date}${lateText}${hard}${repeat}${progress}</div>`
+    date || lateText || hard || repeat || checks || progress
+      ? `<div class="card-meta">${date}${lateText}${hard}${repeat}${checks}${progress}</div>`
       : '';
   const project = projectById && card.projectId ? projectById.get(card.projectId) : null;
   const projectTag = project ? projectTagHTML(project) : '';

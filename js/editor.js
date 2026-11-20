@@ -9,6 +9,7 @@ import { PROJECT_STATUS, STATUS } from './model.js';
 import { NEW_PROJECT, nameOrder } from './projects.js';
 import { placeBeside } from './place.js';
 import { anchorOf, describeMove, describeRhythm, repeats } from './repeat.js';
+import { sameChecklist, setupChecklist } from './checklist.js';
 
 // Matches the CSS: up to this width the editor fills the screen.
 const narrow = window.matchMedia('(max-width: 760px)');
@@ -21,8 +22,9 @@ const narrow = window.matchMedia('(max-width: 760px)');
 // is chosen, projectId is NEW_PROJECT and newProject is the name typed for
 // it (onSave and onDone get it too); app.js makes the project. onClose(card,
 // saved) runs whenever the panel closes; a new card has no id until it is
-// saved.
-export function setupEditor({ onSave, onDone, onCreate, onClose }) {
+// saved. onTick(cardId, itemId, done) runs when a checklist item on a saved
+// card is ticked or unticked: a tick saves at once, not with Save.
+export function setupEditor({ onSave, onDone, onCreate, onClose, onTick }) {
   const dialog = document.getElementById('editor');
   const form = document.getElementById('editor-form');
   const title = document.getElementById('editor-title');
@@ -47,6 +49,20 @@ export function setupEditor({ onSave, onDone, onCreate, onClose }) {
   const heading = document.getElementById('editor-heading');
   const saveButton = document.getElementById('editor-save');
   const doneButton = document.getElementById('editor-done');
+  const checklist = setupChecklist({
+    root: document.getElementById('editor-checklist'),
+    onTick: (itemId, done) => {
+      if (!card || !card.id) return;
+      // An item already saved on the card: its tick saves now, and the
+      // editor's own copy of the card follows, so Save doesn't see the
+      // tick as a change. One added since the panel opened saves with Save.
+      if (!card.checklist.some((item) => item.id === itemId)) return;
+      card.checklist = card.checklist.map((item) => (item.id === itemId ? { ...item, done } : item));
+      onTick(card.id, itemId, done);
+    },
+    onOffer: () => doneButton.click(),
+    onResize: () => follow(),
+  });
 
   let card = null;
   let saved = false;
@@ -59,7 +75,8 @@ export function setupEditor({ onSave, onDone, onCreate, onClose }) {
   // it has nothing to mark done yet. categories and projects are yours,
   // for the menus.
   function open(cardToEdit, { categories, projects }, where = null) {
-    card = cardToEdit;
+    // A copy: a tick changes its checklist (above), never the board's.
+    card = { ...cardToEdit, checklist: cardToEdit.checklist || [] };
     saved = false;
     const isNew = !card.id;
     heading.textContent = isNew ? 'New card' : 'Edit card';
@@ -76,12 +93,17 @@ export function setupEditor({ onSave, onDone, onCreate, onClose }) {
     hard.checked = card.deadlineType === 'hard';
     repeat.value = card.repeat;
     moveSeries.checked = false;
+    checklist.load(card.checklist, { finish: !isNew });
     updateSomedayNote();
     updateRepeatNotes();
     anchor = where;
     dialog.showModal();
     position();
-    window.addEventListener('resize', follow);
+    // After position(): the panel's width beside a card is what the items
+    // wrap to. Then once more, in case the new heights moved it.
+    checklist.fit();
+    position();
+    window.addEventListener('resize', refit);
     // Capture: scrolling the board's own sideways box counts too.
     window.addEventListener('scroll', follow, { capture: true, passive: true });
     // A new card's title is already typed; the date is usually next.
@@ -129,6 +151,12 @@ export function setupEditor({ onSave, onDone, onCreate, onClose }) {
       frame = 0;
       if (dialog.open) position();
     });
+  }
+
+  // A new width can rewrap the checklist's items.
+  function refit() {
+    checklist.fit();
+    follow();
   }
 
   // Your active categories. A card on a retired one keeps it as an option,
@@ -255,6 +283,7 @@ export function setupEditor({ onSave, onDone, onCreate, onClose }) {
       deadlineType: hard.checked ? 'hard' : 'soft',
       repeat: repeat.value,
       projectId: project.value || null,
+      checklist: checklist.values(),
     };
   }
 
@@ -264,7 +293,8 @@ export function setupEditor({ onSave, onDone, onCreate, onClose }) {
     if (!values) return null;
     const changes = {};
     for (const [key, value] of Object.entries(values)) {
-      if (value !== card[key]) changes[key] = value;
+      const same = key === 'checklist' ? sameChecklist(value, card.checklist) : value === card[key];
+      if (!same) changes[key] = value;
     }
     return changes;
   }
@@ -342,7 +372,7 @@ export function setupEditor({ onSave, onDone, onCreate, onClose }) {
   });
 
   dialog.addEventListener('close', () => {
-    window.removeEventListener('resize', follow);
+    window.removeEventListener('resize', refit);
     window.removeEventListener('scroll', follow, { capture: true });
     for (const el of document.querySelectorAll('.card.is-editing')) el.classList.remove('is-editing');
     anchor = null;

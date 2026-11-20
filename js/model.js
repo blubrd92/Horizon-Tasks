@@ -37,6 +37,9 @@
 //   source         "manual", "quick_add", "screenshot", or "pasted_text"
 //   order          number, or null: the card's place within its zone, set
 //                  when you drag it (see order.js). null means date order.
+//   checklist      list of { id, text, done }, in the order shown: up to
+//                  30 short items, each ticked or not (see checklist.js).
+//                  [] or missing for none.
 //   createdAt, updatedAt, completedAt, letGoAt   Firestore timestamps
 //
 // A project document:
@@ -84,6 +87,7 @@
 
 import { formatShort, formatTime, isISODate, toISO, todayISO } from './dates.js';
 import { normalizeLinks } from './links.js';
+import { normalizeChecklist } from './checklist.js';
 
 export const STATUS = {
   OPEN: 'open',
@@ -112,6 +116,7 @@ export function newCard({ title, dueDate = null }) {
     seriesId: null,
     seriesDate: null,
     seriesDay: null,
+    checklist: [],
   };
 }
 
@@ -280,6 +285,7 @@ export function normalizeCard(id, data) {
     seriesId: typeof data.seriesId === 'string' && data.seriesId ? data.seriesId : null,
     seriesDate: isISODate(data.seriesDate) ? data.seriesDate : null,
     seriesDay: Number.isInteger(data.seriesDay) && data.seriesDay >= 1 && data.seriesDay <= 31 ? data.seriesDay : null,
+    checklist: normalizeChecklist(data.checklist),
     // The sample cards on your board (a repeating one's next card keeps it).
     sample: data.sample === true,
     createdAt: millis(data.createdAt),

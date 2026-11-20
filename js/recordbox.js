@@ -1,13 +1,18 @@
 // The small box for one finished or let-go card: its category, project,
-// when it was finished and due, its notes, and "Put back on the board".
-// What you did and project pages both open it. This file only shows the
-// box; the page that opened it decides what Put back does.
+// when it was finished and due, its notes, its checklist, and "Put back on
+// the board". What you did and project pages both open it. This file only
+// shows the box; the page that opened it decides what Put back does.
 
 import { formatShort } from './dates.js';
 import { escapeHTML } from './board.js';
 import { STATUS } from './model.js';
 import { REPEAT_NAMES, repeats } from './repeat.js';
 import { categoryOf, finishedDay } from './record.js';
+
+const BOX_EMPTY =
+  '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="3.5" y="3.5" width="17" height="17" rx="4"></rect></svg>';
+const BOX_FULL =
+  '<svg width="15" height="15" viewBox="0 0 24 24" aria-hidden="true"><rect x="2.5" y="2.5" width="19" height="19" rx="4.5" fill="currentColor"></rect><path d="M8 12.5l3 3 5-6" fill="none" stroke="#FFFFFF" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"></path></svg>';
 
 export function setupRecordBox() {
   const box = document.getElementById('record-card');
@@ -17,6 +22,9 @@ export function setupRecordBox() {
   const when = document.getElementById('record-when');
   const notes = document.getElementById('record-notes');
   const series = document.getElementById('record-series');
+  const checks = document.getElementById('record-checklist');
+  const checksHead = document.getElementById('record-checklist-head');
+  const checksList = document.getElementById('record-checklist-list');
 
   // The card in the box, and what the page that opened it asked for.
   let card = null;
@@ -61,6 +69,29 @@ export function setupRecordBox() {
     when.textContent = `${how} ${withYear(finishedDay(card))}. ${due}`;
     notes.textContent = card.notes;
     notes.hidden = !card.notes.trim();
+    // The whole checklist, each item with its tick, unticked ones included:
+    // the record says what was skipped as plainly as what was done.
+    const items = card.checklist || [];
+    checks.hidden = !items.length;
+    const ticked = items.filter((item) => item.done).length;
+    checksHead.textContent = `Checklist, ${ticked} of ${items.length} ticked`;
+    checksList.replaceChildren(
+      ...items.map((item) => {
+        const li = document.createElement('li');
+        li.className = item.done ? 'is-done' : 'is-open';
+        li.innerHTML = item.done ? BOX_FULL : BOX_EMPTY;
+        const words = document.createElement('span');
+        if (!item.done) {
+          const hint = document.createElement('span');
+          hint.className = 'visually-hidden';
+          hint.textContent = 'Not ticked: ';
+          words.append(hint);
+        }
+        words.append(item.text);
+        li.append(words);
+        return li;
+      }),
+    );
     series.textContent = repeats(card)
       ? `Part of a ${REPEAT_NAMES[card.repeat].toLowerCase()} series. It comes back on its own, as a one-off; the series already has its next card.`
       : '';
