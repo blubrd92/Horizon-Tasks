@@ -1,0 +1,269 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Horizon tick options</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,700&amp;family=IBM+Plex+Mono:wght@400;500&amp;family=IBM+Plex+Sans:wght@400;500;600&amp;display=swap" rel="stylesheet">
+<!-- The site's own styles, so the fields, buttons, switch, and cards around
+     the ticks look exactly as they do in Horizon. -->
+<link rel="stylesheet" href="../../css/horizon.css">
+<style>
+  body { padding: 40px; }
+  .sheet { max-width: 1340px; margin: 0 auto; }
+  h1 { font-family: var(--font-display); font-size: 30px; margin: 0 0 6px; letter-spacing: -0.01em; }
+  .lead { color: var(--ink-secondary); margin: 0 0 6px; max-width: 760px; font-size: 15px; line-height: 1.5; }
+  .how { color: var(--ink-secondary); margin: 0 0 28px; font-size: 13px; }
+
+  .option { background: var(--surface); border: 1px solid var(--border-soft); border-radius: var(--radius-panel); padding: 28px; margin-bottom: 24px; }
+  .option-head { display: flex; align-items: baseline; gap: 12px; margin-bottom: 4px; }
+  .letter { font-family: var(--font-mono); color: var(--accent); font-size: 14px; font-weight: 500; }
+  .name { font-family: var(--font-display); font-size: 22px; margin: 0; }
+  .pick { font-size: 12px; font-weight: 600; color: var(--accent-dark); background: var(--progress-tint); padding: 2px 8px; border-radius: 10px; }
+  .why { color: var(--ink-secondary); margin: 0 0 6px; max-width: 760px; font-size: 14px; line-height: 1.5; }
+  .sr { color: var(--ink-secondary); margin: 0 0 20px; font-size: 13px; }
+  .sr code { color: var(--ink); }
+  .stage { display: flex; flex-wrap: wrap; gap: 24px; align-items: flex-start; }
+  .stage > div { min-width: 0; max-width: 100%; }
+  .caption { font-family: var(--font-mono); font-size: 12px; color: var(--ink-placeholder); margin: 0 0 8px; }
+
+  /* The editor as it opens beside a card: 420 wide. */
+  .mock-panel { width: 420px; max-width: 100%; background: var(--surface-soft); border: 1px solid var(--border-soft); border-radius: var(--radius-panel); box-shadow: 0 16px 40px rgba(24, 25, 28, 0.12); overflow: hidden; }
+  .mock-panel .panel-body { overflow: visible; }
+  .mock-draft { width: 360px; max-width: 100%; }
+  .mock-draft .inbox-item { border-radius: 14px; }
+
+  /* ---------- A. Switches ---------- */
+  .a-list { background: var(--surface); border: 1px solid var(--border-soft); border-radius: var(--radius-card); }
+  .a-row { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 12px; min-height: 52px; padding: 8px 14px; font-size: 14px; color: var(--ink); cursor: pointer; }
+  .a-row + .a-row { border-top: 1px solid var(--border-soft); }
+  .a-sub { display: block; margin-top: 2px; font-size: 13px; line-height: 1.4; color: var(--ink-secondary); }
+  .a-draft { background: transparent; border: none; }
+  .a-draft .a-row { padding: 0; min-height: 44px; }
+
+  /* ---------- B. The card's pill and chip, as buttons ---------- */
+  .b-chips { display: flex; flex-wrap: wrap; gap: 8px; }
+  .b-chip { appearance: none; display: inline-flex; align-items: center; gap: 7px; min-height: 44px; padding: 0 16px 0 13px; border: 1.5px dashed #8C877D; border-radius: 22px; background: transparent; color: var(--ink-secondary); font: inherit; font-size: 14px; font-weight: 500; cursor: pointer; }
+  .b-chip:hover { background: var(--surface); color: var(--ink); }
+  .b-chip:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  .b-chip .b-on { display: none; }
+  .b-chip[aria-pressed="true"] .b-off { display: none; }
+  .b-chip[aria-pressed="true"] .b-on { display: inline; }
+  .b-chip.is-progress[aria-pressed="true"] { border: 1.5px solid var(--progress-tint); background: var(--progress-tint); color: var(--accent-dark); }
+  .b-chip.is-hard[aria-pressed="true"] { border: 1.5px solid var(--hard-outline); background: var(--surface); color: var(--ink-secondary); }
+  .b-chip.is-hard.is-due[aria-pressed="true"] { border-color: var(--hard-tint); background: var(--hard-tint); color: var(--hard-ink); font-weight: 600; }
+  .b-note { margin: 2px 0 0; font-size: 13px; line-height: 1.4; color: var(--ink-secondary); }
+
+  /* ---------- C. Two choices, both named ---------- */
+  .c-lines { display: flex; flex-direction: column; gap: 10px; }
+  .c-line { display: grid; grid-template-columns: 64px minmax(0, 1fr); align-items: center; gap: 12px; border: none; margin: 0; padding: 0; min-width: 0; }
+  .c-line legend { float: left; padding: 0; font-size: 12px; font-weight: 600; color: var(--ink-secondary); }
+  .c-seg { display: flex; gap: 2px; padding: 2px; background: #E8E5DD; border-radius: var(--radius-card); }
+  .c-seg label { flex: 1 1 0; min-width: 0; position: relative; display: flex; align-items: center; justify-content: center; gap: 6px; min-height: 44px; padding: 0 8px; border-radius: 9px; font-size: 14px; color: var(--ink-date); cursor: pointer; white-space: nowrap; }
+  .c-seg input { position: absolute; opacity: 0; width: 1px; height: 1px; }
+  .c-seg label:has(input:checked) { background: var(--surface); color: var(--ink); font-weight: 600; box-shadow: 0 1px 2px rgba(24, 25, 28, 0.08); }
+  .c-seg label:has(input:focus-visible) { outline: 2px solid var(--accent); outline-offset: 1px; }
+  .c-note { margin: -2px 0 0 76px; font-size: 13px; line-height: 1.4; color: var(--ink-secondary); }
+
+  /* ---------- D. Two tiles ---------- */
+  .d-tiles { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+  .d-tile { position: relative; display: flex; flex-direction: column; gap: 4px; min-height: 44px; padding: 12px 40px 12px 14px; background: var(--surface); border: 1px solid var(--field-border); border-radius: var(--radius-card); cursor: pointer; }
+  .d-tile input { position: absolute; opacity: 0; width: 1px; height: 1px; }
+  .d-title { display: flex; align-items: center; gap: 7px; font-size: 14px; font-weight: 600; color: var(--ink); }
+  .d-desc { font-size: 12.5px; line-height: 1.4; color: var(--ink-secondary); }
+  .d-box { position: absolute; top: 12px; right: 12px; width: 20px; height: 20px; border: 1.5px solid #8C877D; border-radius: 6px; background: var(--surface); display: flex; align-items: center; justify-content: center; color: #FFFFFF; }
+  .d-box svg { display: none; }
+  .d-tile:has(input:checked) { border-color: var(--accent); box-shadow: inset 0 0 0 1px var(--accent); }
+  .d-tile:has(input:checked) .d-box { background: var(--accent); border-color: var(--accent); }
+  .d-tile:has(input:checked) .d-box svg { display: block; }
+  .d-tile:has(input:focus-visible) { outline: 2px solid var(--accent); outline-offset: 2px; }
+  .d-draft .d-tiles { grid-template-columns: minmax(0, 1fr); }
+
+  /* ---------- The cards, as they are today ---------- */
+  .cards-row { display: grid; grid-template-columns: repeat(3, minmax(0, 280px)); gap: 16px; }
+  .cards-row .card { cursor: default; }
+
+  @media (max-width: 600px) {
+    body { padding: 20px 16px; }
+    .option { padding: 18px 16px; }
+    h1 { font-size: 24px; }
+    .cards-row { grid-template-columns: minmax(0, 1fr); }
+  }
+  @media (max-width: 420px) {
+    .d-tiles { grid-template-columns: minmax(0, 1fr); }
+    .mock-panel .panel-body { padding: 16px; }
+    .mock-panel .panel-head, .mock-panel .panel-foot { padding-left: 16px; padding-right: 16px; }
+  }
+</style>
+</head>
+<body>
+<div class="sheet">
+  <h1>Horizon: four looks for the ticks</h1>
+  <p class="lead">In progress and Hard deadline, as they'd look in the card editor (drawn at its real width beside a card, 420 pixels) and in an Inbox draft. Each is shown off and on. Today they're two plain checkboxes.</p>
+  <p class="how">Everything here works: click, tap, Tab to it and press Space. In look B, change the Due date to see the chip turn orange and back.</p>
+
+  <section class="option" data-option="A">
+    <div class="option-head"><span class="letter">A</span><h2 class="name">Switches</h2></div>
+    <p class="why">Like Settings' Fold long zones: a row each, the name and its note on the left, the switch on the right, in one small card. The safest choice: a control you already know, so Settings and the editor speak the same language.</p>
+    <p class="sr">A screen reader hears <code>In progress, switch, off</code>.</p>
+    <div class="stage"></div>
+  </section>
+
+  <section class="option" data-option="B">
+    <div class="option-head"><span class="letter">B</span><h2 class="name">The card's own pill and chip, as buttons</h2><span class="pick">My recommendation</span></div>
+    <p class="why">Off: a dashed outline with a plus. On: exactly what the card will wear, the blue pill with its half circle, the Hard deadline chip with a check. The editor opens beside the card, so you see one set of marks in both places. The chip turns orange only when the Due date is today or past, as on the card (question 3 in PLAN.md: yes, or always gray here?).</p>
+    <p class="sr">A screen reader hears <code>In progress, toggle button, pressed</code>.</p>
+    <div class="stage"></div>
+  </section>
+
+  <section class="option" data-option="C">
+    <div class="option-head"><span class="letter">C</span><h2 class="name">Two choices, both named</h2></div>
+    <p class="why">Status: Not started or In progress. Deadline: Soft or Hard. The most honest about what a card holds (every deadline is soft or hard; "soft" just never shows today). It borrows the look of Settings' tabs, which is its risk: it could read as tabs. The wordiest of the four.</p>
+    <p class="sr">A screen reader hears <code>Deadline, Hard, radio button, selected, 2 of 2</code>.</p>
+    <div class="stage"></div>
+  </section>
+
+  <section class="option" data-option="D">
+    <div class="option-head"><span class="letter">D</span><h2 class="name">Two tiles, side by side</h2></div>
+    <p class="why">Each a small box with an icon, its name, and a line on what it does, and a check in the corner when on (the border turns blue too). The roomiest, and the only one that explains In progress. In an Inbox draft, and on a narrow phone, the tiles stack.</p>
+    <p class="sr">A screen reader hears <code>In progress, checkbox, checked</code>, then the line under it.</p>
+    <div class="stage"></div>
+  </section>
+
+  <section class="option">
+    <div class="option-head"><span class="letter">?</span><h2 class="name">The cards, as they are today</h2></div>
+    <p class="why">Question 2: do these change too? My recommendation is no: they match the mockup and already pass the contrast and color-alone checks. If something about them bothers you, say what and I'll draft that next.</p>
+    <div class="cards-row" aria-label="Three cards as they look today">
+      <article class="card" style="--band:#2F7D6B">
+        <p class="card-category">Collection Development</p>
+        <h3 class="card-title">Weekly order: 300s nonfiction</h3>
+        <div class="card-meta"><span class="card-date">Fri, Nov 20</span><span class="card-progress"><svg width="10" height="10" viewBox="0 0 10 10" aria-hidden="true"><circle cx="5" cy="5" r="4" fill="none" stroke="currentColor" stroke-width="1.5"></circle><path d="M5 1 A4 4 0 0 1 5 9 Z" fill="currentColor"></path></svg>In progress</span></div>
+      </article>
+      <article class="card" style="--band:#2F7D6B">
+        <p class="card-category">Collection Development</p>
+        <h3 class="card-title">Holiday materials order: vendor cutoff</h3>
+        <div class="card-meta"><span class="card-date">Fri, Nov 20</span><span class="card-hard is-due">Hard deadline</span></div>
+      </article>
+      <article class="card" style="--band:#6B6F78">
+        <p class="card-category">Admin</p>
+        <h3 class="card-title">Digital resources usage summary</h3>
+        <div class="card-meta"><span class="card-date">Tue, Dec 1</span><span class="card-hard">Hard deadline</span></div>
+      </article>
+    </div>
+  </section>
+</div>
+
+<script>
+  // Builds each look's three examples: the editor off, the editor on, and an
+  // Inbox draft. Only a drawing: nothing is saved anywhere.
+  const pad = (n) => String(n).padStart(2, '0');
+  const iso = (d) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+  const now = new Date();
+  const TODAY = iso(now);
+  const LATER = iso(new Date(now.getFullYear(), now.getMonth(), now.getDate() + 11));
+  const HARD_NOTE = 'A real outside cutoff. It never gets a Let it go button.';
+  const HALF = '<svg width="12" height="12" viewBox="0 0 10 10" aria-hidden="true"><circle cx="5" cy="5" r="4" fill="none" stroke="currentColor" stroke-width="1.5"></circle><path d="M5 1 A4 4 0 0 1 5 9 Z" fill="currentColor"></path></svg>';
+  const PLUS = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"></path></svg>';
+  const CHECK = (s = 14) => `<svg width="${s}" height="${s}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"></path></svg>`;
+  const FLAG = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 21V4"></path><path d="M5 4h11l-2 4 2 4H5"></path></svg>';
+  let uid = 0;
+
+  function ticks(option, on, { draft = false } = {}) {
+    const id = `t${++uid}`;
+    const p = on ? ' checked' : '';
+    if (option === 'A') {
+      const progress = draft ? '' : `<label class="a-row"><span>In progress</span><input type="checkbox" role="switch" class="settings-switch"${p}></label>`;
+      return `<div class="a-list${draft ? ' a-draft' : ''}">${progress}
+        <label class="a-row"><span>Hard deadline${draft ? '' : `<span class="a-sub" id="${id}-n">${HARD_NOTE}</span>`}</span><input type="checkbox" role="switch" class="settings-switch"${p}${draft ? '' : ` aria-describedby="${id}-n"`}></label></div>`;
+    }
+    if (option === 'B') {
+      const pressed = on ? 'true' : 'false';
+      const progress = draft ? '' : `<button type="button" class="b-chip is-progress" aria-pressed="${pressed}"><span class="b-off">${PLUS}</span><span class="b-on">${HALF}</span>In progress</button>`;
+      return `<div class="b-chips">${progress}<button type="button" class="b-chip is-hard" aria-pressed="${pressed}"${draft ? '' : ` aria-describedby="${id}-n"`}><span class="b-off">${PLUS}</span><span class="b-on">${CHECK()}</span>Hard deadline</button></div>${draft ? '' : `<p class="b-note" id="${id}-n">${HARD_NOTE}</p>`}`;
+    }
+    if (option === 'C') {
+      const seg = (legend, a, b) => `<fieldset class="c-line"><legend>${legend}</legend><div class="c-seg">
+        <label><input type="radio" name="${id}-${legend}"${on ? '' : ' checked'}>${a}</label>
+        <label><input type="radio" name="${id}-${legend}"${on ? ' checked' : ''}>${b}</label></div></fieldset>`;
+      return `<div class="c-lines">${draft ? '' : seg('Status', 'Not started', 'In progress')}${seg('Deadline', 'Soft', 'Hard')}</div>${draft ? '' : `<p class="c-note">${HARD_NOTE}</p>`}`;
+    }
+    // D
+    const tile = (icon, title, desc) => `<label class="d-tile"><input type="checkbox"${p} aria-describedby="${id}-${title.length}">
+      <span class="d-title">${icon}${title}</span><span class="d-desc" id="${id}-${title.length}">${desc}</span>
+      <span class="d-box" aria-hidden="true">${CHECK(13)}</span></label>`;
+    return `<div class="${draft ? 'd-draft' : ''}"><div class="d-tiles">
+      ${draft ? '' : tile(HALF, 'In progress', "You've started it. The card shows a blue pill.")}
+      ${tile(FLAG, 'Hard deadline', 'A real outside cutoff. Never offered Let it go.')}</div></div>`;
+  }
+
+  function editor(option, on) {
+    return `<div><p class="caption">Editor, ${on ? 'both on, due today' : 'both off'}</p>
+    <div class="mock-panel">
+      <div class="panel-head"><h3 class="panel-title">Edit card</h3>
+        <button type="button" class="icon-button" aria-label="Close (drawing only)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"></path></svg></button></div>
+      <div class="panel-body">
+        <label class="field">Title<input type="text" class="field-input field-title" value="Holiday materials order: vendor cutoff"></label>
+        <div class="field-row field-row-time">
+          <div class="field"><span>Due</span><div class="field-due"><input type="date" class="field-input field-date" value="${on ? TODAY : LATER}" aria-label="Due"><button type="button" class="button button-small">No date</button></div></div>
+          <label class="field">Repeats<select class="field-input"><option>Doesn't repeat</option></select></label>
+        </div>
+        <div class="field-row">
+          <label class="field">Category<select class="field-input"><option>Collection Development</option></select></label>
+          <label class="field">Project<select class="field-input"><option>No project</option></select></label>
+        </div>
+        ${ticks(option, on)}
+      </div>
+      <div class="panel-foot">
+        <button type="button" class="button">${CHECK(16)} Mark done</button>
+        <div class="panel-foot-end"><button type="button" class="button">Cancel</button><button type="button" class="button button-primary">Save</button></div>
+      </div>
+    </div></div>`;
+  }
+
+  function draft(option) {
+    return `<div class="mock-draft"><p class="caption">Inbox draft, on, due today</p>
+      <div class="inbox-item">
+        <label class="field">Title<input type="text" class="field-input" value="Book club kits: return by Friday"></label>
+        <div class="field-row">
+          <label class="field">Due<input type="date" class="field-input field-date" value="${TODAY}"></label>
+          <label class="field">Category<select class="field-input"><option>Programs</option></select></label>
+        </div>
+        ${ticks(option, true, { draft: true })}
+        <div class="inbox-foot" style="display:flex;justify-content:flex-end;gap:8px"><button type="button" class="button">Discard</button><button type="button" class="button button-primary">Add to board</button></div>
+      </div></div>`;
+  }
+
+  document.querySelectorAll('.option[data-option]').forEach((section) => {
+    const o = section.dataset.option;
+    section.querySelector('.stage').innerHTML = editor(o, false) + editor(o, true) + draft(o);
+  });
+
+  // B: the buttons toggle, and the Hard deadline chip is orange only while
+  // its box's Due date is today or past.
+  function refreshDue(box) {
+    const due = box.querySelector('input[type="date"]');
+    const chip = box.querySelector('.b-chip.is-hard');
+    if (!chip) return;
+    chip.classList.toggle('is-due', Boolean(due && due.value && due.value <= TODAY));
+  }
+  document.querySelectorAll('[data-option="B"] .mock-panel, [data-option="B"] .inbox-item').forEach((box) => {
+    refreshDue(box);
+    box.addEventListener('input', () => refreshDue(box));
+    box.addEventListener('change', () => refreshDue(box));
+  });
+  document.addEventListener('click', (e) => {
+    const chip = e.target.closest('.b-chip');
+    if (chip) chip.setAttribute('aria-pressed', chip.getAttribute('aria-pressed') === 'true' ? 'false' : 'true');
+    // "No date" clears the date, as in the editor.
+    const nodate = e.target.closest('.button-small');
+    if (nodate) {
+      const box = nodate.closest('.mock-panel');
+      box.querySelector('input[type="date"]').value = '';
+      refreshDue(box);
+    }
+  });
+</script>
+</body>
+</html>

@@ -359,12 +359,15 @@ into `main` on 2026-11-20 (a fast-forward: nothing was rewritten).
 was switched to the side branch for testing, point it back at `main`
 (Settings > Pages).
 
-**Next: the card ticks revision, in a fresh session** (item 1 under
-"Queued after categories"). Drafts first: a preview sheet of a few
-looks for the In progress and Hard deadline ticks, in `design/`, for
-you to choose from before anything on the site changes. Its open
-question: whether the card's pill and chip change too, or only the
-editor's checkboxes.
+**Card ticks revision: drafts made, waiting on your choice**
+(2026-11-20), on `claude/admiring-brahmagupta-xzeukh`. A preview sheet
+of four looks for the editor's In progress and Hard deadline ticks,
+`design/ticks-options/preview.html` (and `preview.png`). Nothing on the
+site has changed. See "Card ticks revision" below for the four looks,
+my recommendation (B), and five questions.
+
+**Next: you choose a look and answer the five questions in "Card ticks
+revision"; then I change the site and stop so you can test.**
 
 **The queue after that, in order** (asked 2026-11-19; see "Queued after
 categories" below): (1) a small revision to cards: how the In progress
@@ -387,6 +390,136 @@ a mark for pasted-text cards, SPEC's new `pasted_text` source, and the
 tuning slice (all under "Slice 3c", Proposals). Still parked: Done
 privacy and the Firebase console. (One approved list is settled: see
 "Slice 3a", question 3.)
+
+## Card ticks revision (drafts made, waiting on your choice)
+
+Started 2026-11-20 on `claude/admiring-brahmagupta-xzeukh`, from `main`
+after "Categories you set yourself" merged. Item 1 under "Queued after
+categories". **Nothing on the site changes until you choose.**
+
+### What they are today
+
+- **The card editor:** two plain checkboxes, "In progress" and "Hard
+  deadline", with the note "A real outside cutoff. It never gets a Let it
+  go button." under the second. (They sit one above the other, not side by
+  side: `.checks` is a column.) `index.html` (`editor-progress`,
+  `editor-hard`), `css/horizon.css` (`.checks`, `.check`, `.check-note`),
+  read by `js/editor.js` as `.checked`.
+- **An Inbox draft:** one Hard deadline checkbox (`js/inbox.js`, built in
+  code, also read as `.checked`).
+- **The cards:** a blue "In progress" pill with a half-filled circle, and
+  a "Hard deadline" chip, orange when due today or overdue, a gray outline
+  otherwise (`js/board.js`, `.card-progress`, `.card-hard`). These match
+  the mockup (`design/horizon-board.png`).
+- **"Move the series too"** (only when a repeating card's date changes)
+  uses the same `.check` style.
+
+### The plan
+
+1. **Drafts first (this session, now):** a preview sheet,
+   `design/ticks-options/preview.html`, with a picture of it,
+   `preview.png` (and `preview-phone.png` at phone width). The sheet is
+   live: every control on it can be clicked, tabbed to, and toggled with
+   the Space bar, so you can feel them, not just see them. Each option is
+   drawn at the editor's real width (420 pixels, beside the card), shown
+   off and on, with the same option in an Inbox draft. Nothing else in the
+   repo changes.
+2. **You choose** (and answer the questions below).
+3. **Then the site changes,** in this same session if you like, or the
+   next: `index.html`, `css/horizon.css`, `js/inbox.js`, and `js/editor.js`
+   only if the chosen look needs it. Then I stop so you can test.
+
+### The four looks on the sheet
+
+- **A. Switches,** like Settings' Fold long zones: a row each, the name
+  (and the note) on the left, the switch on the right. The safest: it
+  repeats a control you already know, and Settings and the editor would
+  speak the same language. Screen readers hear "In progress, switch, off".
+- **B. The card's own pill and chip, as buttons.** Off: a dashed outline
+  with a plus, "In progress". On: exactly what the card will show, the
+  blue pill with its half circle, the Hard deadline chip with a check. What
+  you tick is what the card wears, and the editor opens right beside the
+  card, so you see one vocabulary in both places. One catch, flagged
+  below (question 3). Screen readers hear "In progress, toggle button,
+  pressed".
+- **C. Two choices, both named:** "Status: Not started | In progress" and
+  "Deadline: Soft | Hard", as two segmented controls. The most honest
+  about what's stored (SPEC calls a deadline soft or hard; "soft" never
+  appears anywhere today). The wordiest of the four.
+- **D. Two tiles, side by side:** each a small bordered box with an icon,
+  its name, and one line saying what it does ("Shows a blue pill on the
+  card"; "A real outside cutoff. Never offered Let it go."), with a check
+  in the corner when on. The roomiest; on a phone they stack.
+
+**My recommendation: B,** because it teaches the card's marks where you
+set them. If question 3's answer is no, B still works with the chip in
+gray while you edit, and I'd then call A and B a close race.
+
+### Questions for you
+
+1. **Which look:** A, B, C, D, or a mix (say what you'd take from which)?
+2. **Do the card's pill and chip change too?** My recommendation: **no.**
+   They match the mockup, the "In progress" pill is named in SPEC, and
+   they already pass the contrast and color-alone checks; the editor's
+   bare checkboxes are what look unfinished. The sheet shows today's cards
+   under the options so you can judge them together. If you do want them
+   changed, say what bothers you about them and I'll draft that next.
+3. **Only for B: orange in the editor?** With B, the Hard deadline chip in
+   the editor would turn orange when the editor's own due date is today or
+   past, and back to gray when you move the date out, previewing exactly
+   the chip the card will wear. I read that as inside SPEC's rule (it *is*
+   the Hard deadline chip, on a hard deadline due today or overdue), but
+   the rule is yours. Yes, or keep it gray in the editor always?
+4. **The Inbox draft follows the editor's look?** My recommendation: yes,
+   one look for the same choice everywhere.
+5. **"Move the series too" stays a plain checkbox?** My recommendation:
+   yes. It's a one-time choice about this save, not something the card
+   is, and a switch or chip would suggest it lasts.
+
+### Rules the drafts keep
+
+- Orange only for a hard deadline due today or overdue (B, if you say
+  yes to question 3; every other option has no orange).
+- Never color alone: every on state also changes shape or icon (the
+  switch's knob moves; B's dashed plus becomes a solid chip with its
+  icon; C's selected segment is raised and bold; D's corner check).
+- 44-pixel touch targets, a visible focus ring, real inputs or buttons
+  with labels, 4.5:1 text contrast.
+- Blue is the accent for on states; nothing new enters the palette.
+
+### Files (this session)
+
+`design/ticks-options/preview.html` (new; it borrows the site's own
+`css/horizon.css` for the fields around the ticks, so the context looks
+right), `preview.png`, `preview-phone.png`, and this section.
+
+How to look: `preview.png` is the whole sheet at desktop width;
+`preview-phone.png` is look B at phone width. To click the controls,
+open `preview.html` from a copy of the repo (it needs `css/` beside it,
+so GitHub's file view won't show it styled).
+
+### What I checked here (2026-11-20)
+
+Headless Chrome: no sideways scroll at 1440, 390, 360, or 320 pixels
+wide (one fix along the way: the drawings were 453 wide on a phone);
+the fonts load; each look's controls change on a click, and B's on a
+Space press too; B's Hard deadline chip turns orange when its Due date
+is set to today and back to gray when No date clears it. No console
+errors.
+
+### Carried over (not part of this revision)
+
+Open proposals, unchanged: Undo for Let it go and Mark done on the
+board, Let it go in the editor, triage per device instead of per
+account, pinning zone headers on long columns, saving the sample card
+scripts in `tools/`, a Settings gear on the What you did page; from 3a,
+a total daily cap across everyone and SPEC's line about the script's
+allowlist; from 3b, SPEC step 4's JSON shape and paste on every page;
+from 3c, Haiku on the project page's quick add, Alt+Enter for the old
+Enter, a mark for pasted-text cards, and SPEC's `pasted_text` source.
+Parked: Done privacy and the Firebase console. Checklists on cards
+(item 2 in the queue) and the tuning slice (its six questions) each get
+their own session.
 
 ## Categories you set yourself (confirmed)
 
