@@ -359,27 +359,30 @@ into `main` on 2026-11-20 (a fast-forward: nothing was rewritten).
 was switched to the side branch for testing, point it back at `main`
 (Settings > Pages).
 
-**Card ticks revision: built, awaiting test** (2026-11-20), on
+**Card ticks revision: done and confirmed** (2026-11-20), on
 `claude/admiring-brahmagupta-xzeukh`. You chose look B from the preview
 sheet (`design/ticks-options/preview.png`): the editor's and Inbox
 draft's In progress and Hard deadline ticks are now the card's own pill
 and chip, a dashed outline with a plus when off, orange in the editor
 while Due is today or past, with a short explanation on hover. "Move
 the series too" stays a checkbox, in its own box. The cards are
-unchanged. See "Card ticks revision" below. **Committed and pushed
-for testing** (marked "awaiting test"); it is not confirmed until you
-say so.
+unchanged. See "Card ticks revision" below.
 
-**Next: you test the card ticks revision (the list under "Card ticks
-revision", How to test).** Once it's confirmed and merged, checklists
-on cards (item 2 under "Queued after categories") in a fresh session.
+**Branch:** built on `claude/admiring-brahmagupta-xzeukh` and merged
+into `main` on 2026-11-20 (a fast-forward: nothing was rewritten).
+`main` has Phases 1, 2, and 3, your own categories, and the new ticks.
+If GitHub Pages was switched to the side branch for testing, point it
+back at `main` (Settings > Pages).
+
+**Next: checklists on cards (sub-tasks), in a fresh session** (item 2
+under "Queued after categories"). Plan first and settle its questions
+with you before building.
 
 **The queue after that, in order** (asked 2026-11-19; see "Queued after
-categories" below): (1) a small revision to cards: how the In progress
-and Hard deadline ticks look, drafted for your approval before any of it
-is built; (2) checklists on cards (sub-tasks); then (3) the tuning slice
-(its six questions still open; "Tuning slice" below), which you want to
-come back to later, not next. Each in its own session.
+categories" below): (1) the card ticks revision, done; (2) checklists
+on cards (sub-tasks), next; then (3) the tuning slice (its six
+questions still open; "Tuning slice" below), which you want to come
+back to later, not next. Each in its own session.
 
 Open proposals carried over: Undo for Let it go and Mark done on the board
 (the Done view's "Put back on the board" covers getting a card back), Let
@@ -396,7 +399,7 @@ tuning slice (all under "Slice 3c", Proposals). Still parked: Done
 privacy and the Firebase console. (One approved list is settled: see
 "Slice 3a", question 3.)
 
-## Card ticks revision (built, awaiting test)
+## Card ticks revision (confirmed)
 
 Started 2026-11-20 on `claude/admiring-brahmagupta-xzeukh`, from `main`
 after "Categories you set yourself" merged. Item 1 under "Queued after
@@ -936,7 +939,7 @@ Each gets its own session, in this order, after "Categories you set
 yourself" and before the tuning slice. Each session plans first and
 settles its questions with you.
 
-### 1. A small revision to cards: the In progress and Hard deadline ticks
+### 1. A small revision to cards: the In progress and Hard deadline ticks (done 2026-11-20; see "Card ticks revision")
 
 You want them to look different. **Drafts first, for your approval,
 before anything is built:** the session makes a few visual options (a
