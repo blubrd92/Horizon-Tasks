@@ -586,8 +586,21 @@ worth listing, and get no list.
   notes sent"), plausibly because it's now written before the summary;
   if it recurs, one line limiting the timeline to moments you act on or
   wait for.
-- **Still untested:** M2 (cut off), T2 and S5 (one ask, no list), and
-  T1, T5, S2 (dates after the reorder).
+- **M2, the phone cut off mid-list:** steps 1 to 4 and step 5 as far as
+  the screen showed it ("put the sign up"); nothing from the hidden steps
+  6 and 7 or the delivery banner. "My desk" became "Devin's desk". Need
+  to know caught the key's new spot. Pass.
+- **T2 and S5, one ask each:** no checklist, a single-action title, the
+  date inferred and flagged. Pass. (T2's "before Wednesday" landed on
+  Wednesday; the flag covers it.)
+- **Padding in the notes, seen twice** (M4, S5): the timeline includes
+  when the message was sent, and Need to know repeats the summary.
+  Candidate fix, two lines: the timeline holds only moments you act on
+  or wait for, never when the message was sent; Need to know never
+  repeats the summary. Polish, your call.
+- **Verdict so far:** every test put the right task, only your steps,
+  and the right date in front of you; nothing invented. The slips were
+  in the notes and titles, which you review anyway.
 - **Still a candidate, only if it recurs:** the summary adds no
   explanation the message doesn't give, and mentions other tasks, not
   every other item.
