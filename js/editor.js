@@ -4,6 +4,7 @@
 // collects what changed; app.js decides how changes are saved.
 
 import { activeOf } from './categories.js';
+import { todayISO } from './dates.js';
 import { PROJECT_STATUS, STATUS } from './model.js';
 import { NEW_PROJECT, nameOrder } from './projects.js';
 import { placeBeside } from './place.js';
@@ -33,6 +34,7 @@ export function setupEditor({ onSave, onDone, onCreate, onClose }) {
   const category = document.getElementById('editor-category');
   const progress = document.getElementById('editor-progress');
   const hard = document.getElementById('editor-hard');
+  const hardTick = document.getElementById('editor-hard-tick');
   const repeat = document.getElementById('editor-repeat');
   const repeatNote = document.getElementById('editor-repeat-note');
   const moveBlock = document.getElementById('editor-move');
@@ -191,8 +193,12 @@ export function setupEditor({ onSave, onDone, onCreate, onClose }) {
     newProjectName.removeAttribute('aria-invalid');
   }
 
+  // Called whenever the date changes: the Someday note, and the Hard
+  // deadline chip, orange (when it's on) only while Due is today or past,
+  // as on the card.
   function updateSomedayNote() {
     someday.hidden = Boolean(due.value);
+    hardTick.classList.toggle('is-due', Boolean(due.value) && due.value <= todayISO());
   }
 
   // The rhythm in words under Repeats, and "Move the series too" when a

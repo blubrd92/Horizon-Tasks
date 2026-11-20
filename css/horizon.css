@@ -1921,11 +1921,161 @@ body.is-dragging .zones { align-items: stretch; }
 .field-error { color: var(--overdue-ink); }
 .field-note { color: var(--ink-secondary); }
 
-.checks {
+/* The editor's and an Inbox draft's ticks: In progress and Hard deadline
+   drawn as the card's own pill and chip. Off, a dashed outline with a
+   plus; on, what the card wears, with its icon (so on and off differ in
+   shape, not only color). The checkbox underneath is hidden but real: it
+   takes the focus and the Space bar, and screen readers hear it. */
+.ticks {
+  position: relative;
   display: flex;
-  flex-direction: column;
-  gap: 4px;
+  flex-wrap: wrap;
+  gap: 8px;
 }
+
+.tick { display: inline-flex; }
+
+.tick-input {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 1px;
+  height: 1px;
+  margin: 0;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.tick-face {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  min-height: 44px;
+  padding: 0 16px 0 13px;
+  border: 1.5px dashed #8C877D; /* 3.4:1, as the Settings switch's off track */
+  border-radius: 22px;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--ink-secondary);
+  cursor: pointer;
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+.tick-face:hover { background: var(--surface); color: var(--ink); }
+
+.tick-face svg { flex: none; }
+.tick-on { display: none; }
+.tick-input:checked + .tick-face .tick-off { display: none; }
+.tick-input:checked + .tick-face .tick-on { display: block; }
+.tick-input:focus-visible + .tick-face { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+.tick-progress .tick-input:checked + .tick-face {
+  border-style: solid;
+  border-color: var(--progress-tint);
+  background: var(--progress-tint);
+  color: var(--accent-dark);
+}
+
+.tick-hard .tick-input:checked + .tick-face {
+  border-style: solid;
+  border-color: var(--hard-outline);
+  background: var(--surface);
+  color: var(--ink-secondary);
+}
+
+/* Orange only as on the card: a hard deadline due today or already past. */
+.tick-hard.is-due .tick-input:checked + .tick-face {
+  border-color: var(--hard-tint);
+  background: var(--hard-tint);
+  color: var(--hard-ink);
+  font-weight: 600;
+}
+
+/* What a tick means, in a small box above the row: after a moment's rest
+   of the pointer (never on a touch screen, which has no hover), or at once
+   when the keyboard reaches it. The same box as notes on hover. Escape
+   closes the editor or Inbox, and the box with it. */
+.tick-tip {
+  position: absolute;
+  left: 0;
+  bottom: calc(100% + 6px);
+  z-index: 3;
+  width: max-content;
+  max-width: min(100%, 300px);
+  padding: 8px 11px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-card);
+  box-shadow: 0 8px 24px rgba(24, 25, 28, 0.14);
+  font-size: 13px;
+  font-weight: 400;
+  line-height: 1.4;
+  color: var(--ink);
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transition: opacity 120ms ease-out, visibility 0s linear 120ms;
+}
+
+@media (hover: hover) {
+  .tick-face:hover ~ .tick-tip {
+    opacity: 1;
+    visibility: visible;
+    transition-delay: 450ms, 450ms;
+  }
+}
+
+.tick-input:focus-visible ~ .tick-tip {
+  opacity: 1;
+  visibility: visible;
+  transition-delay: 0s, 0s;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tick-tip { transition: none; }
+}
+
+.tick-note {
+  margin: -8px 0 0;
+  font-size: 13px;
+  line-height: 1.4;
+  color: var(--ink-secondary);
+}
+
+/* "Move the series too": a plain checkbox (a choice about this one save,
+   not something the card is), set in its own small box with a drawn
+   checkbox that matches the panel. */
+.check-card {
+  padding: 4px 14px 12px;
+  background: var(--surface);
+  border: 1px solid var(--border-soft);
+  border-radius: var(--radius-card);
+}
+
+.check-card .check { font-weight: 500; }
+
+.check-card .check input {
+  appearance: none;
+  -webkit-appearance: none;
+  flex: none;
+  width: 20px;
+  height: 20px;
+  border: 1.5px solid #8C877D;
+  border-radius: 6px;
+  background: var(--surface) center / 14px 14px no-repeat;
+  cursor: pointer;
+}
+
+.check-card .check input:checked {
+  border-color: var(--accent);
+  background-color: var(--accent);
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23FFFFFF' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M5 12.5l4.5 4.5L19 7.5'/%3E%3C/svg%3E");
+}
+
+.check-card .check input:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+.check-card .check-note { margin-left: 30px; }
 
 .check-block {
   display: flex;
@@ -2974,7 +3124,7 @@ a.link-row:focus-visible { outline-offset: -2px; }
 .inbox-note.is-explicit { color: #1E5A4C; background: #E2F0EC; }
 .inbox-note[hidden] { display: none; }
 
-.inbox-item .check { margin-top: -6px; font-size: 14px; color: var(--ink); }
+.inbox-item .ticks { margin-top: -4px; }
 
 /* A draft's notes: a box you can edit (3c). As tall as its lines, up to
    ten (inbox.js), then it scrolls. */

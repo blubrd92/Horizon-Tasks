@@ -22,7 +22,7 @@
 
 import { activeOf } from './categories.js';
 import { canRetry, costLine } from './backend.js';
-import { isISODate } from './dates.js';
+import { isISODate, todayISO } from './dates.js';
 import { draftNotes, newCard, newDraft } from './model.js';
 import { shrink, splitImages, toBase64 } from './screenshot.js';
 
@@ -39,6 +39,12 @@ const SOURCE_WORDS = {
   pasted_text: { read: 'the text', none: 'No date in the text.', gone: "The pasted text isn't kept, so it's gone after a reload. Check the details against the original if you need to." },
   quick_add: { read: 'what you typed', none: 'No date in what you typed.', gone: '' },
 };
+
+// The Hard deadline tick's face (a plus when off, a check when on) and what
+// it means, as in the editor (index.html, "The ticks").
+const TICK_PLUS = '<svg class="tick-off" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"></path></svg>';
+const TICK_CHECK = '<svg class="tick-on" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"></path></svg>';
+const HARD_TIP = "A date someone else set. The chip turns orange when it's due today or late, and it never gets a Let it go button.";
 
 const finePointer = window.matchMedia('(any-pointer: fine)');
 const isMac = /Mac|iPhone|iPad/.test(navigator.platform || navigator.userAgent);
@@ -577,11 +583,29 @@ export function setupInbox({ read, saveDraft, changeDraft, discardDraft, addToBo
     note.id = `inbox-note-${n}`;
     due.setAttribute('aria-describedby', note.id);
 
-    const hardLabel = document.createElement('label');
-    hardLabel.className = 'check';
+    // Hard deadline, drawn as the card's chip, as in the editor (index.html,
+    // "The ticks"): a real checkbox, its face, and what it means on hover.
+    const ticks = document.createElement('div');
+    ticks.className = 'ticks';
+    const hardTick = document.createElement('span');
+    hardTick.className = 'tick tick-hard';
     const hard = document.createElement('input');
     hard.type = 'checkbox';
-    hardLabel.append(hard, 'Hard deadline');
+    hard.className = 'tick-input';
+    hard.id = `inbox-hard-${n}`;
+    const hardFace = document.createElement('label');
+    hardFace.className = 'tick-face';
+    hardFace.htmlFor = hard.id;
+    hardFace.innerHTML = `${TICK_PLUS}${TICK_CHECK}`;
+    hardFace.append('Hard deadline');
+    const hardTip = document.createElement('span');
+    hardTip.className = 'tick-tip';
+    hardTip.id = `inbox-hard-tip-${n}`;
+    hardTip.setAttribute('role', 'tooltip');
+    hardTip.textContent = HARD_TIP;
+    hard.setAttribute('aria-describedby', hardTip.id);
+    hardTick.append(hard, hardFace, hardTip);
+    ticks.append(hardTick);
 
     // The notes: a box you can edit, saving when you leave it (3c).
     const notesField = document.createElement('label');
@@ -598,8 +622,8 @@ export function setupInbox({ read, saveDraft, changeDraft, discardDraft, addToBo
     const add = button('Add to board', 'button button-primary');
     foot.append(discard, add);
 
-    el.append(shot, titleField, titleError, row, note, hardLabel, notesField, foot);
-    const entry = { el, id, shot, title, titleError, due, category, note, hard, notes, add, discard, stored: {} };
+    el.append(shot, titleField, titleError, row, note, ticks, notesField, foot);
+    const entry = { el, id, shot, title, titleError, due, category, note, hard, hardTick, notes, add, discard, stored: {} };
 
     // Each field saves when you leave it (or pick from it).
     title.addEventListener('input', () => {
@@ -612,6 +636,7 @@ export function setupInbox({ read, saveDraft, changeDraft, discardDraft, addToBo
     due.addEventListener('change', () => {
       const value = isISODate(due.value) ? due.value : null;
       drawNote(entry);
+      drawHardDue(entry);
       if (value !== entry.stored.dueDate) save(entry, { dueDate: value });
     });
     category.addEventListener('change', () => {
@@ -667,7 +692,15 @@ export function setupInbox({ read, saveDraft, changeDraft, discardDraft, addToBo
       notes: draft.notes,
     };
     drawNote(entry);
+    drawHardDue(entry);
     drawColor(entry);
+  }
+
+  // The Hard deadline chip is orange (when it's on) only while the draft's
+  // date is today or past, as on the card.
+  function drawHardDue(entry) {
+    const due = entry.due.value;
+    entry.hardTick.classList.toggle('is-due', isISODate(due) && due <= todayISO());
   }
 
   function fillCategories(entry, draft) {

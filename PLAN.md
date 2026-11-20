@@ -359,15 +359,20 @@ into `main` on 2026-11-20 (a fast-forward: nothing was rewritten).
 was switched to the side branch for testing, point it back at `main`
 (Settings > Pages).
 
-**Card ticks revision: drafts made, waiting on your choice**
-(2026-11-20), on `claude/admiring-brahmagupta-xzeukh`. A preview sheet
-of four looks for the editor's In progress and Hard deadline ticks,
-`design/ticks-options/preview.html` (and `preview.png`). Nothing on the
-site has changed. See "Card ticks revision" below for the four looks,
-my recommendation (B), and five questions.
+**Card ticks revision: built, awaiting test** (2026-11-20), on
+`claude/admiring-brahmagupta-xzeukh`. You chose look B from the preview
+sheet (`design/ticks-options/preview.png`): the editor's and Inbox
+draft's In progress and Hard deadline ticks are now the card's own pill
+and chip, a dashed outline with a plus when off, orange in the editor
+while Due is today or past, with a short explanation on hover. "Move
+the series too" stays a checkbox, in its own box. The cards are
+unchanged. See "Card ticks revision" below. **Committed and pushed
+for testing** (marked "awaiting test"); it is not confirmed until you
+say so.
 
-**Next: you choose a look and answer the five questions in "Card ticks
-revision"; then I change the site and stop so you can test.**
+**Next: you test the card ticks revision (the list under "Card ticks
+revision", How to test).** Once it's confirmed and merged, checklists
+on cards (item 2 under "Queued after categories") in a fresh session.
 
 **The queue after that, in order** (asked 2026-11-19; see "Queued after
 categories" below): (1) a small revision to cards: how the In progress
@@ -391,7 +396,7 @@ tuning slice (all under "Slice 3c", Proposals). Still parked: Done
 privacy and the Firebase console. (One approved list is settled: see
 "Slice 3a", question 3.)
 
-## Card ticks revision (drafts made, waiting on your choice)
+## Card ticks revision (built, awaiting test)
 
 Started 2026-11-20 on `claude/admiring-brahmagupta-xzeukh`, from `main`
 after "Categories you set yourself" merged. Item 1 under "Queued after
@@ -455,28 +460,101 @@ categories". **Nothing on the site changes until you choose.**
 set them. If question 3's answer is no, B still works with the chip in
 gray while you edit, and I'd then call A and B a close race.
 
-### Questions for you
+### Your answers (2026-11-20)
 
-1. **Which look:** A, B, C, D, or a mix (say what you'd take from which)?
-2. **Do the card's pill and chip change too?** My recommendation: **no.**
-   They match the mockup, the "In progress" pill is named in SPEC, and
-   they already pass the contrast and color-alone checks; the editor's
-   bare checkboxes are what look unfinished. The sheet shows today's cards
-   under the options so you can judge them together. If you do want them
-   changed, say what bothers you about them and I'll draft that next.
-3. **Only for B: orange in the editor?** With B, the Hard deadline chip in
-   the editor would turn orange when the editor's own due date is today or
-   past, and back to gray when you move the date out, previewing exactly
-   the chip the card will wear. I read that as inside SPEC's rule (it *is*
-   the Hard deadline chip, on a hard deadline due today or overdue), but
-   the rule is yours. Yes, or keep it gray in the editor always?
-4. **The Inbox draft follows the editor's look?** My recommendation: yes,
-   one look for the same choice everywhere.
-5. **"Move the series too" stays a plain checkbox?** My recommendation:
-   yes. It's a one-time choice about this save, not something the card
-   is, and a switch or chip would suggest it lasts.
+1. **Look B,** plus something new: **a short explanation on hover** for
+   each tick.
+2. **The card's pill and chip stay as they are.**
+3. **Orange in the editor: yes,** while the editor's Due date is today
+   or past.
+4. **The Inbox draft matches the editor.**
+5. **"Move the series too" stays a checkbox,** but made to look nice.
 
-### Rules the drafts keep
+### What was built
+
+- **The ticks (editor and Inbox draft):** look B. Each is still a real
+  checkbox underneath, hidden, so `editor.js` and `inbox.js` read
+  `.checked` exactly as before and nothing about saving changed. Off: a
+  dashed outline with a plus. On: the card's blue pill with its half
+  circle, or the Hard deadline chip with a check, gray, or orange while
+  Due is today or past (the editor checks whenever the date changes or
+  No date is pressed; the Inbox when a draft's date changes or arrives).
+- **The explanations:** rest the pointer on a tick for about half a
+  second and a small box (the same white box as notes on hover) opens
+  above the row; it goes when the pointer leaves. Tabbing to a tick shows
+  it at once. A touch screen has no hover, so a tap only toggles. Screen
+  readers hear the explanation with the tick. The words:
+  - In progress: "You've started it. The card wears a blue In progress
+    pill."
+  - Hard deadline (editor): "A date someone else set. The chip turns
+    orange when it's due today or late." The note under the row stays:
+    "A real outside cutoff. It never gets a Let it go button."
+  - Hard deadline (Inbox, which has no note under it): the same, plus
+    "and it never gets a Let it go button."
+- **"Move the series too":** in its own small white box with a soft
+  border, a drawn 20-pixel checkbox (blue with a white check when on, as
+  in tile look D), its words in medium weight, and its note lined up
+  under the words.
+- **Cards:** unchanged.
+
+### Decisions I made that your answers didn't cover (change any of them)
+
+- **The hover box sits above the whole row, left-aligned,** rather than
+  pointing at the one chip. It can then never run off the panel's edge on
+  a narrow window. When you rest on Hard deadline, the box opens over the
+  left of the row.
+- **The editor's note under Hard deadline stays,** so the "never Let it
+  go" rule is still seen without hovering. If the hover box makes it feel
+  doubled, say so and it goes (its words would move into the hover box,
+  as in the Inbox).
+- **The preview sheet stays in `design/ticks-options/`** as the record of
+  what was weighed.
+
+### Files
+
+`index.html` (the editor's ticks, and "Move the series too" gets a
+`check-card` class), `css/horizon.css` (the tick styles and the hover
+box replace `.checks`; the new `check-card` look; the Inbox's old
+`.check` spacing rule replaced), `js/editor.js` (orange follows the
+date), `js/inbox.js` (the draft's Hard deadline tick built the same way,
+orange follows the date). Site only: no Apps Script, no Firestore rules.
+
+### What I checked here (the build, 2026-11-20)
+
+Headless Chrome with the real `index.html`, `editor.js`, and `inbox.js`
+(a pretend start instead of Firebase), `?today=2026-11-20`: 28 checks,
+all passing. Off is dashed; a click ticks each; In progress on is the
+blue pill; Hard deadline on is gray with Due a week out, orange on today
+and on a past date, gray again after No date; the hover box waits, then
+shows, only for the tick under the pointer, inside the panel, and goes
+when the pointer leaves; Tab reaches In progress after Project and shows
+its box at once; Space toggles it; screen readers get the explanation
+and the note; reopening a card shows its own ticks; "Move the series
+too" appears on a repeating card's date change and ticks; in the Inbox,
+orange on a draft due today, gray when moved later, a click unticks, the
+dashed outline, the hover box; on a 360-wide touch phone a tap shows no
+hover box and nothing scrolls sideways. No console errors.
+
+### How to test (hard-reload first)
+
+- [ ] Open a card: both ticks show as dashed outlines with a plus (or as
+      the pill and chip, if the card already has them).
+- [ ] Click each: In progress becomes the blue pill; Hard deadline the
+      chip with a check. Save: the card shows what the editor showed.
+- [ ] With Hard deadline on, set Due to today: the chip turns orange.
+      Move the date into next week: gray again.
+- [ ] Rest the pointer on each tick: a short explanation appears above
+      after a moment and goes when you move away.
+- [ ] Tab to the ticks: the explanation shows; Space turns each on and
+      off.
+- [ ] Change a repeating card's date: "Move the series too" sits in its
+      own box with the new checkbox.
+- [ ] In the Inbox, a draft's Hard deadline looks the same, and turns
+      orange when its date is today.
+- [ ] On your phone: tapping a tick turns it on and off, with no
+      explanation box in the way.
+
+### Rules the drafts (and the build) keep
 
 - Orange only for a hard deadline due today or overdue (B, if you say
   yes to question 3; every other option has no orange).
@@ -487,7 +565,7 @@ gray while you edit, and I'd then call A and B a close race.
   with labels, 4.5:1 text contrast.
 - Blue is the accent for on states; nothing new enters the palette.
 
-### Files (this session)
+### Files (the drafts)
 
 `design/ticks-options/preview.html` (new; it borrows the site's own
 `css/horizon.css` for the fields around the ticks, so the context looks
@@ -498,7 +576,7 @@ How to look: `preview.png` is the whole sheet at desktop width;
 open `preview.html` from a copy of the repo (it needs `css/` beside it,
 so GitHub's file view won't show it styled).
 
-### What I checked here (2026-11-20)
+### What I checked here (the drafts, 2026-11-20)
 
 Headless Chrome: no sideways scroll at 1440, 390, 360, or 320 pixels
 wide (one fix along the way: the drawings were 453 wide on a phone);

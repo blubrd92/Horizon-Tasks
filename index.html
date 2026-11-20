@@ -469,7 +469,7 @@
         </div>
         <!-- Only when a repeating card's date is changed: this one, or the
              whole series? -->
-        <div id="editor-move" class="check-block" hidden>
+        <div id="editor-move" class="check-block check-card" hidden>
           <label class="check">
             <input type="checkbox" id="editor-move-series" aria-describedby="editor-move-note">
             Move the series too
@@ -477,19 +477,32 @@
           <p id="editor-move-note" class="check-note"></p>
         </div>
 
-        <div class="checks">
-          <label class="check">
-            <input type="checkbox" id="editor-progress">
-            In progress
-          </label>
-          <div class="check-block">
-            <label class="check">
-              <input type="checkbox" id="editor-hard" aria-describedby="editor-hard-note">
+        <!-- The ticks: the card's own pill and chip. Off, a dashed outline
+             with a plus; on, what the card will wear (the Hard deadline
+             chip orange when Due is today or past; editor.js). Each is a
+             real checkbox underneath. Resting the pointer on one, or tabbing
+             to it, shows what it means. -->
+        <div class="ticks">
+          <span class="tick tick-progress">
+            <input type="checkbox" id="editor-progress" class="tick-input" aria-describedby="editor-progress-tip">
+            <label for="editor-progress" class="tick-face">
+              <svg class="tick-off" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"></path></svg>
+              <svg class="tick-on" width="12" height="12" viewBox="0 0 10 10" aria-hidden="true"><circle cx="5" cy="5" r="4" fill="none" stroke="currentColor" stroke-width="1.5"></circle><path d="M5 1 A4 4 0 0 1 5 9 Z" fill="currentColor"></path></svg>
+              In progress
+            </label>
+            <span id="editor-progress-tip" class="tick-tip" role="tooltip">You've started it. The card wears a blue In progress pill.</span>
+          </span>
+          <span id="editor-hard-tick" class="tick tick-hard">
+            <input type="checkbox" id="editor-hard" class="tick-input" aria-describedby="editor-hard-tip editor-hard-note">
+            <label for="editor-hard" class="tick-face">
+              <svg class="tick-off" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"></path></svg>
+              <svg class="tick-on" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"></path></svg>
               Hard deadline
             </label>
-            <p id="editor-hard-note" class="check-note">A real outside cutoff. It never gets a Let it go button.</p>
-          </div>
+            <span id="editor-hard-tip" class="tick-tip" role="tooltip">A date someone else set. The chip turns orange when it's due today or late.</span>
+          </span>
         </div>
+        <p id="editor-hard-note" class="tick-note">A real outside cutoff. It never gets a Let it go button.</p>
       </div>
 
       <div class="panel-foot">
