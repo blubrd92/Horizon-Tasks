@@ -337,7 +337,7 @@ How to test (hard-reload first):
 - [ ] In the Inbox, change a draft's notes and press Ctrl+Enter: it's on
       the board with your change.
 
-**Categories you set yourself: built, awaiting your test (2026-11-19),
+**Categories you set yourself: done and confirmed (2026-11-20),
 on `claude/affectionate-archimedes-kh11iv`.** A Categories section in
 Settings: rename, recolor (ten swatches), move up and down, add (up to
 12), retire, bring back, and delete one nothing uses. Watched live, so
@@ -348,11 +348,23 @@ here, and the test list.
 
 Then, after your first look (two scroll bars, and cut-off keycaps):
 **Settings in three tabs with one scroll area** (Revision 1 in that
-section), awaiting your test.
+section), confirmed. You tested the live checks a pretend Firebase
+couldn't: a rename on one device shows on another without a reload, and
+a retired category's cards keep its name and color, with Delete
+refusing while cards have it.
 
-**Next: test "Categories you set yourself"** (the list under "How to
-test" in that section). Once you confirm it, commit, merge, and start
-the card ticks revision in a fresh session.
+**Branch:** built on `claude/affectionate-archimedes-kh11iv` and merged
+into `main` on 2026-11-20 (a fast-forward: nothing was rewritten).
+`main` has Phases 1, 2, and 3 and your own categories. If GitHub Pages
+was switched to the side branch for testing, point it back at `main`
+(Settings > Pages).
+
+**Next: the card ticks revision, in a fresh session** (item 1 under
+"Queued after categories"). Drafts first: a preview sheet of a few
+looks for the In progress and Hard deadline ticks, in `design/`, for
+you to choose from before anything on the site changes. Its open
+question: whether the card's pill and chip change too, or only the
+editor's checkboxes.
 
 **The queue after that, in order** (asked 2026-11-19; see "Queued after
 categories" below): (1) a small revision to cards: how the In progress
@@ -376,7 +388,7 @@ tuning slice (all under "Slice 3c", Proposals). Still parked: Done
 privacy and the Firebase console. (One approved list is settled: see
 "Slice 3a", question 3.)
 
-## Categories you set yourself (built, awaiting test)
+## Categories you set yourself (confirmed)
 
 Asked 2026-11-18. Each person's categories already live on their own
 profile (`users/{uid}`, `categories: [{ id, name, color }]`), copied
@@ -646,7 +658,7 @@ stand-ins): 45 checks, all passing. Among them:
 When you're done, rename things back if you like; nothing here touches
 a card.
 
-### Revision 1: Settings in three tabs, one scroll area (2026-11-19, awaiting test)
+### Revision 1: Settings in three tabs, one scroll area (2026-11-19, confirmed)
 
 **What you saw:** two scroll bars, one inside the other, and the Quick
 add keycaps cut off ("Shift+Ente"). **Why:** the Categories section made
