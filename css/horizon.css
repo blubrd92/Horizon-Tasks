@@ -2036,13 +2036,6 @@ body.is-dragging .zones { align-items: stretch; }
   .tick-tip { transition: none; }
 }
 
-.tick-note {
-  margin: -8px 0 0;
-  font-size: 13px;
-  line-height: 1.4;
-  color: var(--ink-secondary);
-}
-
 /* "Move the series too": a plain checkbox (a choice about this one save,
    not something the card is), set in its own small box with a drawn
    checkbox that matches the panel. */

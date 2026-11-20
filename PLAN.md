@@ -489,11 +489,10 @@ gray while you edit, and I'd then call A and B a close race.
   readers hear the explanation with the tick. The words:
   - In progress: "You've started it. The card wears a blue In progress
     pill."
-  - Hard deadline (editor): "A date someone else set. The chip turns
-    orange when it's due today or late." The note under the row stays:
-    "A real outside cutoff. It never gets a Let it go button."
-  - Hard deadline (Inbox, which has no note under it): the same, plus
-    "and it never gets a Let it go button."
+  - Hard deadline (editor and Inbox): "A date someone else set. The chip
+    turns orange when it's due today or late, and it never gets a Let it
+    go button." (At first the editor also kept its old note under the
+    row; see the follow-up below.)
 - **"Move the series too":** in its own small white box with a soft
   border, a drawn 20-pixel checkbox (blue with a white check when on, as
   in tile look D), its words in medium weight, and its note lined up
@@ -506,10 +505,10 @@ gray while you edit, and I'd then call A and B a close race.
   pointing at the one chip. It can then never run off the panel's edge on
   a narrow window. When you rest on Hard deadline, the box opens over the
   left of the row.
-- **The editor's note under Hard deadline stays,** so the "never Let it
-  go" rule is still seen without hovering. If the hover box makes it feel
-  doubled, say so and it goes (its words would move into the hover box,
-  as in the Inbox).
+- **The editor's note under Hard deadline:** it first stayed; after
+  you confirmed, you found it unclear which tick it belonged to (under a
+  row of two chips it read as about both), so it went. See the
+  follow-up below.
 - **The preview sheet stays in `design/ticks-options/`** as the record of
   what was weighed.
 
@@ -556,6 +555,17 @@ hover box and nothing scrolls sideways. No console errors.
       orange when its date is today.
 - [ ] On your phone: tapping a tick turns it on and off, with no
       explanation box in the way.
+
+### Follow-up you asked for (2026-11-20, after confirming)
+
+The note "A real outside cutoff. It never gets a Let it go button."
+under the editor's ticks is gone: under a row of two chips it wasn't
+clear which one it meant. Its rule moved into Hard deadline's hover
+explanation, which now matches the Inbox's word for word. Screen readers
+still hear it with the tick. **Files:** `index.html` (the note removed,
+the explanation lengthened), `css/horizon.css` (`.tick-note` removed).
+**Checked:** the same 28 checks plus the 4 for a new card from quick
+add, all passing. Pushed straight to `main`, as you asked.
 
 ### Rules the drafts (and the build) keep
 
