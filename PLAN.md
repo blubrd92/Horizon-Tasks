@@ -374,7 +374,7 @@ into `main` on 2026-11-20 (a fast-forward: nothing was rewritten).
 If GitHub Pages was switched to the side branch for testing, point it
 back at `main` (Settings > Pages).
 
-**Checklists on cards: built, awaiting your test** (2026-11-20), on
+**Checklists on cards: done and confirmed** (2026-11-20), on
 `claude/determined-faraday-st14l9`. You took every recommendation: the
 count on cards (look A), a drag handle in the editor (look F), the list
 in What you did, Copy as text, and the hover box (G); ticks save at
@@ -382,15 +382,21 @@ once; ticking the last item offers to mark the card done; a repeating
 card's next card gets the list unticked. Site only. See "Checklists on
 cards" below for what was built, the test list, and the decisions I made.
 
-**Next: test the checklists.** Once you confirm them: commit, merge into
-`main`, and then **Haiku suggests checklist items** in a fresh session
-(you asked for it next, before tuning; see the end of "Checklists on
-cards").
+**Branch:** not yet merged into `main`; it's a fast-forward whenever
+you say so (or after the Haiku step, which you chose to do in the same
+session and on the same branch).
+
+**Haiku suggests checklist items: planned, questions open**
+(2026-11-20), same branch. See "Haiku suggests checklist items" below:
+ten questions, my recommendation for each. Nothing is built yet.
+
+**Next: answer the Haiku checklist questions,** then build (backend and
+site) and stop so you can test.
 
 **The queue after that, in order** (asked 2026-11-19; see "Queued after
 categories" below): (1) the card ticks revision, done; (2) checklists
-on cards (sub-tasks), built, awaiting test; (2b) Haiku suggests
-checklist items, next after that; then (3) the tuning slice (its six
+on cards (sub-tasks), done; (2b) Haiku suggests checklist items,
+planned, questions open; then (3) the tuning slice (its six
 questions still open; "Tuning slice" below), which you want to come
 back to later, not next. Each in its own session.
 
@@ -409,7 +415,108 @@ tuning slice (all under "Slice 3c", Proposals). Still parked: Done
 privacy and the Firebase console. (One approved list is settled: see
 "Slice 3a", question 3.)
 
-## Checklists on cards (built, awaiting your test)
+## Haiku suggests checklist items (planning; questions open, nothing built)
+
+Started 2026-11-20 on `claude/determined-faraday-st14l9`, right after
+"Checklists on cards" was confirmed, as you asked. **Nothing changes
+until you answer the questions below.**
+
+### What it would do
+
+When Haiku reads a screenshot or a pasted email that spells out steps
+("fill in the form, attach a photo, and confirm with Bonnie"), the Inbox
+draft arrives with those steps as a checklist, unticked, which you can
+edit like the editor's before Add to board. Most reads have no steps
+worth listing, and get no list.
+
+### What I checked first (the Claude API reference, 2026-11-20)
+
+- **The answer's shape can't cap a list's length or an item's length.**
+  Structured outputs (`output_config.format`, which `Code.gs` uses) don't
+  support `maxItems` or `maxLength`. `Code.gs` calls the API directly,
+  not through an SDK that would strip those out, so the limits go in the
+  prompt, and `normalizeDraft_` enforces them when it cleans the answer,
+  as it already does for the timeline's five moments.
+- **A changed shape is compiled once** on its first use (a slower first
+  read), then cached for 24 hours.
+- **Prices** (Anthropic's pricing page, as recorded in the Tuning slice
+  on 2026-11-18, and the reference's model table): Haiku 5.5 reads at
+  $0.10 and writes at $0.50 per million tokens.
+
+### The questions, with my recommendation for each
+
+1. **Which reads suggest items.** *Recommend: screenshots and pasted
+   text (including an email pasted into quick add, which goes the same
+   way), not quick add.* A quick add line is your own words, and one
+   with a plainly named day goes straight onto the board without review
+   (3c, question 3): a list Haiku invented there would land unchecked.
+   And a short line rarely holds steps.
+2. **When Haiku makes a list at all.** *Recommend: only when the
+   material itself names two or more separate things the reader must do
+   for this task* (numbered steps, "please do X, Y, and Z", a form with
+   parts to fill). Never steps Haiku thinks up, never advice, never
+   filler like "read the email" or "reply to Bonnie" when replying is
+   the whole task. An empty list is the usual answer.
+3. **The timeline and the checklist overlap.** The timeline already
+   holds "a step to take first" with its date. *Recommend: the checklist
+   lists every step in order, in plain words without dates; the timeline
+   stays as it is,* saying when. So a step with a date can appear in
+   both, once as a thing to do and once as a moment. The other choices,
+   dated steps only in the timeline, or taking steps out of the timeline,
+   change a prompt the tuning slice is about to measure, and leave the
+   list incomplete.
+4. **Several tasks in one message.** Today Haiku picks the one due
+   soonest and names the others in the summary. *Recommend: keep that;
+   the checklist holds the steps of the chosen task only.* Mixing other
+   tasks into one card's list muddles both.
+5. **Limits.** *Recommend: up to 8 items from Haiku, each a short phrase
+   that starts with a verb (under 80 characters), in the order to do
+   them.* `Code.gs` cuts anything past 8 items or 120 characters. A card
+   still holds 30, so you can add more.
+6. **The Inbox draft.** *Recommend: the same list as the editor* (look F:
+   handle, box, words, X, "Add an item"), after the notes, as in the
+   editor. Changes save to the draft as you make them, like its other
+   fields, so they survive a reload; ticking is allowed (for a step
+   you've already done); no "Mark it done?" line, since a draft has no
+   Mark done. Add to board carries the list onto the card. A draft
+   without a list shows only "Add an item", so you can start one there
+   too. **No preview sheet,** since it's the look you already approved;
+   say if you'd like one.
+7. **Storage.** *Confirmed: no rules change.* The draft document gets
+   `checklist: [{ id, text, done }]`, the card's own shape; drafts
+   already waiting read as having none.
+8. **Effort.** *Recommend: unchanged* (medium for screenshots and pasted
+   text). Picking out steps is the kind of judgment medium is there for.
+9. **Cost.** *My estimate:* about 150 more tokens of instructions per
+   read (about $0.000015), and up to about 120 more written when there
+   is a list (about $0.00006). Under a hundredth of a cent a read, so a
+   screenshot stays about $0.0007 to $0.001. The console's cost line will
+   show the real figure.
+10. **Order of setup, and tuning.** The new script and the new site work
+    with each other's older versions (an old script sends no list, so a
+    draft has none; an old site ignores a list it doesn't know), so the
+    deploy order doesn't matter. The tuning slice will then compare the
+    checklist along with everything else; its six questions are
+    unchanged.
+
+### What would change (once answered)
+
+- `apps-script/Code.gs`: a `checklist` line in the screenshot and
+  pasted-text prompt; `checklist` (a list of strings) in the answer's
+  shape; `normalizeDraft_` keeps at most 8, each one clean line of at
+  most 120 characters, empty ones dropped. Quick add's prompt says to
+  give an empty list (the shape is shared).
+- `js/model.js`: `newDraft` turns Haiku's list into items; `normalizeDraft`
+  reads a draft's `checklist`.
+- `js/checklist.js`: the section made reusable, with an `onChange` for
+  the draft (and its help text's id passed in, since each draft needs
+  its own).
+- `js/inbox.js`, `css/horizon.css`: the list in each draft; Add to board
+  carries it.
+- Setup (yours): paste `Code.gs`, run `checkSetup`, Deploy > Manage
+  deployments > pencil > New version > Deploy.
+
+## Checklists on cards (confirmed)
 
 Started 2026-11-20 on `claude/determined-faraday-st14l9`, from `main`
 after the card ticks revision merged. Item 2 under "Queued after
@@ -644,11 +751,11 @@ Chrome can't fake a touch drag well), and the real Firestore.
 - [ ] Open the same card on two devices; tick on one: the other's board
       count follows.
 
-### Next: Haiku suggests checklist items (asked 2026-11-20, not planned)
+### Next: Haiku suggests checklist items (asked 2026-11-20; planned below)
 
-You want Haiku to help with checklists, right after this slice is
-confirmed and before the tuning slice. Its own session: plan first, and
-settle with you, among others: which reads suggest items (screenshots,
+You confirmed the checklists the same day and chose to do this next, in
+the same session ("Haiku suggests checklist items", above this section).
+The questions it was to settle, among others: which reads suggest items (screenshots,
 pasted text, quick add, or some); when a message has steps worth listing
 versus a single task; how the Inbox draft shows and lets you edit the
 suggested items before Add to board; limits (30 items, 200 characters,
