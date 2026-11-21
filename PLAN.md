@@ -382,12 +382,8 @@ once; ticking the last item offers to mark the card done; a repeating
 card's next card gets the list unticked. Site only. See "Checklists on
 cards" below for what was built, the test list, and the decisions I made.
 
-**Branch:** not yet merged into `main`; it's a fast-forward whenever
-you say so (or after the Haiku step, which you chose to do in the same
-session and on the same branch).
-
-**Haiku suggests checklist items: built, awaiting your test**
-(2026-11-20), same branch. You took every recommendation: screenshots
+**Haiku suggests checklist items: done and confirmed** (2026-11-21),
+same branch. You took every recommendation: screenshots
 and pasted text (not quick add) may come with the steps the message
 itself asks for, at most 8, editable in the Inbox draft before Add to
 board. **Needs a new Apps Script version** (setup steps in that
@@ -415,21 +411,35 @@ draft and the new wording; quick add's heads-up didn't show for "thurs
 dec 4" (Haiku picked Dec 3), so **Revision 8** (site only) checks for
 words that contradict themselves, whichever date Haiku picks. It
 worked, but the line fades, so **Revision 9** (site only) sends those
-quick adds to the Inbox instead, where the count can't fade. After a
-look: confirm, and merge into `main`.
+quick adds to the Inbox instead, where the count can't fade. You
+confirmed it all on 2026-11-21. The Apps Script deployment runs the
+Revision 4 code ("less padding"); Revisions 5 to 9 are site only.
 
-**Next: keep testing with `samples/haiku-checklist/`,** especially M4 (who
-you are), M2 (steps off the screen), M3 (the forward), and the one-ask
-controls (T2, S5). Only then decide on prompt changes; two candidates
-are noted under "Haiku suggests checklist items", "Live results so far".
-Once you confirm: merge this branch into `main` when you say so.
+Afterwards, the seven "Budget form" test cards from the quick add tests
+were deleted from Firestore with a console script, by their ids (Marin
+Villages Visit kept), so they're in neither the board nor What you did.
+
+**Branch:** built on `claude/determined-faraday-st14l9` and merged into
+`main` on 2026-11-21 (a fast-forward: nothing was rewritten). `main` has
+Phases 1, 2, and 3, your own categories, the new ticks, checklists on
+cards, and Haiku's checklist steps with every Inbox revision. If GitHub
+Pages was switched to the side branch for testing, point it back at
+`main` (Settings > Pages).
+
+**Next: the tuning slice, when you're ready** (item 3 in the queue; you
+wanted to come back to it later, not straight away). Its six questions
+are still open ("Tuning slice" below), and this work adds three things
+for it to look at: M6 (the volunteer chat) as a named case, since Haiku
+read an ambiguous "in there" as fact three times; whether a larger model
+uses the "Check:" line, which Haiku never did, even on T10's plain
+conflict; and Hard deadline leaning hard on urgent wording (M3, T10).
 
 **The queue after that, in order** (asked 2026-11-19; see "Queued after
 categories" below): (1) the card ticks revision, done; (2) checklists
 on cards (sub-tasks), done; (2b) Haiku suggests checklist items,
-built, awaiting test; then (3) the tuning slice (its six
-questions still open; "Tuning slice" below), which you want to come
-back to later, not next. Each in its own session.
+done; then (3) the tuning slice (its six questions still open;
+"Tuning slice" below), which you want to come back to later, not next.
+Each in its own session.
 
 Open proposals carried over: Undo for Let it go and Mark done on the board
 (the Done view's "Put back on the board" covers getting a card back), Let
@@ -442,11 +452,30 @@ and updating SPEC's line about the script's allowlist (both under "Slice
 3b uses, and paste on every page (I advised against it for now). From
 3c: Haiku on the project page's quick add, Alt+Enter for the old Enter,
 a mark for pasted-text cards, SPEC's new `pasted_text` source, and the
-tuning slice (all under "Slice 3c", Proposals). Still parked: Done
-privacy and the Firebase console. (One approved list is settled: see
-"Slice 3a", question 3.)
+tuning slice (all under "Slice 3c", Proposals). From checklists and
+Haiku's steps: untested T9 (a Spanish email: should steps come in the
+email's language?), and Haiku setting Repeats (you said no; you set it
+in the Inbox instead). Still parked: Done privacy and the Firebase
+console. (One approved list is settled: see "Slice 3a", question 3.)
 
-## Haiku suggests checklist items (built, awaiting your test)
+**Still thinking (noted, not a task, 2026-11-21): a Delete button.** For
+cards that were never real tasks (a test, a duplicate, a quick add
+typo), which today can only be removed by a console script. My
+recommendation if you go ahead: narrow and apart from Let it go: in the
+card editor only, never on the board; worded for its purpose ("for a
+card that was never a real task"); one confirmation; open cards only
+(a finished card's record stays, and "Put back on the board" covers a
+mistaken Mark done). The reason for the narrowness: the record is honest
+because nothing in it can be quietly erased. Questions it would raise:
+the wording; whether deleting a repeating card ends its series or only
+this card; whether an Undo right after a quick add (lighter, covers most
+typos) comes with it or instead; and whether Let it go moves into the
+editor too (already a proposal), so the two sit side by side and
+clearly apart. Also noted: letting go of a task doesn't count against
+you; What you did counts only finished cards, and let-go ones sit folded
+at the bottom with no score.
+
+## Haiku suggests checklist items (confirmed)
 
 Started 2026-11-20 on `claude/determined-faraday-st14l9`, right after
 "Checklists on cards" was confirmed, as you asked. You took every
@@ -648,7 +677,7 @@ worth listing, and get no list.
   item measured in a stand-in font, before IBM Plex Sans arrived, kept a
   spare blank line.
 
-### Revision 1: Repeats in the Inbox, and one scroll bar (2026-11-20, awaiting test)
+### Revision 1: Repeats in the Inbox, and one scroll bar (2026-11-20, confirmed)
 
 After your first live tests (the volunteer chat and the bulletin board,
 both good; notes in the chat), you asked for two things. Site only: no
@@ -693,7 +722,7 @@ How to test (hard-reload first):
 - [ ] Add to board: the card shows Weekly. Mark it done: the next one
       arrives a week later, its checklist unticked.
 
-### Revision 9: a quick add that doesn't add up waits in the Inbox (2026-11-21, awaiting test)
+### Revision 9: a quick add that doesn't add up waits in the Inbox (2026-11-21, confirmed)
 
 **Why.** Revision 8's heads-up worked, but it was a line that fades:
 miss it and the card sits a day off, unseen. You chose (my recommendation,
@@ -732,7 +761,7 @@ How to test (hard-reload first): type "budget form thurs dec 4" in quick
 add. It should go to the Inbox (count on the button), and the draft
 should say why.
 
-### Revision 8: dates that don't add up, whichever one Haiku picks (2026-11-21, awaiting test)
+### Revision 8: dates that don't add up, whichever one Haiku picks (2026-11-21, confirmed; its quick add line replaced by Revision 9)
 
 **What you found.** "budget form thurs dec 4" landed on Thu, Dec 3 with
 no heads-up. Haiku sided with Thursday; the weekday check (Revisions 6
@@ -772,7 +801,7 @@ checklists (55) still pass.
 How to test (hard-reload first): type "budget form thurs dec 4" in quick
 add. Whichever day it lands on, the line explains why to look.
 
-### Revision 7: quick add's heads-up (2026-11-21, awaiting test)
+### Revision 7: quick add's heads-up (2026-11-21, replaced by Revision 9)
 
 A line you type with a plainly named date goes straight onto the board,
 with no review; if it names a weekday that isn't the date's own ("budget
@@ -806,7 +835,7 @@ How to test (hard-reload first): type "budget form thurs dec 4" in quick
 add and press Enter. The card goes on Dec 4, and the line says "You
 typed Thursday." for 15 seconds.
 
-### Revision 6: the weekday check, in code (2026-11-21, awaiting test)
+### Revision 6: the weekday check, in code (2026-11-21, confirmed; widened by Revision 8)
 
 **Why.** T10 ("due Thursday, December 4", when Dec 4, 2026 is a Friday)
 got the right steps and Dec 4, but no "Check:" line, and the date note
@@ -850,7 +879,7 @@ yellow and name both days.
 **Proposal, built as Revision 7 (lighter than first offered):** quick
 add's straight-to-the-board path, below.
 
-### Revision 5: the Inbox's wording, and the screenshot beside the draft (2026-11-20, awaiting test)
+### Revision 5: the Inbox's wording, and the screenshot beside the draft (2026-11-20, confirmed)
 
 You asked for two changes to the Inbox. Site only: no Apps Script
 version needed.
@@ -899,7 +928,7 @@ How to test (hard-reload first):
 - [ ] Escape closes the screenshot; a second Escape closes the Inbox.
 - [ ] On your phone, tapping a screenshot opens it full screen as before.
 
-### Revision 4: less padding in the notes (2026-11-20, awaiting deploy and test)
+### Revision 4: less padding in the notes (2026-11-20, deployed, confirmed)
 
 Seen twice (M4, S5): the timeline listed when the message was sent, and
 Need to know repeated the summary, so a card's notes said one thing
@@ -917,7 +946,7 @@ How to test: rerun S5 (Tomás) and M4. The notes should lose the "emails
 you" line and the repeated Need to know, and keep what's useful (the
 shift's date and time, the next meeting).
 
-### Revision 3: the steps before the title, and "Check:" when Haiku isn't sure (2026-11-20, awaiting deploy and test)
+### Revision 3: the steps before the title, and "Check:" when Haiku isn't sure (2026-11-20, deployed, confirmed)
 
 **Why.** With Revision 2 live (you confirmed the version), M4 and M6
 still got titles that list the steps. The likely cause: Haiku writes the
@@ -973,7 +1002,7 @@ should carry a "Check:" line about which room (or simply not claim the
 staff room). Then a few with clear dates (T1, T5, S2) to make sure dates
 held up.
 
-### Revision 2: titles that name the job (2026-11-20, awaiting deploy and test)
+### Revision 2: titles that name the job (2026-11-20, deployed; didn't take, replaced by Revision 3)
 
 In three of your first four live tests the title listed the steps
 ("Draft five teen advisory survey questions and send..."). You want a
@@ -1928,7 +1957,7 @@ zones, or two toggle buttons); confirm whether the card pill and chip
 should change as well. SPEC's rule stands: orange only for a hard
 deadline due today or overdue.
 
-### 2. Checklists on cards (sub-tasks) (built 2026-11-20; see "Checklists on cards")
+### 2. Checklists on cards (sub-tasks) (done 2026-11-20; see "Checklists on cards", then "Haiku suggests checklist items")
 
 A card gets a checklist: short items you can tick off. Questions for
 that session to settle with you, among them:
