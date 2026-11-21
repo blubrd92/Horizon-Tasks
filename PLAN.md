@@ -444,7 +444,12 @@ picks by name alone, so an unclear name ("Saturday PIC") makes it guess;
 a clearer name is the cheap fix. Idea, not proposed: a short description
 per category, only if suggestions turn out to be a problem.
 
-**Next: the tuning slice, when you're ready** (item 3 in the queue; you
+**Now: follow-up cards, being talked out** (2026-11-21, on
+`claude/elegant-wright-plpeuh`). A card that, when done, leads to a new
+card, with the chain shown in the editor and What you did. Four small
+questions open; see "Follow-up cards" below. Nothing built yet.
+
+**After that: the tuning slice, when you're ready** (item 3 in the queue; you
 wanted to come back to it later, not straight away). Its six questions
 are still open ("Tuning slice" below), and this work adds three things
 for it to look at: M6 (the volunteer chat) as a named case, since Haiku
@@ -492,6 +497,64 @@ editor too (already a proposal), so the two sit side by side and
 clearly apart. Also noted: letting go of a task doesn't count against
 you; What you did counts only finished cards, and let-go ones sit folded
 at the bottom with no score.
+
+## Follow-up cards (talking it out, 2026-11-21; not planned in detail, nothing built)
+
+Your idea: a card can say "when this is done, another task follows,"
+because tasks spawn tasks. The plumbing mostly exists: a repeating card
+already finishes and creates its next card in one write
+(`finishAndRepeat` in `js/firebase.js`). No Apps Script change, no
+Firestore rules change (the rules don't limit a card's fields). **No
+Haiku changes in this work** (your call, 2026-11-21).
+
+### Two kinds of follow-up
+- **Known ahead:** "weed graphic novels" will lead to "send the withdrawn
+  list." The value is memory: the card carries the next step.
+- **Found at the end:** you finish a reply, and the answer creates a new
+  task. Only "something will come of this" is known ahead.
+One switch serves both: write the follow-up now, or leave it blank to be
+asked at the end.
+
+### The shape so far (my recommendations; you agreed to the first two)
+- **A Follow-up pill in the editor's ticks row**, beside In progress and
+  Hard deadline, same dashed-outline-with-plus look. On, it opens one
+  line: "What comes next?" (fill it in or leave it blank). It earns the
+  ticks row only if the card wears it too: a small arrow mark in the
+  card's meta row (like Repeats), the follow-up's text in the hover box.
+  Check the row at phone width (three pills, or a clean wrap).
+- **After Mark done: a one-tap step (recommended; you asked what I'd
+  recommend, and this is it).** The done card saves first, so nothing
+  after can undo it. Then the editor shows the follow-up's title
+  (prefilled or empty), triage's "when" buttons (Today, Tomorrow, This
+  week, Someday), and "Nothing after all." Closing without choosing: a
+  written follow-up goes to Someday (never lost); a blank one is simply
+  dropped. Not straight to Someday: a follow-up that lands unseen in a
+  drawer is half forgotten.
+- **The new card takes the category and project** of the card it came
+  from.
+- **The chain (you want it, 2026-11-21).** Stored like a series: a
+  `chainId` shared by every card in the chain (one Firestore question
+  fetches all of it, no index setup), and `afterId` naming the card it
+  came from. Shown in two places: the editor of a card that came from
+  another ("After: Weed graphic novels, done Nov 12"), and the box a
+  finished row opens in What you did, with the whole chain and this card
+  in bold. Not on the board: the board is about when, not history.
+
+### Still open (my recommendation for each)
+1. **A repeating card with a follow-up:** each card in the series
+   carries the follow-up, and each week's follow-up starts its own small
+   chain (not one fifty-link chain per series).
+2. **Let it go:** no follow-up; the chain ends there.
+3. **Copy as text:** the chain only when the notes option is ticked, so
+   the plain list stays plain.
+4. **The name:** Follow-up (plain in a tooltip and to a screen reader),
+   over "Then…". Not "Next step," which collides with checklist steps.
+
+### Noted, not proposed
+- A finished card put back on the board ("Put back on the board") keeps
+  the follow-up it already made; nothing is undone behind your back.
+- The Inbox draft has the same ticks row; whether Follow-up appears
+  there is a question for the detailed plan.
 
 ## Haiku suggests checklist items (confirmed)
 
