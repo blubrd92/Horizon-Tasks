@@ -413,7 +413,9 @@ wrong weekday, the Inbox's date note turns yellow and says so. Then
 goes straight onto the board. You confirmed the screenshot beside the
 draft and the new wording; quick add's heads-up didn't show for "thurs
 dec 4" (Haiku picked Dec 3), so **Revision 8** (site only) checks for
-words that contradict themselves, whichever date Haiku picks. After a
+words that contradict themselves, whichever date Haiku picks. It
+worked, but the line fades, so **Revision 9** (site only) sends those
+quick adds to the Inbox instead, where the count can't fade. After a
 look: confirm, and merge into `main`.
 
 **Next: keep testing with `samples/haiku-checklist/`,** especially M4 (who
@@ -690,6 +692,45 @@ How to test (hard-reload first):
       it; change the date and it follows. Reload: still Weekly.
 - [ ] Add to board: the card shows Weekly. Mark it done: the next one
       arrives a week later, its checklist unticked.
+
+### Revision 9: a quick add that doesn't add up waits in the Inbox (2026-11-21, awaiting test)
+
+**Why.** Revision 8's heads-up worked, but it was a line that fades:
+miss it and the card sits a day off, unseen. You chose (my recommendation,
+reversing my earlier advice) to send these to the Inbox instead: they're
+rare, so the extra step almost never happens, and when it does it's the
+step you want; the Inbox's count stays on its button until you've looked.
+
+**What it does.** A quick add whose words don't add up, or don't match
+the date Haiku chose (Revision 8's three kinds), no longer goes straight
+onto the board. It becomes an Inbox draft, and the line says why, with
+Review: "Sent "Budget form" to the Inbox: you typed Thursday, Dec 4, but
+Dec 4 is a Friday." The draft's yellow note says the same in your words
+("What you typed says Thursday, Dec 4, but Dec 4 is a Friday. Worth a
+second look."), checking your whole typed line as well as Haiku's quote
+of it. Fix or keep the date, then Add to board. Every other quick add
+goes straight on, as before. The 15-second heads-up line is gone; quick
+add's file is back to what it was before Revision 7.
+
+**Files:** `js/app.js` (the clash sends the line to the Inbox, and says
+why), `js/dates.js` (`bestClash`: of Haiku's quote and your line, the
+clash that explains the most), `js/inbox.js` (the note checks a quick
+add's typed line too), `js/quickadd.js` (the longer stay removed). Site
+only.
+
+**Checked here:** quick add, 11 checks, all passing. Your case (Haiku
+picks Thu, Dec 3 for "thurs dec 4"): no card on the board, a draft in the
+Inbox with Dec 3 to check, the line saying why with Review, the Inbox
+count showing it, and still showing after the line fades. With Haiku's
+quote leaving out "thurs": the same, from your whole line. "budget form
+dec 4" and "call ruth thursday": straight on, plain lines. A clash on
+today: to the Inbox too. In the Inbox, each draft's yellow note says why
+in your words. The Inbox note (5), the Inbox (36), the side pane (20),
+and checklists (55) still pass.
+
+How to test (hard-reload first): type "budget form thurs dec 4" in quick
+add. It should go to the Inbox (count on the button), and the draft
+should say why.
 
 ### Revision 8: dates that don't add up, whichever one Haiku picks (2026-11-21, awaiting test)
 

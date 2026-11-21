@@ -197,6 +197,14 @@ export function dateClash(words, iso) {
   return null;
 }
 
+// Of several sets of words (Haiku's quote of a date's words, and the
+// line you typed), the clash that explains the most: words that
+// contradict themselves first, then the first one found.
+export function bestClash(wordSets, iso) {
+  const found = wordSets.map((words) => dateClash(words, iso)).filter(Boolean);
+  return found.find((c) => c.kind === 'self') || found[0] || null;
+}
+
 // The clash in words, after who said it ("The text says", "You typed"):
 //   "The text says Thursday, Dec 4, but Dec 4 is a Friday."
 //   "You typed Dec 4, not Dec 3."

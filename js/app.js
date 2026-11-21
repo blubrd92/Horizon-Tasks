@@ -9,7 +9,7 @@ import {
   isISODate,
   pretendToday,
   todayISO,
-  dateClash,
+  bestClash,
   describeClash,
   zoneBounds,
   zoneFor,
@@ -570,9 +570,17 @@ async function start() {
     const draft = newDraft(answer.draft, today, { source: 'quick_add', typed });
     if (draft.category && !activeOf(categories).some((c) => c.id === draft.category)) draft.category = null;
     const due = draft.dueDate;
+    // What you typed doesn't add up ("thurs dec 4", Dec 4 being a
+    // Friday) or doesn't match the date Haiku chose: it waits in the
+    // Inbox, where the count stays on the button until you've looked and
+    // the draft says why (a line under quick add could fade unseen).
+    // Haiku's quote of your words and your whole line are both checked,
+    // since the quote can leave part out.
+    const clash = due ? bestClash([draft.dueDateQuote, typed], due) : null;
     // The site's own check on Haiku's "explicit": a date in the past or
-    // more than a year out waits in the Inbox however sure Haiku was.
-    const plain = draft.dueDateConfidence === 'explicit' && due >= today && due <= addDays(today, 365);
+    // more than a year out waits in the Inbox however sure Haiku was, and
+    // so does one that doesn't add up.
+    const plain = draft.dueDateConfidence === 'explicit' && due >= today && due <= addDays(today, 365) && !clash;
 
     if (!due || plain) {
       const card = {
@@ -582,18 +590,8 @@ async function start() {
         notes: draft.notes,
       };
       const { id, saved } = fb.addCard(uid, card);
-      // What you typed doesn't add up ("thurs dec 4", Dec 4 being a
-      // Friday) or doesn't match the date chosen: the card still goes
-      // straight on, and the line says where it landed and why to look,
-      // so a card a day off can't slip by. Haiku's quote of your words and
-      // your whole line are both checked (the quote can leave part out);
-      // words that contradict themselves explain the most, so they win.
-      const found = due ? [dateClash(draft.dueDateQuote, due), dateClash(typed, due)].filter(Boolean) : [];
-      const clash = found.find((c) => c.kind === 'self') || found[0] || null;
-      let where = !due ? 'to Someday' : due === today ? 'to Today' : `for ${formatShort(due)}`;
-      if (clash && due === today) where = `to Today, ${formatShort(due)}`;
-      const heads = clash ? ` ${describeClash(clash, 'You typed', due)}` : '';
-      quickAdd.showAdded(`Added \u201c${draft.title}\u201d ${where}.${heads}`, id, { headsUp: Boolean(clash) });
+      const where = !due ? 'to Someday' : due === today ? 'to Today' : `for ${formatShort(due)}`;
+      quickAdd.showAdded(`Added \u201c${draft.title}\u201d ${where}.`, id);
       saved.catch((err) => {
         quickAdd.showText(`Couldn't save \u201c${draft.title}\u201d (${err.code || err.message}).`);
         quickAdd.giveBack(typed);
@@ -604,7 +602,8 @@ async function start() {
     if (draft.dueDateConfidence === 'explicit') draft.dueDateConfidence = 'inferred';
     const { saved } = fb.addDraft(uid, draft);
     const quote = draft.dueDateQuote ? ` (\u201c${draft.dueDateQuote}\u201d)` : '';
-    quickAdd.showAction(`Sent \u201c${draft.title}\u201d to the Inbox to check the date${quote}.`, 'Review', () => inbox.open());
+    const why = clash ? `: ${describeClash(clash, 'you typed', due)}` : ` to check the date${quote}.`;
+    quickAdd.showAction(`Sent \u201c${draft.title}\u201d to the Inbox${why}`, 'Review', () => inbox.open());
     saved.catch((err) => {
       quickAdd.showText(`Couldn't save \u201c${draft.title}\u201d to the Inbox (${err.code || err.message}).`);
       quickAdd.giveBack(typed);

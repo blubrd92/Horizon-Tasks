@@ -22,7 +22,7 @@
 
 import { activeOf } from './categories.js';
 import { canRetry, costLine } from './backend.js';
-import { dateClash, describeClash, isISODate, todayISO } from './dates.js';
+import { bestClash, describeClash, isISODate, todayISO } from './dates.js';
 import { draftNotes, newCard, newDraft } from './model.js';
 import { shrink, splitImages, toBase64 } from './screenshot.js';
 import { sameChecklist, sectionHTML, setupChecklist } from './checklist.js';
@@ -889,7 +889,10 @@ export function setupInbox({ read, saveDraft, changeDraft, discardDraft, addToBo
     // when Dec 4 is a Friday), or don't match the date chosen: Haiku chose
     // for you. Checked here in code, since Haiku tends to settle a
     // contradiction quietly rather than mention it (dates.js, dateClash).
-    const clash = draft.aiDueDate && due === draft.aiDueDate ? dateClash(draft.dueDateQuote, due) : null;
+    // A quick add draft checks your whole typed line too: Haiku's quote of
+    // it can leave part out.
+    const clashWords = [draft.dueDateQuote, draft.source === 'quick_add' ? draft.typed : ''];
+    const clash = draft.aiDueDate && due === draft.aiDueDate ? bestClash(clashWords, due) : null;
     if (clash) {
       const source = words.read.charAt(0).toUpperCase() + words.read.slice(1);
       text = `${describeClash(clash, `${source} says`, due)} Worth a second look.`;
