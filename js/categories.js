@@ -158,6 +158,18 @@ export function moveCategory(list, id, step) {
   return { list: next };
 }
 
+// Puts the active categories in this order (their ids, as dragged in
+// Settings). Retired ones keep their places in between, as moveCategory
+// leaves them. An id that isn't an active category, or a missing one,
+// leaves the list as it was.
+export function orderCategories(list, ids) {
+  const active = activeOf(list);
+  if (ids.length !== active.length || !active.every((c) => ids.includes(c.id))) return { list };
+  const byId = new Map(active.map((c) => [c.id, c]));
+  const queue = ids.map((id) => byId.get(id));
+  return { list: list.map((c) => (c.retired ? c : queue.shift())) };
+}
+
 export function retireCategory(list, id) {
   if (!list.some((c) => c.id === id)) return { error: 'That category is gone (changed on another device?).' };
   return { list: list.map((c) => (c.id === id ? { ...c, retired: true } : c)) };

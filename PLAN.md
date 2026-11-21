@@ -426,6 +426,11 @@ cards, and Haiku's checklist steps with every Inbox revision. If GitHub
 Pages was switched to the side branch for testing, point it back at
 `main` (Settings > Pages).
 
+**Revision to categories: drag handles instead of arrows** (2026-11-21,
+awaiting test), on `claude/determined-faraday-st14l9`, before the tuning
+slice. See "Revision 2: categories move by a drag handle" under
+"Categories you set yourself". `main` waits for your test.
+
 **Next: the tuning slice, when you're ready** (item 3 in the queue; you
 wanted to come back to it later, not straight away). Its six questions
 are still open ("Tuning slice" below), and this work adds three things
@@ -1914,6 +1919,54 @@ How to test (hard-reload first):
 - [ ] Quick add tab: all four keycaps whole, the menus lined up.
 - [ ] Switch tabs: the box stays the same size.
 - [ ] On your phone, the three tabs fit and read well.
+
+### Revision 2: categories move by a drag handle (2026-11-21, awaiting test)
+
+You asked for the category rows to look like checklist items: the up and
+down arrows swapped for the six-dot drag handle, on the left; everything
+else the same. Why it's worth doing: one way to reorder across Horizon
+(the checklist already drags); the name gets the room two 44-pixel
+arrow buttons took (about 50 pixels more, which matters on a phone);
+moving the twelfth category to the top is one drag instead of eleven
+taps; and the rows read as "this list has an order" instead of a panel
+of buttons.
+
+**What changed.** Each row: the handle (44 pixels, "Drag to move" on
+hover), then the color, the name, and the pencil, as before. Drag a row
+by its handle, with a mouse or a finger; the others step around it, the
+Settings box scrolls when you drag near its edge, and dropping saves at
+once, like every change there, with the line saying where it went
+("Moved "Admin" to 1 of 5."). A drag that ends where it began changes
+nothing. **The keyboard keeps a way to move them,** since the arrows were
+the accessible path: with a category's name focused, Alt and the up or
+down arrow moves it one place, and focus stays on it. Screen readers
+hear each name with its place ("Change Admin, 1 of 5") and the keys.
+Retired categories keep their places in your saved order, as the arrows
+left them. The note above the list now says "drag the dots".
+
+**Files:** `js/sortable.js` (new: the drag, the same approach as the
+checklist's, where the dragged row's own element never moves),
+`js/settings.js` (the rows, the drag, the keys), `js/categories.js`
+(`orderCategories`), `index.html` (the note and the keys' help),
+`css/horizon.css`. Site only. The checklist's own drag is unchanged; it
+could use `sortable.js` too someday (a proposal, not done).
+
+**Checked here:** 16 checks in Settings, all passing: the handle first
+and no arrows; the note; a 44-pixel handle and the name taking the rest;
+dragging the last category to the top, with the line saying so; a drag
+back to its place changing nothing; Alt+Down moving one place with focus
+staying, Alt+Up back to the top and no further; what screen readers
+hear; clicking a name still opening its box; on a 390-wide phone, no
+sideways scroll and the name with room. `orderCategories`: retired ones
+stay put, and an incomplete or unknown order changes nothing. No console
+errors.
+
+How to test (hard-reload first):
+- [ ] Settings > Categories: dots on the left of each row, no arrows.
+- [ ] Drag a category to a new place: it saves, and every menu (the
+      editor's Category, the Inbox's) follows the new order.
+- [ ] Click a name: its box opens as before.
+- [ ] On your phone, drag one with a finger.
 
 ### Carried over (not part of this slice)
 

@@ -676,8 +676,9 @@
         <!-- Your categories (settings.js draws the rows; categories.js has the rules). -->
         <div role="tabpanel" id="settings-pane-categories" class="settings-pane" aria-labelledby="settings-tab-categories" hidden>
           <section class="settings-section">
-            <p class="settings-note">The name and color across the top of each card. Click a name to change it; the arrows set the order of every menu.</p>
+            <p class="settings-note">The name and color across the top of each card. Click a name to change it; drag the dots to set the order of every menu.</p>
             <ul id="category-list" class="category-list" aria-labelledby="settings-tab-categories"></ul>
+            <p id="category-move-help" class="visually-hidden">Alt with the up or down arrow moves it.</p>
             <div class="category-add-line">
               <button type="button" id="category-add" class="button button-small" aria-describedby="category-count">Add a category</button>
               <span id="category-count" class="category-count"></span>

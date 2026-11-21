@@ -12,11 +12,13 @@ import {
   deleteCategory,
   moveCategory,
   nextColor,
+  orderCategories,
   restoreCategory,
   retireCategory,
   retiredOf,
 } from './categories.js';
 import { QUICK_ADD_KEYS } from './model.js';
+import { startSort } from './sortable.js';
 
 // What each quick add job is called in the menus.
 const JOB_NAMES = {
@@ -121,8 +123,9 @@ export function setupSettings({ onChange, withClaude = true, onCategories, categ
   return { open, show, showCategories: categoryList.show, close: () => dialog.close() };
 }
 
-// The Categories section: a row per active category (its name opens it
-// for changing; up and down move it), Add a category, and the retired
+// The Categories section: a row per active category (drag it by the
+// handle on its left to move it, or press Alt with the up or down arrow on
+// its name; the name opens it for changing), Add a category, and the retired
 // ones, folded. One box (the form) at a time, moved in place of the row
 // it changes. Every change saves at once; the list redraws from the
 // result, and again whenever the categories change on another device.
@@ -153,15 +156,16 @@ function setupCategories({ dialog, onCategories, categoryInUse }) {
 
   const pencil =
     '<svg class="category-pencil" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20h4L19 9l-4-4L4 16z"></path><path d="M13.5 6.5l4 4"></path></svg>';
-  const arrow = (up) =>
-    `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="${up ? 'M12 19V5M6 11l6-6 6 6' : 'M12 5v14M6 13l6 6 6-6'}"></path></svg>`;
+  // The six dots, as on a checklist item.
+  const handle =
+    '<span class="category-handle" title="Drag to move" aria-hidden="true"><svg width="12" height="18" viewBox="0 0 12 18" fill="currentColor"><circle cx="3" cy="3" r="1.6"></circle><circle cx="9" cy="3" r="1.6"></circle><circle cx="3" cy="9" r="1.6"></circle><circle cx="9" cy="9" r="1.6"></circle><circle cx="3" cy="15" r="1.6"></circle><circle cx="9" cy="15" r="1.6"></circle></svg></span>';
   const dot = (c) => `<span class="category-dot" style="background: ${escapeHTML(c.color)}" aria-hidden="true"></span>`;
 
   // A row's controls, found by what they do and which category: so focus
   // can go back to the same control after the list redraws.
   function controlKey(el) {
     if (!el || !el.dataset) return null;
-    for (const name of ['catEdit', 'catUp', 'catDown', 'catRestore', 'catDelete']) {
+    for (const name of ['catEdit', 'catRestore', 'catDelete']) {
       if (el.dataset[name]) return { name, id: el.dataset[name] };
     }
     return null;
@@ -192,11 +196,10 @@ function setupCategories({ dialog, onCategories, categoryInUse }) {
           .map(
             (c, i) => `
         <li class="category-row" data-category-row="${escapeHTML(c.id)}">
-          <button type="button" class="category-name-button" data-cat-edit="${escapeHTML(c.id)}" aria-label="Change ${escapeHTML(c.name)}">
+          ${handle}
+          <button type="button" class="category-name-button" data-cat-edit="${escapeHTML(c.id)}" aria-label="Change ${escapeHTML(c.name)}, ${i + 1} of ${active.length}" aria-describedby="category-move-help">
             ${dot(c)}<span class="category-name">${escapeHTML(c.name)}</span>${pencil}
           </button>
-          <button type="button" class="icon-button category-move" data-cat-up="${escapeHTML(c.id)}" aria-label="Move ${escapeHTML(c.name)} up"${i === 0 ? ' disabled' : ''}>${arrow(true)}</button>
-          <button type="button" class="icon-button category-move" data-cat-down="${escapeHTML(c.id)}" aria-label="Move ${escapeHTML(c.name)} down"${i === active.length - 1 ? ' disabled' : ''}>${arrow(false)}</button>
         </li>`,
           )
           .join('')
@@ -245,10 +248,6 @@ function setupCategories({ dialog, onCategories, categoryInUse }) {
     } else if (key) {
       const again = findControl(key);
       if (again && !again.disabled) again.focus();
-      else if (key.name === 'catUp' || key.name === 'catDown') {
-        const other = findControl({ name: key.name === 'catUp' ? 'catDown' : 'catUp', id: key.id });
-        if (other && !other.disabled) other.focus();
-      }
     }
   }
 
@@ -407,17 +406,38 @@ function setupCategories({ dialog, onCategories, categoryInUse }) {
   listEl.addEventListener('click', (event) => {
     const button = event.target.closest('button');
     if (!button || !listEl.contains(button) || form.contains(button)) return;
-    const { catEdit, catUp, catDown } = button.dataset;
-    if (catEdit) {
-      openForm(catEdit);
-      return;
-    }
-    const id = catUp || catDown;
-    if (!id) return;
-    const result = moveCategory(list, id, catUp ? -1 : 1);
+    const { catEdit } = button.dataset;
+    if (catEdit) openForm(catEdit);
+  });
+
+  // Moving: drag a row by its handle (sortable.js), or press Alt with the
+  // up or down arrow on its name. Either saves at once, like every change
+  // here, and the line says where it went.
+  function moved(id, result) {
     const active = activeOf(result.list);
     const at = active.findIndex((c) => c.id === id);
-    commit(result.list, `Moved \u201c${active[at].name}\u201d ${catUp ? 'up' : 'down'}, to ${at + 1} of ${active.length}.`);
+    if (at === -1) return;
+    commit(result.list, `Moved \u201c${active[at].name}\u201d to ${at + 1} of ${active.length}.`);
+  }
+
+  listEl.addEventListener('pointerdown', (event) => {
+    const grip = event.target.closest('.category-handle');
+    if (!grip || event.button !== 0) return;
+    const row = grip.closest('[data-category-row]');
+    if (!row) return;
+    startSort(listEl, row, event, {
+      idOf: (li) => li.dataset.categoryRow || null,
+      onDrop: (ids) => moved(row.dataset.categoryRow, orderCategories(list, ids)),
+    });
+  });
+
+  listEl.addEventListener('keydown', (event) => {
+    const button = event.target.closest('[data-cat-edit]');
+    if (!button || !event.altKey || (event.key !== 'ArrowUp' && event.key !== 'ArrowDown')) return;
+    event.preventDefault();
+    const id = button.dataset.catEdit;
+    const result = moveCategory(list, id, event.key === 'ArrowUp' ? -1 : 1);
+    if (result.list !== list) moved(id, result);
   });
 
   retiredToggle.addEventListener('click', () => {
