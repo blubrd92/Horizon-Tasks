@@ -410,8 +410,11 @@ can read it while fixing the draft. Then T5, M1, and T10 run live, and
 **Revision 6** (site only): when the words the date came from name the
 wrong weekday, the Inbox's date note turns yellow and says so. Then
 **Revision 7** (site only): quick add's line says the same when a card
-goes straight onto the board ("You typed Thursday."). After a look:
-confirm, and merge into `main`.
+goes straight onto the board. You confirmed the screenshot beside the
+draft and the new wording; quick add's heads-up didn't show for "thurs
+dec 4" (Haiku picked Dec 3), so **Revision 8** (site only) checks for
+words that contradict themselves, whichever date Haiku picks. After a
+look: confirm, and merge into `main`.
 
 **Next: keep testing with `samples/haiku-checklist/`,** especially M4 (who
 you are), M2 (steps off the screen), M3 (the forward), and the one-ask
@@ -687,6 +690,46 @@ How to test (hard-reload first):
       it; change the date and it follows. Reload: still Weekly.
 - [ ] Add to board: the card shows Weekly. Mark it done: the next one
       arrives a week later, its checklist unticked.
+
+### Revision 8: dates that don't add up, whichever one Haiku picks (2026-11-21, awaiting test)
+
+**What you found.** "budget form thurs dec 4" landed on Thu, Dec 3 with
+no heads-up. Haiku sided with Thursday; the weekday check (Revisions 6
+and 7) compared only the weekday with the chosen date, and Thursday Dec
+3 has no weekday clash, so it stayed quiet, though "thurs" and "dec 4"
+can't both be true.
+
+**What changed.** `weekdayClash` became `dateClash` (`js/dates.js`),
+which finds three kinds, in this order:
+- **the words contradict themselves:** a weekday and a calendar date
+  that don't match ("thurs dec 4"), whichever of the two was chosen:
+  "You typed Thursday, Dec 4, but Dec 4 is a Friday.";
+- **the words name a date that isn't the chosen one:** "You typed Dec 4,
+  not Dec 3.";
+- **the words name a weekday that isn't the chosen date's own** (as
+  before): "You typed Thursday, but Nov 20 is a Friday."
+Calendar dates count as "Dec 4", "December 4th", "4 Dec", "4th of
+December", or "12/4" (month first), in the year nearest the chosen
+date. `describeClash` writes the sentence for both places: the Inbox's
+yellow date note ("The text says Thursday, Dec 4, but Dec 4 is a
+Friday. Worth a second look.") and quick add's line. Quick add checks
+both Haiku's quote of your words and your whole line (the quote can
+leave part out), and prefers a self-contradiction, which explains the
+most.
+
+**Files:** `js/dates.js`, `js/inbox.js`, `js/app.js`. Site only.
+
+**Checked here:** `dateClash` on 20 cases (your case both ways, the
+Inbox wording, "dec 4" against Dec 3, "thu 12/3", "4th of December",
+"fri jan 1" across the new year, "Saturn", and others), all right. Quick
+add, 10 checks, all passing, including your case: Haiku picks Thu, Dec 3
+and the line says "for Thu, Dec 3. You typed Thursday, Dec 4, but Dec 4
+is a Friday."; and when Haiku's quote leaves out "thurs", your whole
+line still gives that sentence. The Inbox note (5), the Inbox (36), and
+checklists (55) still pass.
+
+How to test (hard-reload first): type "budget form thurs dec 4" in quick
+add. Whichever day it lands on, the line explains why to look.
 
 ### Revision 7: quick add's heads-up (2026-11-21, awaiting test)
 

@@ -9,7 +9,8 @@ import {
   isISODate,
   pretendToday,
   todayISO,
-  weekdayClash,
+  dateClash,
+  describeClash,
   zoneBounds,
   zoneFor,
   zoneStart,
@@ -581,13 +582,17 @@ async function start() {
         notes: draft.notes,
       };
       const { id, saved } = fb.addCard(uid, card);
-      // You named a weekday that isn't the date's own ("thurs dec 4"):
-      // the card still goes straight on, and the line says which day it
-      // landed on and what you typed, so a card a day off can't slip by.
-      const clash = due ? weekdayClash(draft.dueDateQuote, due) : null;
+      // What you typed doesn't add up ("thurs dec 4", Dec 4 being a
+      // Friday) or doesn't match the date chosen: the card still goes
+      // straight on, and the line says where it landed and why to look,
+      // so a card a day off can't slip by. Haiku's quote of your words and
+      // your whole line are both checked (the quote can leave part out);
+      // words that contradict themselves explain the most, so they win.
+      const found = due ? [dateClash(draft.dueDateQuote, due), dateClash(typed, due)].filter(Boolean) : [];
+      const clash = found.find((c) => c.kind === 'self') || found[0] || null;
       let where = !due ? 'to Someday' : due === today ? 'to Today' : `for ${formatShort(due)}`;
       if (clash && due === today) where = `to Today, ${formatShort(due)}`;
-      const heads = clash ? ` You typed ${clash.said}.` : '';
+      const heads = clash ? ` ${describeClash(clash, 'You typed', due)}` : '';
       quickAdd.showAdded(`Added \u201c${draft.title}\u201d ${where}.${heads}`, id, { headsUp: Boolean(clash) });
       saved.catch((err) => {
         quickAdd.showText(`Couldn't save \u201c${draft.title}\u201d (${err.code || err.message}).`);

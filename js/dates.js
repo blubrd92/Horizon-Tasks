@@ -132,14 +132,21 @@ export function weekdayName(iso) {
   return DOW_LONG[fromISO(iso).getDay()];
 }
 
-// A weekday named in some words that doesn't match a date's own weekday:
-// "Thursday, December 4" when Dec 4 is a Friday. Returns { said, is } as
-// full names ("Thursday", "Friday"), or null when the words name no
-// weekday, or name the right one. The words are only the ones a date came
-// from (Haiku's quote of them), never a whole sentence, so short forms
-// count in any case: "thurs dec 4", "Sat, Nov 28", "weds". Used for the
-// Inbox's date note and quick add's line: Haiku reads the date, and this
-// checks it against the words it came from.
+// Dates that don't add up, in the few words a date came from (Haiku's
+// quote of them, or a quick add line), checked against the date chosen.
+// Three kinds, returned as { kind, ... }, or null when it all agrees or
+// the words name no day:
+//   self:    the words disagree with themselves: "thurs dec 4", when
+//            Dec 4 is a Friday ({ said: 'Thursday', date, is: 'Friday' }),
+//            whichever of the two was chosen;
+//   date:    the words name a calendar date that isn't the one chosen
+//            ({ said: '2026-12-04' });
+//   weekday: the words name a weekday that isn't the chosen date's own
+//            ({ said: 'Thursday', is: 'Friday' }).
+// Weekday names count full or short, in any case ("Thursday", "thurs",
+// "Sat", "weds"); calendar dates as "Dec 4", "December 4th", "4 Dec", or
+// "12/4" (month first). If the words name two weekdays and one fits, no
+// flag. Used for the Inbox's date note and quick add's line.
 const WEEKDAY_WORDS = [
   ['Sunday', /\b(?:sundays?|sun)\b/i],
   ['Monday', /\b(?:mondays?|mon)\b/i],
@@ -149,13 +156,55 @@ const WEEKDAY_WORDS = [
   ['Friday', /\b(?:fridays?|fri)\b/i],
   ['Saturday', /\b(?:saturdays?|sat)\b/i],
 ];
+const MONTH_WORDS = '(jan(?:uary)?|feb(?:ruary)?|mar(?:ch)?|apr(?:il)?|may|june?|july?|aug(?:ust)?|sep(?:t(?:ember)?)?|oct(?:ober)?|nov(?:ember)?|dec(?:ember)?)';
+const MONTH_DAY = new RegExp(`\\b${MONTH_WORDS}\\.?\\s+(\\d{1,2})(?:st|nd|rd|th)?\\b`, 'i');
+const DAY_MONTH = new RegExp(`\\b(\\d{1,2})(?:st|nd|rd|th)?\\s+(?:of\\s+)?${MONTH_WORDS}\\b`, 'i');
+const NUMERIC = /\b(\d{1,2})\/(\d{1,2})\b/;
 
-export function weekdayClash(words, iso) {
-  if (typeof words !== 'string' || !isISODate(iso)) return null;
+// The calendar date some words name, in the year that puts it nearest the
+// chosen date, or null.
+function namedDate(words, near) {
+  let month = null;
+  let day = null;
+  let m = words.match(MONTH_DAY);
+  if (m) [month, day] = [monthIndex(m[1]), Number(m[2])];
+  else if ((m = words.match(DAY_MONTH))) [month, day] = [monthIndex(m[2]), Number(m[1])];
+  else if ((m = words.match(NUMERIC))) [month, day] = [Number(m[1]) - 1, Number(m[2])];
+  if (month === null || month < 0 || month > 11 || day < 1 || day > 31) return null;
+  const year = fromISO(near).getFullYear();
+  const options = [year - 1, year, year + 1]
+    .map((y) => new Date(y, month, day))
+    .filter((d) => d.getMonth() === month)
+    .map(toISO);
+  if (!options.length) return null;
+  return options.reduce((best, iso) => (Math.abs(daysBetween(iso, near)) < Math.abs(daysBetween(best, near)) ? iso : best));
+}
+
+function monthIndex(word) {
+  return MONTHS.findIndex((name) => word.toLowerCase().startsWith(name.toLowerCase()));
+}
+
+export function dateClash(words, iso) {
+  if (typeof words !== 'string' || !words.trim() || !isISODate(iso)) return null;
   const named = WEEKDAY_WORDS.filter(([, pattern]) => pattern.test(words)).map(([name]) => name);
+  const date = namedDate(words, iso);
+  if (date && named.length && !named.includes(weekdayName(date))) {
+    return { kind: 'self', said: named[0], date, is: weekdayName(date) };
+  }
+  if (date && date !== iso) return { kind: 'date', said: date };
   const is = weekdayName(iso);
-  if (!named.length || named.includes(is)) return null;
-  return { said: named[0], is };
+  if (named.length && !named.includes(is)) return { kind: 'weekday', said: named[0], is };
+  return null;
+}
+
+// The clash in words, after who said it ("The text says", "You typed"):
+//   "The text says Thursday, Dec 4, but Dec 4 is a Friday."
+//   "You typed Dec 4, not Dec 3."
+//   "You typed Thursday, but Dec 4 is a Friday."
+export function describeClash(clash, who, iso) {
+  if (clash.kind === 'self') return `${who} ${clash.said}, ${formatMonthDay(clash.date)}, but ${formatMonthDay(clash.date)} is a ${clash.is}.`;
+  if (clash.kind === 'date') return `${who} ${formatMonthDay(clash.said)}, not ${formatMonthDay(iso)}.`;
+  return `${who} ${clash.said}, but ${formatMonthDay(iso)} is a ${clash.is}.`;
 }
 
 // "Th": the strip's tiles.
