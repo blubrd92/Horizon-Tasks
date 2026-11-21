@@ -17,6 +17,7 @@
 
 import { addDays, dayOfMonth, fromISO, toISO, weekdayName } from './dates.js';
 import { unticked } from './checklist.js';
+import { nextFollowUp } from './followup.js';
 
 export const REPEAT_NAMES = { weekly: 'Weekly', monthly: 'Monthly' };
 
@@ -88,6 +89,16 @@ export function nextCard(card, today) {
     seriesDay: card.repeat === 'monthly' ? (anchor ? aimDay(card, anchor) : dayOfMonth(today)) : null,
     // The same checklist, in the same order, none ticked.
     checklist: unticked(card.checklist || []),
+    // The same follow-up, its date moved along with the series. Each card
+    // in the series starts its own small chain, and none starts out
+    // waiting: that was about this card's week, not the next one's.
+    followUp: nextFollowUp(card, dueDate),
+    waitingSince: null,
+    waitingOn: '',
+    chainId: null,
+    afterId: null,
+    afterTitle: '',
+    afterDay: null,
   };
   // Sample cards stay findable by the script that removes them.
   if (card.sample) fields.sample = true;

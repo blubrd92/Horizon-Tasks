@@ -189,7 +189,7 @@ export function watchStampedBetween(uid, field, from, to, onChange, onError) {
   );
 }
 
-// Calls onChange with the full list of open and in-progress cards now, and
+// Calls onChange with the full list of open cards (old "in_progress" ones too) now, and
 // again every time one of them changes. Done and let-go cards are never
 // downloaded for the board. Returns a function that stops listening.
 export function watchActiveCards(uid, onChange, onError) {
@@ -247,12 +247,14 @@ export function markDone(uid, cardId, changes = {}) {
   return updateCard(uid, cardId, { ...changes, status: STATUS.DONE, completedAt: serverTimestamp() });
 }
 
-// Finishes a repeating card and adds the next one in the series, in one
-// write: either both save or neither, so a refused save can't leave a done
-// card with no next one. `how` is "done" or "let_go"; `changes` are edits
-// made at the same moment; `next` is the new card's fields (repeat.js).
-// Returns the new card's id at once, plus `saved`, as addCard does.
-export function finishAndRepeat(uid, cardId, how, changes, next) {
+// Finishes a card and adds new ones in the same write: a repeating card's
+// next card, a follow-up written ahead, or both. Either everything saves
+// or nothing does, so a refused save can't leave a done card without the
+// cards that were meant to follow it. `how` is "done" or "let_go";
+// `changes` are edits made at the same moment; `adds` is a list of new
+// cards' fields (repeat.js, followup.js). Returns the new cards' ids at
+// once, in the same order, plus `saved`, as addCard does.
+export function finishWith(uid, cardId, how, changes, adds) {
   const batch = writeBatch(db);
   const stamp = how === STATUS.DONE ? 'completedAt' : 'letGoAt';
   batch.update(doc(db, 'users', uid, 'cards', cardId), {
@@ -261,9 +263,39 @@ export function finishAndRepeat(uid, cardId, how, changes, next) {
     [stamp]: serverTimestamp(),
     updatedAt: serverTimestamp(),
   });
+  const ids = adds.map((fields) => {
+    const ref = doc(collection(db, 'users', uid, 'cards'));
+    batch.set(ref, { ...fields, createdAt: serverTimestamp(), updatedAt: serverTimestamp() });
+    return ref.id;
+  });
+  return { ids, saved: batch.commit() };
+}
+
+// Finishes a repeating card and adds the next one in the series, in one
+// write (see finishWith). Returns the new card's id at once, plus `saved`.
+export function finishAndRepeat(uid, cardId, how, changes, next) {
+  const { ids, saved } = finishWith(uid, cardId, how, changes, [next]);
+  return { id: ids[0], saved };
+}
+
+// A follow-up made after its card was finished (the editor asked when):
+// the new card, and the finished card's chain id if it's the first in the
+// chain, in one write. Returns the new card's id at once, plus `saved`.
+export function addFollowUp(uid, fields, parentId, parentChanges) {
+  const batch = writeBatch(db);
   const ref = doc(collection(db, 'users', uid, 'cards'));
-  batch.set(ref, { ...next, createdAt: serverTimestamp(), updatedAt: serverTimestamp() });
+  batch.set(ref, { ...fields, createdAt: serverTimestamp(), updatedAt: serverTimestamp() });
+  if (Object.keys(parentChanges).length) {
+    batch.update(doc(db, 'users', uid, 'cards', parentId), { ...parentChanges, updatedAt: serverTimestamp() });
+  }
   return { id: ref.id, saved: batch.commit() };
+}
+
+// Every card in one chain of follow-ups, in any status, read once. One
+// filter on one field, so Firestore's automatic index answers it.
+export async function getChain(uid, chainId) {
+  const snap = await getDocs(query(collection(db, 'users', uid, 'cards'), where('chainId', '==', chainId)));
+  return snap.docs.map((d) => normalizeCard(d.id, d.data({ serverTimestamps: 'estimate' })));
 }
 
 // Calls onChange with every project, active and archived, now and whenever

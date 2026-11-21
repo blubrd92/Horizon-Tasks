@@ -26,7 +26,25 @@
 //   deadlineType   "soft" (default) or "hard"
 //   projectId      string or null: the project the card belongs to
 //   category       a category id from the profile, e.g. "programs"
-//   status         "open", "in_progress", "done", or "let_go"
+//   status         "open", "done", or "let_go". ("in_progress" was the
+//                  old In progress tick; a card saved with it still loads
+//                  and reads as open, and the editor saves it as open.)
+//   waitingSince   "YYYY-MM-DD" or null: the day Waiting was turned on
+//                  (the board's today then). Waiting is on while it's set.
+//   waitingOn      string, up to 80 characters: who or what you're
+//                  waiting on. "" for none (and always "" when not waiting)
+//   followUp       null, or { title, dueDate }: the card that comes after
+//                  this one, made when this one is marked done (see
+//                  followup.js). title "" means "ask me then"; dueDate
+//                  "YYYY-MM-DD" or null ("ask me when"). Cleared when the
+//                  card is marked done.
+//   chainId        string or null: on cards linked by follow-ups, the id of
+//                  the chain's first card, shared by every card in it. The
+//                  first card gets it only once a follow-up is made.
+//   afterId        string or null: the card this one followed
+//   afterTitle     string: that card's title, copied when this one was
+//                  made, for the editor's "After ..." line ("" for none)
+//   afterDay       "YYYY-MM-DD" or null: the day that card was finished
 //   repeat         "none", "weekly", or "monthly"
 //   seriesId       string or null: on repeating cards, the id of the card
 //                  the series started with, shared by every card in it
@@ -34,7 +52,8 @@
 //                  this card. Dragging and triage change dueDate, not this.
 //   seriesDay      1 to 31, or null: monthly only, the day of the month the
 //                  series aims for (see repeat.js)
-//   source         "manual", "quick_add", "screenshot", or "pasted_text"
+//   source         "manual", "quick_add", "screenshot", "pasted_text", or
+//                  "follow_up" (made from another card's follow-up)
 //   order          number, or null: the card's place within its zone, set
 //                  when you drag it (see order.js). null means date order.
 //   checklist      list of { id, text, done }, in the order shown: up to
@@ -96,12 +115,14 @@ import { newItemId, normalizeChecklist } from './checklist.js';
 
 export const STATUS = {
   OPEN: 'open',
+  // The old In progress tick (replaced by Waiting). Only ever read.
   IN_PROGRESS: 'in_progress',
   DONE: 'done',
   LET_GO: 'let_go',
 };
 
-// Cards that belong on the board (and in the Someday drawer).
+// Cards that belong on the board (and in the Someday drawer). An old
+// "in_progress" card is still one of them.
 export const ACTIVE_STATUSES = [STATUS.OPEN, STATUS.IN_PROGRESS];
 
 // A card as quick add creates it: just a title, and either no date (Someday)
@@ -122,6 +143,13 @@ export function newCard({ title, dueDate = null }) {
     seriesDate: null,
     seriesDay: null,
     checklist: [],
+    waitingSince: null,
+    waitingOn: '',
+    followUp: null,
+    chainId: null,
+    afterId: null,
+    afterTitle: '',
+    afterDay: null,
   };
 }
 
@@ -312,12 +340,32 @@ export function normalizeCard(id, data) {
     seriesDate: isISODate(data.seriesDate) ? data.seriesDate : null,
     seriesDay: Number.isInteger(data.seriesDay) && data.seriesDay >= 1 && data.seriesDay <= 31 ? data.seriesDay : null,
     checklist: normalizeChecklist(data.checklist),
+    waitingSince: isISODate(data.waitingSince) ? data.waitingSince : null,
+    waitingOn: isISODate(data.waitingSince) && typeof data.waitingOn === 'string' ? data.waitingOn.slice(0, WAITING_ON_MAX) : '',
+    followUp: normalizeFollowUp(data.followUp),
+    chainId: typeof data.chainId === 'string' && data.chainId ? data.chainId : null,
+    afterId: typeof data.afterId === 'string' && data.afterId ? data.afterId : null,
+    afterTitle: typeof data.afterTitle === 'string' ? data.afterTitle : '',
+    afterDay: isISODate(data.afterDay) ? data.afterDay : null,
     // The sample cards on your board (a repeating one's next card keeps it).
     sample: data.sample === true,
     createdAt: millis(data.createdAt),
     updatedAt: millis(data.updatedAt),
     completedAt: millis(data.completedAt),
     letGoAt: millis(data.letGoAt),
+  };
+}
+
+// The longest "Waiting on ..." and follow-up title the editor takes.
+export const WAITING_ON_MAX = 80;
+export const FOLLOW_UP_MAX = 200;
+
+// A card's follow-up, checked: { title, dueDate }, or null for none.
+export function normalizeFollowUp(value) {
+  if (!value || typeof value !== 'object') return null;
+  return {
+    title: typeof value.title === 'string' ? value.title.trim().slice(0, FOLLOW_UP_MAX) : '',
+    dueDate: isISODate(value.dueDate) ? value.dueDate : null,
   };
 }
 

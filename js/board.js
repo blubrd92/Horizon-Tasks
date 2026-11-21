@@ -13,13 +13,21 @@ import {
   zoneFor,
   addDays,
 } from './dates.js';
-import { STATUS } from './model.js';
 import { compareCards } from './order.js';
 import { REPEAT_NAMES, repeats } from './repeat.js';
 import { projectHref } from './projects.js';
 import { checklistCount } from './checklist.js';
+import { daysText, isWaiting, waitingDays, waitingLabel } from './followup.js';
 
 const FALLBACK_COLOR = '#6B6F78';
+
+// Waiting: an hourglass, its sand settled at the bottom. Follow-up: down,
+// then onward (not the repeat's two arrows, not the project's diagonal).
+// The editor and the right-click menu draw the same two.
+export const WAIT_ICON = (size = 12) =>
+  `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 3h12M6 21h12"></path><path d="M8 3v3.5a4 4 0 0 0 1.8 3.3L12 11.5l2.2-1.7A4 4 0 0 0 16 6.5V3"></path><path d="M8 21v-3.5a4 4 0 0 1 1.8-3.3l2.2-1.7 2.2 1.7a4 4 0 0 1 1.8 3.3V21"></path><path d="M9.5 19.5h5" stroke-width="2.4"></path></svg>`;
+export const THEN_ICON = (size = 14) =>
+  `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 4v7a4 4 0 0 0 4 4h9"></path><path d="M15 11l4 4-4 4"></path></svg>`;
 
 // The checklist count's box: outlined with a check while items are left,
 // filled when every one is ticked.
@@ -173,13 +181,12 @@ function cardHTML(card, today, categoryById, { triage = false, highlight = null,
   const late = card.dueDate && card.dueDate < today ? daysBetween(card.dueDate, today) : 0;
   const lateText = late ? `<span class="card-late">${late} ${late === 1 ? 'day' : 'days'} late</span>` : '';
 
-  const progress =
-    card.status === STATUS.IN_PROGRESS
-      ? `<span class="card-progress">
-           <svg width="10" height="10" viewBox="0 0 10 10" aria-hidden="true"><circle cx="5" cy="5" r="4" fill="none" stroke="currentColor" stroke-width="1.5"></circle><path d="M5 1 A4 4 0 0 1 5 9 Z" fill="currentColor"></path></svg>
-           In progress
-         </span>`
-      : '';
+  // Waiting: a gray pill, the hourglass and how long it's been ("7 days",
+  // "today"), so it ages where you can see it. Who it's waiting on is in
+  // the hover box, and read out to screen readers here.
+  const waiting = isWaiting(card)
+    ? `<span class="card-waiting">${WAIT_ICON(12)}<span aria-hidden="true">${daysText(waitingDays(card, today))}</span><span class="visually-hidden">${escapeHTML(waitingLabel(card, today))}</span></span>`
+    : '';
 
   // Orange only when a hard deadline is due today or already past; further
   // out (or undated), a quiet gray outline.
@@ -208,8 +215,8 @@ function cardHTML(card, today, categoryById, { triage = false, highlight = null,
   // Someday cards have no date to show.
   const date = card.dueDate ? `<span class="card-date">${formatShort(card.dueDate)}</span>` : '';
   const meta =
-    date || lateText || hard || repeat || checks || progress
-      ? `<div class="card-meta">${date}${lateText}${hard}${repeat}${checks}${progress}</div>`
+    date || lateText || hard || repeat || checks || waiting
+      ? `<div class="card-meta">${date}${lateText}${hard}${repeat}${checks}${waiting}</div>`
       : '';
   const project = projectById && card.projectId ? projectById.get(card.projectId) : null;
   const projectTag = project ? projectTagHTML(project) : '';
@@ -232,7 +239,12 @@ function cardHTML(card, today, categoryById, { triage = false, highlight = null,
            <span class="visually-hidden">Has notes</span>
          </span>`
       : '';
-  const marks = notesMark || source ? `<span class="card-marks">${notesMark}${source}</span>` : '';
+  // The follow-up arrow: another card comes after this one (the hover box
+  // says which).
+  const followMark = card.followUp
+    ? `<span class="card-follow-mark">${THEN_ICON(14)}<span class="visually-hidden">Has a follow-up</span></span>`
+    : '';
+  const marks = followMark || notesMark || source ? `<span class="card-marks">${followMark}${notesMark}${source}</span>` : '';
 
   // The title is a real button; CSS stretches its click area over the whole
   // card. app.js finds the card by data-card-id; drag.js by data-drag-id.
@@ -265,9 +277,11 @@ function triageHTML(card, today) {
   const weekLeft = fromISO(today).getDay() !== 0;
   const button = (action, label, extra = '') =>
     `<button type="button" class="triage-button${extra}" data-triage="${action}">${label}</button>`;
+  // A card that's waiting on someone gets the question that fits.
+  const prompt = isWaiting(card) ? `Still waiting${card.waitingOn ? ` on ${card.waitingOn}` : ''}?` : 'Still on your plate?';
   return `
-      <div class="card-triage" role="group" aria-label="Still on your plate? ${escapeHTML(card.title)}" data-triage-card="${escapeHTML(card.id)}">
-        <span class="triage-prompt">Still on your plate?</span>
+      <div class="card-triage" role="group" aria-label="${escapeHTML(prompt)} ${escapeHTML(card.title)}" data-triage-card="${escapeHTML(card.id)}">
+        <span class="triage-prompt">${escapeHTML(prompt)}</span>
         <div class="triage-buttons">
           ${button('tomorrow', 'Tomorrow')}
           ${weekLeft ? button('week', 'This week') : ''}

@@ -4,12 +4,22 @@
 // collects what changed; app.js decides how changes are saved.
 
 import { activeOf } from './categories.js';
-import { todayISO } from './dates.js';
-import { PROJECT_STATUS, STATUS } from './model.js';
+import { addDays, formatShort, todayISO, zoneBounds } from './dates.js';
+import { PROJECT_STATUS, STATUS, WAITING_ON_MAX, FOLLOW_UP_MAX } from './model.js';
+import { daysText, isWaiting, waitingDays } from './followup.js';
 import { NEW_PROJECT, nameOrder } from './projects.js';
 import { placeBeside } from './place.js';
 import { anchorOf, describeMove, describeRhythm, repeats } from './repeat.js';
 import { sameChecklist, setupChecklist } from './checklist.js';
+
+// The follow-up arrow, small, for the "After ..." line.
+const THEN_SMALL = () => {
+  const span = document.createElement('span');
+  span.className = 'editor-after-icon';
+  span.innerHTML =
+    '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 4v7a4 4 0 0 0 4 4h9"></path><path d="M15 11l4 4-4 4"></path></svg>';
+  return span;
+};
 
 // Matches the CSS: up to this width the editor fills the screen.
 const narrow = window.matchMedia('(max-width: 760px)');
@@ -24,7 +34,16 @@ const narrow = window.matchMedia('(max-width: 760px)');
 // saved) runs whenever the panel closes; a new card has no id until it is
 // saved. onTick(cardId, itemId, done) runs when a checklist item on a saved
 // card is ticked or unticked: a tick saves at once, not with Save.
-export function setupEditor({ onSave, onDone, onCreate, onClose, onTick }) {
+//
+// Follow-ups: onDone returns nothing when it has finished the card, or {
+// parent, followUp, keeps } when the follow-up still needs a title or a
+// date. The card is already saved as done then, and the editor turns into
+// one question, "What comes next?" (keeps is the line under the title:
+// what the new card keeps). onFollowUp(parent, { title, dueDate }, {
+// closed }) makes it: from a "when" button, or with closed true when the
+// panel is closed with a title in the box (it goes to Someday then, so a
+// title isn't lost). Nothing after all, or a blank box, makes nothing.
+export function setupEditor({ onSave, onDone, onCreate, onClose, onTick, onFollowUp }) {
   const dialog = document.getElementById('editor');
   const form = document.getElementById('editor-form');
   const title = document.getElementById('editor-title');
@@ -34,7 +53,26 @@ export function setupEditor({ onSave, onDone, onCreate, onClose, onTick }) {
   const noDate = document.getElementById('editor-nodate');
   const someday = document.getElementById('editor-someday');
   const category = document.getElementById('editor-category');
-  const progress = document.getElementById('editor-progress');
+  const waiting = document.getElementById('editor-waiting');
+  const waitingBox = document.getElementById('editor-waiting-box');
+  const waitingOn = document.getElementById('editor-waiting-on');
+  const waitingSince = document.getElementById('editor-waiting-since');
+  const followTick = document.getElementById('editor-follow');
+  const followBox = document.getElementById('editor-follow-box');
+  const followTitle = document.getElementById('editor-follow-title');
+  const followDue = document.getElementById('editor-follow-due');
+  const after = document.getElementById('editor-after');
+  const next = document.getElementById('editor-next');
+  const nextHeading = document.getElementById('editor-next-heading');
+  const nextParent = document.getElementById('editor-next-parent');
+  const nextTitle = document.getElementById('editor-next-title');
+  const nextKeeps = document.getElementById('editor-next-keeps');
+  const nextWhen = next.querySelector('.next-when');
+  const nextWeek = next.querySelector('[data-next="week"]');
+  const nextPick = document.getElementById('editor-next-pick');
+  const nextDateRow = document.getElementById('editor-next-date-row');
+  const nextDate = document.getElementById('editor-next-date');
+  const nextError = document.getElementById('editor-next-error');
   const hard = document.getElementById('editor-hard');
   const hardTick = document.getElementById('editor-hard-tick');
   const repeat = document.getElementById('editor-repeat');
@@ -67,6 +105,9 @@ export function setupEditor({ onSave, onDone, onCreate, onClose, onTick }) {
 
   let card = null;
   let saved = false;
+  // After Mark done, while the editor asks what comes next: { parent,
+  // done } (done once a choice is made), or null.
+  let step = null;
   // Where the editor sits: { cardId, fallback } beside that card (or under
   // `fallback` if the card isn't showing), or { below } under an element.
   let anchor = null;
@@ -74,11 +115,13 @@ export function setupEditor({ onSave, onDone, onCreate, onClose, onTick }) {
 
   // A new card (one without an id) isn't saved until you press Add card, so
   // it has nothing to mark done yet. categories and projects are yours,
-  // for the menus.
-  function open(cardToEdit, { categories, projects }, where = null) {
+  // for the menus. startFollowUp (the right-click menu's "Follow-up...")
+  // opens it with Follow-up on and its title box focused.
+  function open(cardToEdit, { categories, projects }, where = null, { startFollowUp = false } = {}) {
     // A copy: a tick changes its checklist (above), never the board's.
     card = { ...cardToEdit, checklist: cardToEdit.checklist || [] };
     saved = false;
+    endStep();
     const isNew = !card.id;
     heading.textContent = isNew ? 'New card' : 'Edit card';
     saveButton.textContent = isNew ? 'Add card' : 'Save';
@@ -90,8 +133,14 @@ export function setupEditor({ onSave, onDone, onCreate, onClose, onTick }) {
     due.value = card.dueDate || '';
     fillCategories(categories);
     fillProjects(projects);
-    progress.checked = card.status === STATUS.IN_PROGRESS;
     hard.checked = card.deadlineType === 'hard';
+    waiting.checked = isWaiting(card);
+    waitingOn.value = card.waitingOn || '';
+    followTick.checked = Boolean(card.followUp) || startFollowUp;
+    followTitle.value = card.followUp ? card.followUp.title : '';
+    followDue.value = card.followUp && card.followUp.dueDate ? card.followUp.dueDate : '';
+    showAfter();
+    updateBoxes();
     repeat.value = card.repeat;
     moveSeries.checked = false;
     checklist.load(card.checklist, { finish: !isNew });
@@ -108,7 +157,42 @@ export function setupEditor({ onSave, onDone, onCreate, onClose, onTick }) {
     // Capture: scrolling the board's own sideways box counts too.
     window.addEventListener('scroll', follow, { capture: true, passive: true });
     // A new card's title is already typed; the date is usually next.
-    if (isNew) due.focus();
+    if (startFollowUp) followTitle.focus();
+    else if (isNew) due.focus();
+  }
+
+  // "After Weed graphic novels, 741.5, done Thu, Nov 19": on a card made
+  // from another card's follow-up.
+  function showAfter() {
+    after.hidden = !card.afterTitle;
+    if (!card.afterTitle) return;
+    const name = document.createElement('b');
+    name.textContent = card.afterTitle;
+    const parts = [THEN_SMALL(), document.createTextNode('After '), name];
+    if (card.afterDay) {
+      const day = document.createElement('span');
+      day.className = 'editor-after-day';
+      day.textContent = formatShort(card.afterDay);
+      parts.push(document.createTextNode(', done '), day);
+    }
+    const words = document.createElement('span');
+    words.append(...parts.slice(1));
+    after.replaceChildren(parts[0], words);
+  }
+
+  // Waiting's and Follow-up's boxes show while they're on. Waiting says
+  // since when: the day it was turned on, kept while it stays on.
+  function updateBoxes() {
+    waitingBox.hidden = !waiting.checked;
+    followBox.hidden = !followTick.checked;
+    if (waiting.checked) {
+      const today = todayISO();
+      const was = card && isWaiting(card) && card.waitingSince < today;
+      waitingSince.textContent = was
+        ? `Since ${formatShort(card.waitingSince)} (${daysText(waitingDays(card, today))}).`
+        : 'Since today.';
+    }
+    follow();
   }
 
   // The card the editor belongs to, if it's on screen. The board redraws
@@ -121,6 +205,9 @@ export function setupEditor({ onSave, onDone, onCreate, onClose, onTick }) {
   }
 
   function position() {
+    // While asking what comes next, the card it sat beside is gone (done),
+    // so the panel stays where it is.
+    if (step) return;
     for (const el of document.querySelectorAll('.card.is-editing')) el.classList.remove('is-editing');
     const cardEl = anchorCard();
     const below = cardEl ? null : anchor && (anchor.below || anchor.fallback);
@@ -275,13 +362,18 @@ export function setupEditor({ onSave, onDone, onCreate, onClose, onTick }) {
       newProjectName.focus();
       return null;
     }
+    const stillWaiting = waiting.checked && card && isWaiting(card);
     return {
       title: newTitle,
       notes: notes.value,
       dueDate: due.value || null,
       category: category.value || null,
-      status: progress.checked ? STATUS.IN_PROGRESS : STATUS.OPEN,
+      // Always open: an old In progress card is saved as open.
+      status: STATUS.OPEN,
       deadlineType: hard.checked ? 'hard' : 'soft',
+      waitingSince: waiting.checked ? (stillWaiting ? card.waitingSince : todayISO()) : null,
+      waitingOn: waiting.checked ? waitingOn.value.trim().slice(0, WAITING_ON_MAX) : '',
+      followUp: followTick.checked ? { title: followTitle.value.trim().slice(0, FOLLOW_UP_MAX), dueDate: followDue.value || null } : null,
       repeat: repeat.value,
       projectId: project.value || null,
       checklist: checklist.values(),
@@ -294,7 +386,12 @@ export function setupEditor({ onSave, onDone, onCreate, onClose, onTick }) {
     if (!values) return null;
     const changes = {};
     for (const [key, value] of Object.entries(values)) {
-      const same = key === 'checklist' ? sameChecklist(value, card.checklist) : value === card[key];
+      const same =
+        key === 'checklist'
+          ? sameChecklist(value, card.checklist)
+          : key === 'followUp'
+            ? JSON.stringify(value) === JSON.stringify(card.followUp || null)
+            : value === (card[key] === undefined ? null : card[key]);
       if (!same) changes[key] = value;
     }
     return changes;
@@ -333,9 +430,111 @@ export function setupEditor({ onSave, onDone, onCreate, onClose, onTick }) {
     if (!changes) return;
     // Marking done sets the status itself.
     delete changes.status;
-    onDone(card.id, changes, extras());
+    const asking = onDone(card.id, changes, extras());
     saved = true;
+    if (asking) startStep(asking);
+    else close();
+  });
+
+  // After Mark done: "What comes next?" in place of the form, with the
+  // title written ahead (or an empty box) and the "when" buttons.
+  function startStep({ parent, followUp, keeps }) {
+    step = { parent, done: false };
+    form.hidden = true;
+    next.hidden = false;
+    dialog.setAttribute('aria-labelledby', 'editor-next-heading');
+    nextParent.textContent = parent.title;
+    nextTitle.value = followUp.title;
+    nextKeeps.textContent = keeps;
+    nextKeeps.hidden = !keeps;
+    nextDate.value = followUp.dueDate || '';
+    nextDateRow.hidden = true;
+    nextPick.setAttribute('aria-expanded', 'false');
+    nextError.hidden = true;
+    nextTitle.removeAttribute('aria-invalid');
+    // On a Sunday nothing is left of this week.
+    const today = todayISO();
+    nextWeek.hidden = zoneBounds(today).weekEnd <= today;
+    updateNextTitle();
+    // A title written ahead: the "when" is all that's left. A blank box:
+    // the title first.
+    if (followUp.title) next.querySelector('[data-next="today"]').focus();
+    else nextTitle.focus();
+  }
+
+  function endStep() {
+    step = null;
+    form.hidden = false;
+    next.hidden = true;
+    dialog.setAttribute('aria-labelledby', 'editor-heading');
+  }
+
+  // The "when" buttons wait (dashed) until there's a title.
+  function updateNextTitle() {
+    nextWhen.classList.toggle('is-waiting', !nextTitle.value.trim());
+    if (nextTitle.value.trim() && !nextError.hidden) {
+      nextError.hidden = true;
+      nextTitle.removeAttribute('aria-invalid');
+    }
+  }
+
+  function chooseNext(kind) {
+    if (!step) return;
+    const title = nextTitle.value.trim();
+    if (!title) {
+      nextError.hidden = false;
+      nextTitle.setAttribute('aria-invalid', 'true');
+      nextTitle.setAttribute('aria-describedby', 'editor-next-keeps editor-next-error');
+      nextTitle.focus();
+      return;
+    }
+    const today = todayISO();
+    let dueDate = null;
+    if (kind === 'today') dueDate = today;
+    else if (kind === 'tomorrow') dueDate = addDays(today, 1);
+    else if (kind === 'week') dueDate = zoneBounds(today).weekEnd;
+    else if (kind === 'date') {
+      if (!nextDate.value) {
+        nextDate.focus();
+        return;
+      }
+      dueDate = nextDate.value;
+    }
+    step.done = true;
+    onFollowUp(step.parent, { title: title.slice(0, FOLLOW_UP_MAX), dueDate }, { closed: false });
     close();
+  }
+
+  next.addEventListener('click', (event) => {
+    const button = event.target.closest('[data-next]');
+    if (button) chooseNext(button.dataset.next);
+  });
+  nextPick.addEventListener('click', () => {
+    const opening = nextDateRow.hidden;
+    nextDateRow.hidden = !opening;
+    nextPick.setAttribute('aria-expanded', String(opening));
+    if (opening) nextDate.focus();
+  });
+  nextDate.addEventListener('keydown', (event) => {
+    if (event.key === 'Enter') {
+      event.preventDefault();
+      chooseNext('date');
+    }
+  });
+  nextTitle.addEventListener('input', updateNextTitle);
+  document.getElementById('editor-next-skip').addEventListener('click', () => {
+    if (step) step.done = true;
+    close();
+  });
+  document.getElementById('editor-next-close').addEventListener('click', close);
+
+  waiting.addEventListener('change', () => {
+    updateBoxes();
+    if (waiting.checked) waitingOn.focus();
+  });
+  followTick.addEventListener('change', () => {
+    updateBoxes();
+    if (followTick.checked) followTitle.focus();
   });
 
   document.getElementById('editor-close').addEventListener('click', close);
@@ -373,6 +572,12 @@ export function setupEditor({ onSave, onDone, onCreate, onClose, onTick }) {
   });
 
   dialog.addEventListener('close', () => {
+    // Closed while asking what comes next, with a title in the box: it
+    // goes to Someday rather than vanishing.
+    if (step && !step.done && nextTitle.value.trim()) {
+      onFollowUp(step.parent, { title: nextTitle.value.trim().slice(0, FOLLOW_UP_MAX), dueDate: null }, { closed: true });
+    }
+    endStep();
     window.removeEventListener('resize', refit);
     window.removeEventListener('scroll', follow, { capture: true });
     for (const el of document.querySelectorAll('.card.is-editing')) el.classList.remove('is-editing');

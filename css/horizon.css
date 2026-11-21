@@ -503,7 +503,8 @@ code { font-family: var(--font-mono); font-size: 0.92em; }
   color: var(--ink-secondary);
 }
 
-/* The marks at a card's top right: notes, then the screenshot brackets. */
+/* The marks at a card's top right: the follow-up arrow, notes, then the
+   screenshot brackets. */
 .card-marks {
   flex: none;
   display: flex;
@@ -511,7 +512,8 @@ code { font-family: var(--font-mono); font-size: 0.92em; }
   gap: 6px;
 }
 
-.card-notes-mark {
+.card-notes-mark,
+.card-follow-mark {
   display: flex;
   color: var(--ink-secondary);
 }
@@ -629,17 +631,23 @@ code { font-family: var(--font-mono); font-size: 0.92em; }
   color: var(--ink-secondary);
 }
 
-.card-progress {
+/* Waiting: a soft gray pill, never blue (blue means today), with the
+   hourglass and how long it's been, in the mono type every count uses.
+   #33363C on #ECE9E1 is 10.4:1. */
+.card-waiting {
   display: inline-flex;
   align-items: center;
   gap: 5px;
+  font-family: var(--font-mono);
   font-size: 12px;
-  font-weight: 500;
-  color: var(--accent-dark);
-  background: var(--progress-tint);
+  color: var(--ink-date);
+  background: var(--strip-day);
   padding: 2px 8px;
   border-radius: 10px;
+  white-space: nowrap;
 }
+
+.card-waiting svg { flex: none; color: var(--ink-secondary); }
 
 /* The checklist's count, "2/5", in the mono type every count uses. When
    every item is ticked the box fills and the count turns blue. */
@@ -1958,8 +1966,8 @@ body.is-dragging .zones { align-items: stretch; }
 .field-error { color: var(--overdue-ink); }
 .field-note { color: var(--ink-secondary); }
 
-/* The editor's and an Inbox draft's ticks: In progress and Hard deadline
-   drawn as the card's own pill and chip. Off, a dashed outline with a
+/* The editor's ticks: Waiting, Hard deadline, and Follow-up (an Inbox
+   draft has Hard deadline alone), drawn as what the card wears. Off, a dashed outline with a
    plus; on, what the card wears, with its icon (so on and off differ in
    shape, not only color). The checkbox underneath is hidden but real: it
    takes the focus and the Space bar, and screen readers hear it. */
@@ -1988,7 +1996,9 @@ body.is-dragging .zones { align-items: stretch; }
   align-items: center;
   gap: 7px;
   min-height: 44px;
-  padding: 0 16px 0 13px;
+  /* 2 pixels less on each side than at first, so all three fit on one
+     line in the editor beside a card (420 wide). Phones wrap. */
+  padding: 0 14px 0 11px;
   border: 1.5px dashed #8C877D; /* 3.4:1, as the Settings switch's off track */
   border-radius: 22px;
   font-size: 14px;
@@ -2007,11 +2017,20 @@ body.is-dragging .zones { align-items: stretch; }
 .tick-input:checked + .tick-face .tick-on { display: block; }
 .tick-input:focus-visible + .tick-face { outline: 2px solid var(--accent); outline-offset: 2px; }
 
-.tick-progress .tick-input:checked + .tick-face {
+/* Waiting on: the card's soft gray pill. */
+.tick-wait .tick-input:checked + .tick-face {
   border-style: solid;
-  border-color: var(--progress-tint);
-  background: var(--progress-tint);
-  color: var(--accent-dark);
+  border-color: var(--strip-day);
+  background: var(--strip-day);
+  color: var(--ink-secondary);
+}
+
+/* Follow-up on: a quiet outline, like a hard deadline further out. */
+.tick-follow .tick-input:checked + .tick-face {
+  border-style: solid;
+  border-color: var(--hard-outline);
+  background: var(--surface);
+  color: var(--ink-secondary);
 }
 
 .tick-hard .tick-input:checked + .tick-face {
@@ -3720,3 +3739,236 @@ a.link-row:focus-visible { outline-offset: -2px; }
 .notes-peek-list svg { margin-top: 3px; }
 .notes-peek-list .is-done { color: var(--ink-secondary); text-decoration: line-through; }
 .notes-peek-list .notes-peek-more { display: block; color: var(--ink-secondary); }
+
+/* Waiting and follow-ups: the editor's boxes and "After ..." line, the
+   question after Mark done, the hover box's lines, the chain in a finished
+   card's box, and the right-click menu on a card. */
+
+/* Waiting's and Follow-up's boxes, under the ticks while they're on. */
+.tick-box {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 12px 14px 14px;
+  background: var(--surface);
+  border: 1px solid var(--border-soft);
+  border-radius: var(--radius-card);
+}
+
+.tick-box[hidden] { display: none; }
+
+.tick-box .field-note { margin: 0; }
+
+/* "After Weed graphic novels, 741.5, done Thu, Nov 19." */
+.editor-after {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin: 0;
+  padding: 10px 12px;
+  background: var(--surface);
+  border: 1px solid var(--border-soft);
+  border-radius: var(--radius-card);
+  font-size: 13px;
+  line-height: 1.45;
+  color: var(--ink-secondary);
+  overflow-wrap: anywhere;
+}
+
+.editor-after[hidden] { display: none; }
+.editor-after-icon { display: flex; flex: none; margin-top: 2px; }
+.editor-after b { font-weight: 600; color: var(--ink); }
+.editor-after-day { font-family: var(--font-mono); font-size: 12px; color: var(--ink-date); }
+
+/* The question after Mark done takes the form's place in the panel. */
+#editor-next[hidden] { display: none; }
+
+.panel-dialog.is-beside #editor-next {
+  height: auto;
+  max-height: calc(100vh - 32px);
+}
+
+.next-done {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.4;
+  color: var(--ink);
+  overflow-wrap: anywhere;
+}
+
+.next-done svg { flex: none; color: var(--accent); }
+.next-done b { font-weight: 600; }
+
+#editor-next-keeps { margin-top: -10px; }
+
+.next-when {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.next-when-label {
+  margin: 0;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--ink-secondary);
+}
+
+.next-when-buttons {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 6px;
+}
+
+.next-when-buttons .triage-button { font-size: 14px; }
+.next-when-buttons .triage-button[hidden] { display: none; }
+
+/* On a Sunday there are three; the last takes the whole row. */
+.next-when-buttons .triage-button:nth-last-child(1 of :not([hidden])):nth-child(odd of :not([hidden])) { grid-column: 1 / -1; }
+
+/* With no title yet, the "when" buttons wait, dashed. They still answer a
+   click (with a word about the title), so nothing is silently dead. */
+.next-when.is-waiting .triage-button,
+.next-when.is-waiting .next-pick,
+.next-when.is-waiting .next-date-row .button {
+  border-style: dashed;
+  background: transparent;
+  color: var(--ink-placeholder);
+}
+
+.next-pick { align-self: flex-start; }
+
+.next-date-row {
+  display: flex;
+  gap: 6px;
+}
+
+.next-date-row[hidden] { display: none; }
+.next-date-row .field-date { flex: 1; min-width: 0; }
+
+#editor-next .field-error { margin: 0; }
+
+/* The hover box's lines: Waiting, then the follow-up, each with its icon. */
+.notes-peek-line {
+  margin: 0;
+  display: grid;
+  grid-template-columns: 13px minmax(0, 1fr);
+  gap: 7px;
+  white-space: normal;
+}
+
+.notes-peek-line svg { margin-top: 3px; color: var(--ink-secondary); }
+
+.notes-peek > * + .notes-peek-line,
+.notes-peek-line + .notes-peek-list {
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px solid var(--border-soft);
+}
+
+/* The chain in a finished card's box: oldest first, a thread between the
+   marks, this card in bold. */
+.record-box-chain {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.record-box-chain[hidden] { display: none; }
+
+.chain-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.chain-list li {
+  position: relative;
+  display: grid;
+  grid-template-columns: 18px minmax(0, 1fr);
+  gap: 10px;
+  padding-bottom: 12px;
+  font-size: 14px;
+  line-height: 1.4;
+}
+
+.chain-list li:last-child { padding-bottom: 0; }
+
+.chain-list li:not(:last-child)::before {
+  content: '';
+  position: absolute;
+  left: 8.25px;
+  top: 20px;
+  bottom: 2px;
+  border-left: 1.5px solid var(--hard-outline);
+}
+
+.chain-list svg { margin-top: 1px; }
+.chain-list .is-done svg { color: var(--accent); }
+.chain-list .is-open svg,
+.chain-list .is-letgo svg { color: var(--ink-secondary); }
+.chain-list .is-this .chain-title { font-weight: 600; }
+.chain-title { color: var(--ink); overflow-wrap: anywhere; }
+
+.chain-when {
+  display: block;
+  margin-top: 1px;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--ink-date);
+}
+
+.chain-list .is-open .chain-when {
+  font-family: var(--font-body);
+  font-size: 13px;
+  color: var(--ink-secondary);
+}
+
+/* The right-click menu on a card (cardmenu.js). */
+.card-menu {
+  position: fixed;
+  z-index: 60;
+  min-width: 210px;
+  padding: 6px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-card);
+  box-shadow: 0 12px 28px rgba(24, 25, 28, 0.18);
+  display: flex;
+  flex-direction: column;
+}
+
+.card-menu[hidden] { display: none; }
+
+.card-menu-item {
+  display: grid;
+  grid-template-columns: 16px 16px minmax(0, 1fr);
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+  padding: 0 12px 0 8px;
+  border: none;
+  border-radius: 8px;
+  background: none;
+  font: inherit;
+  font-size: 14px;
+  color: var(--ink);
+  text-align: left;
+  cursor: pointer;
+}
+
+.card-menu-item svg { color: var(--ink-secondary); }
+.card-menu-check { display: flex; }
+.card-menu-check svg { color: var(--accent); }
+.card-menu-item:hover,
+.card-menu-item:focus-visible { background: var(--surface-soft); }
+.card-menu-item:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+
+.card-menu-rule {
+  height: 1px;
+  margin: 5px 4px;
+  background: var(--border-soft);
+}

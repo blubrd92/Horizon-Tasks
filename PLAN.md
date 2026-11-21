@@ -444,13 +444,13 @@ picks by name alone, so an unclear name ("Saturday PIC") makes it guess;
 a clearer name is the cheap fix. Idea, not proposed: a short description
 per category, only if suggestions turn out to be a problem.
 
-**Now: Waiting and follow-up cards, a look sheet to judge** (2026-11-21,
-on `claude/elegant-wright-plpeuh`). Waiting replaces In progress (gray,
-who, and the days it's been); Follow-up makes the next card at Mark
-done, asking only when its title or date is missing; the chain shows in
-the editor and What you did. Questions settled; the second look sheet
-is in `design/followup-options/`. Nothing built yet. See "Waiting and
-follow-up cards" below.
+**Now: Waiting and follow-up cards, built, awaiting your test**
+(2026-11-21, on `claude/elegant-wright-plpeuh`). Waiting replaces In
+progress (a gray hourglass and the days on the card); Follow-up makes
+the next card at Mark done, asking only when its title or date is
+missing; the chain shows in the editor and What you did; a right-click
+menu toggles Waiting and Hard deadline. Site only. See "Waiting and
+follow-up cards" below for the test list.
 
 **After that: the tuning slice, when you're ready** (item 3 in the queue; you
 wanted to come back to it later, not straight away). Its six questions
@@ -501,7 +501,7 @@ clearly apart. Also noted: letting go of a task doesn't count against
 you; What you did counts only finished cards, and let-go ones sit folded
 at the bottom with no score.
 
-## Waiting and follow-up cards (questions settled, second look sheet drawn 2026-11-21; nothing built)
+## Waiting and follow-up cards (built 2026-11-21, awaiting your test)
 
 Your idea: a card can say "when this is done, another task follows,"
 because tasks spawn tasks. The plumbing mostly exists: a repeating card
@@ -552,6 +552,126 @@ asked at the end.
    the plain list stays plain.
 4. **The name:** Follow-up (plain in a tooltip and to a screen reader),
    over "Then…". Not "Next step," which collides with checklist steps.
+
+### The build (2026-11-21: "go with your best recommendations and do all at once")
+Everything below in one slice, then stop for your test.
+
+**Icons and the ticks row (settled):** the editor keeps words. All three
+pills fit one line at the editor's 420 pixels once each pill's side
+padding drops by 2 pixels (measured: 375 needed, 370 there; 363 after).
+Phones wrap. On the card: Waiting is a gray pill of an hourglass and the
+days ("⧗ 7 days"; who is in the hover box and for screen readers);
+Follow-up is an icon among the top-right marks (notes, screenshot);
+Hard deadline and Repeats keep their words. No separate tooltips on the
+card's icons: the whole card is one click target, so the hover box
+explains them, a line each.
+
+**Data (new card fields; no rules change, no Apps Script change):**
+- `waitingSince` "YYYY-MM-DD" (the board's today when turned on) or
+  null; `waitingOn` string, "" for none. Waiting is on while
+  `waitingSince` is set; turning it off clears both.
+- `followUp` null, or `{ title, dueDate }` ("" title = ask me; null date
+  = ask when). Cleared on the card when it's marked done (the decision
+  is made then), so "Put back on the board" can't make a second one.
+- `chainId` (the first card's id, shared by every card in the chain;
+  set on the first card only once a follow-up is actually made),
+  `afterId`, and a copy of `afterTitle` / `afterDay` for the editor's
+  "After ..." line and Copy as text, so neither needs a Firestore read.
+- `status` stays open / done / let go. Old "in_progress" cards still
+  load and read as open; the editor saves them as open.
+
+**Mark done:** follow-up with title and date: one write (done card,
+follow-up card, and for a repeating card its next card), the editor
+closes, the line beside quick add says "Done. Next: ..., due ..." with
+Edit. Otherwise the done card is saved first, then the editor turns
+into the step (when buttons; Pick a date shows a date box in place).
+Closing with a title in the box sends it to Someday; Nothing after all,
+or a blank box, makes nothing. A repeating card's next card carries the
+follow-up, its date moved by the same number of days as the series
+(and no date if the card had none); each starts its own chain.
+
+**Right-click menu (desktop):** on a card on the board, in Someday, or
+on a project page: Waiting, Hard deadline (checkmarks, save at once),
+then "Follow-up…" (opens the editor with Follow-up on, its title box
+focused). The Menu key or Shift+F10 on a focused card opens it too; a
+real menu (arrow keys, Escape back to the card). Not on the project
+link (the browser's own menu stays there), not on touch (press and
+hold is drag), not while dragging. Mark done isn't in it.
+
+**Also:** triage's "Still waiting on Bonnie?"; the hover box's two new
+lines; What you did's link mark and the chain in a card's box (one
+Firestore question on `chainId` when the box opens); Copy as text's
+"After:" line (with notes); SPEC.md's In progress lines updated.
+**Not in this slice (proposals):** Waiting or Follow-up in Inbox
+drafts; the link mark on a project page's finished rows.
+
+### Built (2026-11-21, awaiting your test)
+Site only: no Apps Script version, no Firestore rules change, no setup
+steps. Hard-reload, and test on the live site.
+
+**Files:** `js/followup.js` (new: Waiting's days and lines, the follow-up
+card's fields, the chain's order), `js/cardmenu.js` (new: the right-click
+menu), `js/model.js` (the new fields), `js/firebase.js` (`finishWith`,
+`addFollowUp`, `getChain`), `js/editor.js` (the pills, their boxes, the
+"After ..." line, the question after Mark done), `js/app.js` (Mark done,
+the hover lines, the menu, the chain), `js/board.js` (the card's marks,
+triage's question), `js/repeat.js` (a series' next card carries the
+follow-up), `js/notespeek.js`, `js/recordbox.js`, `js/done.js`,
+`js/record.js`, `index.html`, `css/horizon.css`, `SPEC.md`.
+
+**Decisions I made that the talk didn't cover (change any of them):**
+- The question after Mark done stays where the editor was (the card it
+  sat beside is gone), and its dialog is announced by its own heading.
+- With no title yet, the "when" buttons look dashed but still answer a
+  click, with "Give the next card a title first." Nothing is silently
+  dead.
+- The menu closes after each choice; from the keyboard, focus goes back
+  to the card.
+- Turning Waiting on from the menu leaves it nameless; a name is added
+  in the editor. Turned off and on again in the same editor visit, it
+  keeps its first day (an accidental click doesn't reset the count).
+- A follow-up card's source is "follow_up" (SPEC's list updated).
+- An old In progress card says nothing on the board; it's saved as open
+  the next time you save it from the editor.
+
+**Checked here** (headless Chrome, the real site with a pretend
+Firebase; 93 checks, all passing): the pill's days and gray color;
+"Still waiting on Bonnie?"; the hover box's lines; three pills on one
+line beside a card; Mark done with title and date (one write, the line
+"Done. Next: ..."); a weekly card with a follow-up (its next card due in
+a week, carrying the follow-up a week later, not waiting, no chain;
+the follow-up made; both named in the line); the question after Mark
+done (title prefilled, focus on Today; Tomorrow makes it; blank: title
+first, the word about a title, Escape sends a typed title to Someday;
+Nothing after all makes nothing); Waiting on, named, then off in the
+editor; Save with nothing changed writes nothing; the menu by right
+click and by Shift+F10 (arrow keys, wrap, Home, Enter, Escape, focus
+back), not on the project link, not on touch; Follow-up... opens the
+editor at its title; the link mark and the chain (three links, oldest
+first, this one bold; none for a card without one); Copy as text's
+"After:" line only with notes; at 390 wide, no sideways scroll; no
+errors on the page. **Not checked here:** real Firestore (the chain's
+query, the writes), and a real right click on a Mac (Ctrl+click).
+
+**How to test (hard-reload first):**
+- [ ] Open a card: Waiting, Hard deadline, Follow-up on one line. Turn on
+      Waiting, type who, Save: the card shows "⧗ today". Rest the
+      pointer on it: "Waiting on ... since today."
+- [ ] Right-click a card: Waiting, Hard deadline, Follow-up…. Toggle
+      Waiting and Hard deadline from there.
+- [ ] Turn on Follow-up with a title and a date, then Mark done: no
+      question; the line beside quick add names the new card, and it's
+      on the board on that date.
+- [ ] Follow-up with a title, no date: Mark done asks when. Try Pick a
+      date too.
+- [ ] Follow-up left blank: Mark done asks what. Type one, press Escape:
+      it lands in Someday.
+- [ ] Open a follow-up card: "After ..., done ..." at the top.
+- [ ] What you did: the link mark on chained cards; click one: the
+      chain. Copy as text with Include notes: the "After:" line.
+- [ ] A card you marked In progress before: no pill now.
+- [ ] On your phone: the pills wrap; nothing scrolls sideways; long
+      press still drags.
 
 ### Waiting replaces In progress (settled 2026-11-21)
 In progress only ever drew a pill: nothing on the board acted on it (no

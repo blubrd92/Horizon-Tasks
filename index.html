@@ -408,6 +408,12 @@
         <ul id="record-checklist-list" class="record-box-checklist-list" aria-labelledby="record-checklist-head"></ul>
       </div>
       <p id="record-series" class="record-box-series" hidden></p>
+      <!-- A card linked to others by follow-ups: the whole chain, oldest
+           first, this card in bold (recordbox.js). -->
+      <div id="record-chain" class="record-box-chain" hidden>
+        <p id="record-chain-head" class="record-box-checklist-head">The chain</p>
+        <ol id="record-chain-list" class="chain-list" aria-labelledby="record-chain-head"></ol>
+      </div>
       <div class="small-foot record-foot">
         <button type="button" id="record-putback" class="button">Put back on the board</button>
         <button type="button" id="record-close" class="button button-primary">Close</button>
@@ -426,6 +432,10 @@
       </div>
 
       <div class="panel-body">
+        <!-- Only on a card made from another card's follow-up: which card
+             it came after. -->
+        <p id="editor-after" class="editor-after" hidden></p>
+
         <label class="field">Title
           <input type="text" id="editor-title" class="field-input field-title" required autocomplete="off">
         </label>
@@ -510,20 +520,21 @@
           <p id="editor-move-note" class="check-note"></p>
         </div>
 
-        <!-- The ticks: the card's own pill and chip. Off, a dashed outline
-             with a plus; on, what the card will wear (the Hard deadline
-             chip orange when Due is today or past; editor.js). Each is a
-             real checkbox underneath. Resting the pointer on one, or tabbing
-             to it, shows what it means. -->
+        <!-- The ticks: what the card wears. Off, a dashed outline with a
+             plus; on, the card's own look (the Hard deadline chip orange
+             when Due is today or past; editor.js). Each is a real checkbox
+             underneath. Resting the pointer on one, or tabbing to it, shows
+             what it means. Waiting and Follow-up each open a small box
+             below the row while they're on. -->
         <div class="ticks">
-          <span class="tick tick-progress">
-            <input type="checkbox" id="editor-progress" class="tick-input" aria-describedby="editor-progress-tip">
-            <label for="editor-progress" class="tick-face">
+          <span class="tick tick-wait">
+            <input type="checkbox" id="editor-waiting" class="tick-input" aria-describedby="editor-waiting-tip">
+            <label for="editor-waiting" class="tick-face">
               <svg class="tick-off" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"></path></svg>
-              <svg class="tick-on" width="12" height="12" viewBox="0 0 10 10" aria-hidden="true"><circle cx="5" cy="5" r="4" fill="none" stroke="currentColor" stroke-width="1.5"></circle><path d="M5 1 A4 4 0 0 1 5 9 Z" fill="currentColor"></path></svg>
-              In progress
+              <svg class="tick-on" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 3h12M6 21h12"></path><path d="M8 3v3.5a4 4 0 0 0 1.8 3.3L12 11.5l2.2-1.7A4 4 0 0 0 16 6.5V3"></path><path d="M8 21v-3.5a4 4 0 0 1 1.8-3.3l2.2-1.7 2.2 1.7a4 4 0 0 1 1.8 3.3V21"></path><path d="M9.5 19.5h5" stroke-width="2.4"></path></svg>
+              Waiting
             </label>
-            <span id="editor-progress-tip" class="tick-tip" role="tooltip">You've started it. The card wears a blue In progress pill.</span>
+            <span id="editor-waiting-tip" class="tick-tip" role="tooltip">The next move is someone else's. The card shows a gray hourglass and counts the days.</span>
           </span>
           <span id="editor-hard-tick" class="tick tick-hard">
             <input type="checkbox" id="editor-hard" class="tick-input" aria-describedby="editor-hard-tip">
@@ -534,6 +545,35 @@
             </label>
             <span id="editor-hard-tip" class="tick-tip" role="tooltip">A date someone else set. The chip turns orange when it's due today or late, and it never gets a Let it go button.</span>
           </span>
+          <span class="tick tick-follow">
+            <input type="checkbox" id="editor-follow" class="tick-input" aria-describedby="editor-follow-tip">
+            <label for="editor-follow" class="tick-face">
+              <svg class="tick-off" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"></path></svg>
+              <svg class="tick-on" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 4v7a4 4 0 0 0 4 4h9"></path><path d="M15 11l4 4-4 4"></path></svg>
+              Follow-up
+            </label>
+            <span id="editor-follow-tip" class="tick-tip" role="tooltip">Another task comes after this one. It becomes its own card when you mark this one done.</span>
+          </span>
+        </div>
+
+        <!-- Waiting's box: who or what (optional), and since when. -->
+        <div id="editor-waiting-box" class="tick-box" hidden>
+          <label class="field">On whom or what (optional)
+            <input type="text" id="editor-waiting-on" class="field-input" maxlength="80" placeholder="Tech Services, the vendor, Bonnie&hellip;" autocomplete="off">
+          </label>
+          <p id="editor-waiting-since" class="field-note"></p>
+        </div>
+
+        <!-- Follow-up's box: the next card's title and, if you know it,
+             its date. With both, Mark done makes it without asking. -->
+        <div id="editor-follow-box" class="tick-box" hidden>
+          <label class="field">What comes next?
+            <input type="text" id="editor-follow-title" class="field-input" maxlength="200" placeholder="Leave blank to be asked when it's done" autocomplete="off">
+          </label>
+          <label class="field">Its due date (optional)
+            <input type="date" id="editor-follow-due" class="field-input field-date">
+          </label>
+          <p class="field-note">With a title and a date, Mark done makes it without asking. It keeps this card's category and project.</p>
         </div>
       </div>
 
@@ -548,6 +588,47 @@
         </div>
       </div>
     </form>
+
+    <!-- After Mark done, when a follow-up still needs a title or a date
+         (editor.js): the editor turns into this one question. The card is
+         already saved as done. -->
+    <section id="editor-next" class="panel" aria-labelledby="editor-next-heading" hidden>
+      <div class="panel-head">
+        <h2 id="editor-next-heading" class="panel-title" tabindex="-1">What comes next?</h2>
+        <button type="button" id="editor-next-close" class="icon-button" aria-label="Close">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"></path></svg>
+        </button>
+      </div>
+      <div class="panel-body">
+        <p class="next-done">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"></path></svg>
+          <span><b id="editor-next-parent"></b> is done.</span>
+        </p>
+        <label class="field">Next card
+          <input type="text" id="editor-next-title" class="field-input field-title" maxlength="200" placeholder="What came out of it?" autocomplete="off" aria-describedby="editor-next-keeps">
+        </label>
+        <p id="editor-next-keeps" class="field-note"></p>
+        <div class="next-when" role="group" aria-labelledby="editor-next-when-label">
+          <p id="editor-next-when-label" class="next-when-label">When</p>
+          <div class="next-when-buttons">
+            <button type="button" class="triage-button" data-next="today">Today</button>
+            <button type="button" class="triage-button" data-next="tomorrow">Tomorrow</button>
+            <button type="button" class="triage-button" data-next="week">This week</button>
+            <button type="button" class="triage-button" data-next="someday">Someday</button>
+          </div>
+          <button type="button" id="editor-next-pick" class="button button-small next-pick" aria-expanded="false" aria-controls="editor-next-date-row">Pick a date&hellip;</button>
+          <div id="editor-next-date-row" class="next-date-row" hidden>
+            <label class="visually-hidden" for="editor-next-date">Due date</label>
+            <input type="date" id="editor-next-date" class="field-input field-date">
+            <button type="button" class="button button-primary" data-next="date">Add</button>
+          </div>
+        </div>
+        <p id="editor-next-error" class="field-error" hidden>Give the next card a title first.</p>
+      </div>
+      <div class="panel-foot">
+        <button type="button" id="editor-next-skip" class="button">Nothing after all</button>
+      </div>
+    </section>
   </dialog>
 
   <!-- The Inbox (inbox.js). Slides in from the right over the dimmed

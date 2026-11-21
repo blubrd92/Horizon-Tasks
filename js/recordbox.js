@@ -7,14 +7,25 @@ import { formatShort } from './dates.js';
 import { escapeHTML } from './board.js';
 import { STATUS } from './model.js';
 import { REPEAT_NAMES, repeats } from './repeat.js';
-import { categoryOf, finishedDay } from './record.js';
+import { categoryOf, dayOf, finishedDay } from './record.js';
+import { chainOrder, chainStatus } from './followup.js';
 
 const BOX_EMPTY =
   '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="3.5" y="3.5" width="17" height="17" rx="4"></rect></svg>';
 const BOX_FULL =
   '<svg width="15" height="15" viewBox="0 0 24 24" aria-hidden="true"><rect x="2.5" y="2.5" width="19" height="19" rx="4.5" fill="currentColor"></rect><path d="M8 12.5l3 3 5-6" fill="none" stroke="#FFFFFF" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"></path></svg>';
 
-export function setupRecordBox() {
+// The chain's marks: a filled check for finished, a dash for let go, an
+// open circle for still on the board.
+const CHAIN_ICONS = {
+  done: '<svg width="15" height="15" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10" fill="currentColor"></circle><path d="M7.5 12.5l3 3 6-6.5" fill="none" stroke="#FFFFFF" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"></path></svg>',
+  letgo: '<svg width="15" height="15" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="1.8"></circle><path d="M8 12h8" stroke="currentColor" stroke-width="2" stroke-linecap="round"></path></svg>',
+  open: '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="8.5"></circle></svg>',
+};
+
+// loadChain(chainId) returns a promise of every card in a chain of
+// follow-ups.
+export function setupRecordBox({ loadChain = null } = {}) {
   const box = document.getElementById('record-card');
   const title = document.getElementById('record-title');
   const categoryEl = document.getElementById('record-category');
@@ -25,6 +36,8 @@ export function setupRecordBox() {
   const checks = document.getElementById('record-checklist');
   const checksHead = document.getElementById('record-checklist-head');
   const checksList = document.getElementById('record-checklist-list');
+  const chain = document.getElementById('record-chain');
+  const chainList = document.getElementById('record-chain-list');
 
   // The card in the box, and what the page that opened it asked for.
   let card = null;
@@ -96,7 +109,47 @@ export function setupRecordBox() {
       ? `Part of a ${REPEAT_NAMES[card.repeat].toLowerCase()} series. It comes back on its own, as a one-off; the series already has its next card.`
       : '';
     series.hidden = !repeats(card);
+    chain.hidden = true;
+    chainList.replaceChildren();
+    if (card.chainId && loadChain) showChain(card);
     box.showModal();
+  }
+
+  // The chain, once Firestore answers, if the box still shows that card.
+  // A chain of one (its follow-up never made) shows nothing.
+  function showChain(shown) {
+    loadChain(shown.chainId)
+      .then((cards) => {
+        if (card !== shown || cards.length < 2) return;
+        chainList.replaceChildren(
+          ...chainOrder(cards).map((link) => {
+            const { kind, text } = chainStatus(link, dayOf);
+            const li = document.createElement('li');
+            li.className = `is-${kind}${link.id === shown.id ? ' is-this' : ''}`;
+            li.innerHTML = CHAIN_ICONS[kind];
+            const words = document.createElement('span');
+            const name = document.createElement('span');
+            name.className = 'chain-title';
+            name.textContent = link.title;
+            const when = document.createElement('span');
+            when.className = 'chain-when';
+            when.textContent = text;
+            words.append(name, when);
+            if (link.id === shown.id) {
+              const me = document.createElement('span');
+              me.className = 'visually-hidden';
+              me.textContent = ' (this card)';
+              words.append(me);
+            }
+            li.append(words);
+            return li;
+          }),
+        );
+        chain.hidden = false;
+      })
+      // The chain is extra: if it can't be read, the box simply goes
+      // without it.
+      .catch(() => {});
   }
 
   return {

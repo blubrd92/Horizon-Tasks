@@ -39,6 +39,15 @@ import { setupRecordBox } from './recordbox.js';
 import { setupInbox } from './inbox.js';
 import { setupHeaderMenu } from './headermenu.js';
 import { setupNotesPeek } from './notespeek.js';
+import { setupCardMenu } from './cardmenu.js';
+import {
+  followUpCard,
+  followUpLine,
+  isWaiting,
+  needsAsking,
+  parentChainChanges,
+  waitingLine,
+} from './followup.js';
 import { backendAddress, callBackend, costLine } from './backend.js';
 
 const views = {
@@ -491,15 +500,55 @@ async function start() {
       if ('dueDate' in changes) changes.order = null;
       fb.updateCard(uid, cardId, changes).catch(showSaveError);
     },
+    // Marking done. A follow-up with a title and a date is made in the
+    // same write (with a repeating card's next card, if it has one), and
+    // nothing is asked. A follow-up missing either: the card is saved as
+    // done now, and the editor asks what comes next (returned to it here;
+    // see editor.js). The card's own follow-up is cleared either way: the
+    // decision is made now, so putting it back on the board later can't
+    // make a second one.
     onDone: (cardId, changes, { moveSeries, newProject }) => {
       resolveProject(changes, newProject);
       const card = findCard(cardId);
-      if (card) Object.assign(changes, seriesChanges(card, changes, moveSeries));
-      if (card && repeats({ ...card, ...changes })) {
-        finishRepeating({ ...card, ...changes }, STATUS.DONE, changes);
-        return;
+      if (!card) {
+        fb.markDone(uid, cardId, changes).catch(showSaveError);
+        return null;
       }
-      fb.markDone(uid, cardId, changes).catch(showSaveError);
+      Object.assign(changes, seriesChanges(card, changes, moveSeries));
+      const finished = { ...card, ...changes };
+      const followUp = finished.followUp;
+      if (followUp) changes.followUp = null;
+      const today = todayISO();
+      const repeatNext = repeats(finished) ? nextCard(finished, today) : null;
+      const madeNow = followUp && !needsAsking(followUp) ? followUpCard(finished, followUp, today) : null;
+      if (madeNow) Object.assign(changes, parentChainChanges(finished));
+      const adds = [repeatNext, madeNow].filter(Boolean);
+      if (adds.length) {
+        const { ids, saved } = fb.finishWith(uid, cardId, STATUS.DONE, changes, adds);
+        const series = repeatNext ? `The series' next one is due ${formatShort(repeatNext.dueDate)}.` : '';
+        if (madeNow) {
+          activeQuickAdd().showAdded(`Done. Next: \u201c${madeNow.title}\u201d, ${whereText(madeNow.dueDate)}.${series ? ` ${series}` : ''}`, ids[ids.length - 1]);
+        } else {
+          activeQuickAdd().showAdded(`Done. The next one is due ${formatShort(repeatNext.dueDate)}.`, ids[0]);
+        }
+        saved.catch(showSaveError);
+      } else {
+        fb.markDone(uid, cardId, changes).catch(showSaveError);
+      }
+      if (followUp && !madeNow) return { parent: { ...finished, id: cardId }, followUp, keeps: keepsText(finished) };
+      return null;
+    },
+    // The follow-up the editor asked about after Mark done: made now, in
+    // the finished card's chain.
+    onFollowUp: (parent, { title, dueDate }, { closed }) => {
+      if (!uid) return;
+      const fields = followUpCard(parent, { title, dueDate }, todayISO());
+      const { id, saved } = fb.addFollowUp(uid, fields, parent.id, parentChainChanges(parent));
+      activeQuickAdd().showAdded(
+        closed ? `Next: \u201c${title}\u201d is in Someday.` : `Next: \u201c${title}\u201d, ${whereText(dueDate)}.`,
+        id,
+      );
+      saved.catch(showSaveError);
     },
     onCreate: (values, { newProject }) => {
       resolveProject(values, newProject);
@@ -706,19 +755,36 @@ async function start() {
     saved.catch(showSaveError);
   }
 
+  // "due Fri, Dec 4", "due today", "in Someday".
+  function whereText(dueDate) {
+    if (!dueDate) return 'in Someday';
+    if (dueDate === todayISO()) return 'due today';
+    return `due ${formatShort(dueDate)}`;
+  }
+
+  // What a follow-up keeps from the card it follows, for the editor's
+  // question: "Keeps Collection Development and Graphic novel refresh."
+  function keepsText(card) {
+    const category = card.category && categories.find((c) => c.id === card.category);
+    const project = card.projectId && projects.find((p) => p.id === card.projectId);
+    const names = [category && category.name, project && project.name].filter(Boolean);
+    return names.length ? `Keeps ${names.join(' and ')}.` : '';
+  }
+
   function addedText(dueDate) {
     if (!dueDate) return 'Added to Someday.';
     if (dueDate === todayISO()) return 'Added to Today.';
     return `Added for ${formatShort(dueDate)}.`;
   }
 
-  function openCard(cardId) {
+  // startFollowUp: from the right-click menu's "Follow-up...".
+  function openCard(cardId, { startFollowUp = false } = {}) {
     const card = latest && latest.cards.find((c) => c.id === cardId);
     // Beside the card; a card in a closed Someday drawer has nothing to sit
     // beside, so it opens under the quick add field (or the project page's
     // heading).
     const fallback = views.project.hidden ? quickAddField : projectHeading;
-    if (card) editor.open(card, { categories, projects }, { cardId, fallback });
+    if (card) editor.open(card, { categories, projects }, { cardId, fallback }, { startFollowUp });
   }
 
   for (const el of [zonesEl, somedayCardsEl]) {
@@ -842,7 +908,10 @@ async function start() {
 
   // The box for one finished or let-go card, shared by What you did and
   // project pages.
-  const recordBox = setupRecordBox();
+  const recordBox = setupRecordBox({
+    // The chain of follow-ups a card is part of, read when its box opens.
+    loadChain: (chainId) => (uid ? fb.getChain(uid, chainId) : Promise.resolve([])),
+  });
 
   const doneScreen = setupDone({
     box: recordBox,
@@ -1247,8 +1316,32 @@ async function start() {
     roots: [zonesEl, somedayCardsEl, views.project],
     getCard: (cardId) => {
       const card = findCard(cardId);
-      return card ? { notes: card.notes, checklist: card.checklist } : null;
+      if (!card) return null;
+      // Waiting and the follow-up, a line each under the notes.
+      const lines = [];
+      if (isWaiting(card)) lines.push({ kind: 'wait', text: waitingLine(card, todayISO()) });
+      if (card.followUp) lines.push({ kind: 'then', text: followUpLine(card.followUp) });
+      return { notes: card.notes, checklist: card.checklist, lines };
     },
+  });
+
+  // The right-click menu on a card (cardmenu.js). Its toggles save at once,
+  // from the card as the board has it now.
+  setupCardMenu({
+    roots: [zonesEl, somedayCardsEl, views.project],
+    getCard: (cardId) => findCard(cardId) || null,
+    onToggle: (cardId, what) => {
+      const card = findCard(cardId);
+      if (!card || !uid) return;
+      const changes =
+        what === 'waiting'
+          ? isWaiting(card)
+            ? { waitingSince: null, waitingOn: '' }
+            : { waitingSince: todayISO(), waitingOn: '' }
+          : { deadlineType: card.deadlineType === 'hard' ? 'soft' : 'hard' };
+      fb.updateCard(uid, cardId, changes).catch(showSaveError);
+    },
+    onFollowUp: (cardId) => openCard(cardId, { startFollowUp: true }),
   });
 
   fb.watchAuth(async (user) => {

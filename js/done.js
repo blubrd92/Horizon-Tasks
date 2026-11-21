@@ -24,6 +24,9 @@ const LETGO_ICON =
 const REPEAT_ICON =
   '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17 2l4 4-4 4"></path><path d="M3 11V9a3 3 0 0 1 3-3h15"></path><path d="M7 22l-4-4 4-4"></path><path d="M21 13v2a3 3 0 0 1-3 3H3"></path></svg>';
 
+const CHAIN_ICON =
+  '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1"></path><path d="M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1"></path></svg>';
+
 // onRange(kind) for Week, Month, Year, Custom; onStep(-1 or 1) for the
 // arrows; onCustom(start, end) when Custom's dates change; onCopy({ notes })
 // for Copy as text; onPutBack(card) from a card's box. box is the shared
@@ -215,6 +218,8 @@ export function setupDone({ onRange, onStep, onCustom, onCopy, onPutBack, box })
   function rowHTML(card, icon) {
     const category = categoryOf(card, categoryById);
     const repeat = inSeries(card) ? `<span class="record-repeat">${REPEAT_ICON}<span class="visually-hidden">Repeats</span></span>` : '';
+    // Linked to other cards by follow-ups: its box shows the chain.
+    const chain = card.chainId ? `<span class="record-repeat">${CHAIN_ICON}<span class="visually-hidden">Part of a chain</span></span>` : '';
     // The card's project under its title, as plain text: the whole row is
     // already a button. A project that was deleted isn't named.
     const project = projectById.get(card.projectId);
@@ -225,7 +230,7 @@ export function setupDone({ onRange, onStep, onCustom, onCopy, onPutBack, box })
       <li>
         <button type="button" class="record-row" data-record-id="${escapeHTML(card.id)}">
           ${icon}
-          <span class="record-title">${escapeHTML(card.title)}${repeat}${projectLine ? ` ${projectLine}` : ''}</span>
+          <span class="record-title">${escapeHTML(card.title)}${repeat}${chain}${projectLine ? ` ${projectLine}` : ''}</span>
           <span class="record-category">${swatch(category.color)}${escapeHTML(category.name)}</span>
           <span class="record-date">${formatShort(finishedDay(card))}</span>
         </button>

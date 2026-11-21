@@ -260,6 +260,10 @@ export function copyText(cards, categories, range, today, { notes = false, proje
     const category = categoryOf(latest, categoryById).name;
     const project = projectById.get(latest.projectId);
     lines.push(`${formatShort(days[days.length - 1])} · ${latest.title}${times} · ${category}${project ? ` · ${project.name}` : ''}`);
+    // With notes: the card it followed, if it came from a follow-up.
+    if (notes && latest.afterTitle) {
+      lines.push(`    After: ${latest.afterTitle}${latest.afterDay ? ` (${formatShort(latest.afterDay)})` : ''}`);
+    }
     if (notes && latest.notes.trim()) {
       for (const line of latest.notes.trim().split(/\r?\n/)) lines.push(`    ${line}`);
     }

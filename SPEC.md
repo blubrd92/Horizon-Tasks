@@ -39,12 +39,21 @@ narrow screens the zones scroll sideways inside their own container.
 ## Cards
 Fields: title, notes (optional), due date (optional), deadline type ("soft" by
 default, or "hard" for real external cutoffs), project (optional), category,
-status (open, in progress, done, let go), repeat rule (none, weekly, monthly),
-source (manual, quick add, or screenshot), created, updated, and completed or
-let-go timestamps.
+status (open, done, let go), waiting (since when, and on whom), a follow-up
+(the next card's title and, optionally, its date), repeat rule (none, weekly,
+monthly), source (manual, quick add, screenshot, pasted text, or follow-up),
+created, updated, and completed or let-go timestamps.
 
 - Clicking a card opens it for editing.
-- In-progress cards show a small "In progress" pill.
+- Waiting cards (the next move is someone else's) show a small gray pill with
+  an hourglass and how many days they've waited. Who they're waiting on shows
+  on hover and in the editor. Waiting replaced an earlier "In progress" pill.
+- A card can carry a follow-up: the card that comes after it. Marking the card
+  done makes the follow-up, asking only for what wasn't written ahead (its
+  title, or when). Cards linked this way form a chain, shown in the Done
+  record.
+- Right-clicking a card (desktop) toggles Waiting and Hard deadline and opens
+  its follow-up; everything there is also in the editor.
 - Repeating cards create their next instance when marked done.
 - Overdue cards show how late they are ("2 days late").
 - Marking a card done removes it from the board and adds it to the Done record.
