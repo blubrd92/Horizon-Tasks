@@ -1,0 +1,310 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Horizon follow-ups</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,700&amp;family=IBM+Plex+Mono:wght@400;500&amp;family=IBM+Plex+Sans:wght@400;500;600&amp;display=swap" rel="stylesheet">
+<!-- The site's own styles, so the fields, buttons, ticks, and cards look
+     exactly as they do in Horizon. Only the new pieces are drawn here. -->
+<link rel="stylesheet" href="../../css/horizon.css">
+<style>
+  body { padding: 40px; }
+  .sheet { max-width: 1340px; margin: 0 auto; }
+  h1 { font-family: var(--font-display); font-size: 30px; margin: 0 0 6px; letter-spacing: -0.01em; }
+  .lead { color: var(--ink-secondary); margin: 0 0 6px; max-width: 780px; font-size: 15px; line-height: 1.5; }
+  .how { color: var(--ink-secondary); margin: 0 0 28px; font-size: 13px; }
+
+  .option { background: var(--surface); border: 1px solid var(--border-soft); border-radius: var(--radius-panel); padding: 28px; margin-bottom: 24px; }
+  .option-head { display: flex; align-items: baseline; gap: 12px; margin-bottom: 4px; }
+  .letter { font-family: var(--font-mono); color: var(--accent); font-size: 14px; font-weight: 500; }
+  .name { font-family: var(--font-display); font-size: 22px; margin: 0; }
+  .why { color: var(--ink-secondary); margin: 0 0 6px; max-width: 780px; font-size: 14px; line-height: 1.5; }
+  .ask { color: var(--ink); margin: 0 0 20px; max-width: 780px; font-size: 14px; line-height: 1.5; padding: 10px 14px; background: var(--surface-soft); border: 1px solid var(--border-soft); border-radius: var(--radius-card); }
+  .ask b { font-weight: 600; }
+  .stage { display: flex; flex-wrap: wrap; gap: 24px; align-items: flex-start; margin-top: 18px; }
+  .stage > div { min-width: 0; max-width: 100%; }
+  .caption { font-family: var(--font-mono); font-size: 12px; color: var(--ink-placeholder); margin: 0 0 8px; }
+
+  /* The editor as it opens beside a card: 420 wide. */
+  .mock-panel { width: 420px; max-width: 100%; background: var(--surface-soft); border: 1px solid var(--border-soft); border-radius: var(--radius-panel); box-shadow: 0 16px 40px rgba(24, 25, 28, 0.12); overflow: hidden; }
+  .mock-panel .panel-body { overflow: visible; }
+  .mock-phone { width: 360px; }
+  .mock-phone .panel-head, .mock-phone .panel-foot { padding-left: 16px; padding-right: 16px; }
+  .mock-phone .panel-body { padding: 16px; }
+
+  /* ---------- New: the Follow-up tick, off and on ---------- */
+  .tick-follow .tick-input:checked + .tick-face {
+    border-style: solid;
+    border-color: var(--hard-outline);
+    background: var(--surface);
+    color: var(--ink-secondary);
+  }
+  /* "What comes next?" opens under the ticks only while Follow-up is on. */
+  .fu-line { display: none; }
+  .fu-wrap:has(.tick-follow .tick-input:checked) .fu-line { display: flex; }
+  .fu-wrap { display: flex; flex-direction: column; gap: 16px; }
+
+  /* ---------- New: "After ..." at the top of a follow-up's editor ---------- */
+  .fu-after {
+    display: flex; gap: 8px; align-items: flex-start;
+    margin: 0; padding: 10px 12px;
+    background: var(--surface); border: 1px solid var(--border-soft); border-radius: var(--radius-card);
+    font-size: 13px; line-height: 1.45; color: var(--ink-secondary);
+  }
+  .fu-after svg { flex: none; margin-top: 2px; }
+  .fu-after b { font-weight: 600; color: var(--ink); }
+  .fu-after .mono { font-family: var(--font-mono); font-size: 12px; color: var(--ink-date); }
+
+  /* ---------- New: the step after Mark done ---------- */
+  .fu-done-line { display: flex; gap: 8px; align-items: center; margin: 0; font-size: 14px; color: var(--ink); }
+  .fu-done-line svg { color: var(--accent); flex: none; }
+  .fu-keeps { margin: -8px 0 0; font-size: 13px; line-height: 1.4; color: var(--ink-secondary); }
+  .fu-when-label { margin: 0 0 -8px; font-size: 12px; font-weight: 600; color: var(--ink-secondary); }
+  .fu-when { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px; }
+  .fu-when .triage-button { font-size: 14px; }
+  .fu-when .triage-button[aria-disabled="true"] { color: var(--ink-placeholder); background: transparent; border-style: dashed; cursor: default; }
+  .fu-pick { justify-self: start; grid-column: 1 / -1; }
+
+  /* ---------- New: the card's mark, and the hover box ---------- */
+  .card-follow { display: inline-flex; align-items: center; gap: 4px; font-size: 12px; color: var(--ink-secondary); }
+  .board-row { display: flex; flex-wrap: wrap; gap: 16px; align-items: flex-start; }
+  .board-row .card { width: 260px; cursor: default; }
+  .peek-pair { display: flex; gap: 10px; align-items: flex-start; flex-wrap: wrap; }
+  .peek-pair .notes-peek { position: static; white-space: normal; max-width: 260px; }
+  .peek-then { display: grid; grid-template-columns: 14px minmax(0, 1fr); gap: 7px; }
+  .peek-then svg { margin-top: 3px; color: var(--ink-secondary); }
+  .peek-then i { font-style: normal; color: var(--ink-secondary); }
+  .notes-peek-text + .peek-then { margin-top: 8px; padding-top: 8px; border-top: 1px solid var(--border-soft); }
+
+  /* ---------- New: the chain in What you did ---------- */
+  .mock-record { width: 640px; max-width: 100%; }
+  .mock-record .record-list { border-radius: var(--radius-panel); }
+  .record-chain { display: inline-flex; vertical-align: -2px; margin-left: 8px; color: var(--ink-secondary); }
+  .mock-box { width: 440px; max-width: 100%; background: var(--surface-soft); border-radius: var(--radius-panel); box-shadow: 0 12px 32px rgba(24, 25, 28, 0.18); }
+  .chain { display: flex; flex-direction: column; gap: 6px; }
+  .chain-head { margin: 0; font-size: 12px; font-weight: 600; color: var(--ink-secondary); }
+  .chain-list { list-style: none; margin: 0; padding: 0; }
+  .chain-list li { position: relative; display: grid; grid-template-columns: 18px minmax(0, 1fr); gap: 10px; padding-bottom: 12px; font-size: 14px; line-height: 1.4; }
+  .chain-list li:last-child { padding-bottom: 0; }
+  /* The thread between links: a line from each mark down to the next. */
+  .chain-list li:not(:last-child)::before { content: ''; position: absolute; left: 8.25px; top: 20px; bottom: 2px; border-left: 1.5px solid var(--hard-outline); }
+  .chain-list svg { margin-top: 1px; }
+  .chain-list .is-done svg { color: var(--accent); }
+  .chain-list .is-open svg { color: var(--ink-secondary); }
+  .chain-list .is-this .chain-title { font-weight: 600; color: var(--ink); }
+  .chain-title { color: var(--ink); overflow-wrap: anywhere; }
+  .chain-when { display: block; font-family: var(--font-mono); font-size: 12px; color: var(--ink-date); margin-top: 1px; }
+  .chain-list .is-open .chain-when { color: var(--ink-secondary); font-family: var(--font-body); font-size: 13px; }
+  .copy-sample { margin: 0; padding: 12px 14px; background: var(--surface-soft); border: 1px solid var(--border-soft); border-radius: var(--radius-card); font-family: var(--font-mono); font-size: 12px; line-height: 1.6; color: var(--ink-date); white-space: pre-wrap; }
+
+  @media (max-width: 600px) {
+    body { padding: 20px 16px; }
+    .option { padding: 18px 16px; }
+    h1 { font-size: 24px; }
+  }
+</style>
+</head>
+<body>
+<div class="sheet">
+  <h1>Horizon: follow-ups</h1>
+  <p class="lead">One look, drawn with the site's own styles: the Follow-up pill in the editor, the mark a card wears, the step after Mark done, and the chain in What you did. The sample cards are made up.</p>
+  <p class="how">The pills work: click one, or Tab to it and press Space. Turning Follow-up on opens "What comes next?" below it.</p>
+
+  <!-- A. The editor -->
+  <section class="option">
+    <div class="option-head"><span class="letter">A</span><h2 class="name">The editor: a third pill</h2></div>
+    <p class="why">Follow-up sits beside In progress and Hard deadline: dashed with a plus when off, a quiet gray outline with an arrow when on. On, one line opens under it. Write the next task now, or leave it blank and you'll be asked when you mark it done. The checklist is left out of these drawings to save room; it stays where it is.</p>
+    <p class="why">Three pills don't fit on one line in the editor's 420 pixels, so Follow-up wraps to a second line, on a phone and on a wide screen alike. Making the existing two smaller to squeeze it in would cost them their 44-pixel tap height, so I'd let it wrap.</p>
+    <p class="why">A card that came from another says so at the top, in its own small box. That's the first place the chain shows.</p>
+    <div class="stage">
+      <div><p class="caption">Off</p><div class="mock-panel" id="ed-off"></div></div>
+      <div><p class="caption">On, with the next task written</p><div class="mock-panel" id="ed-on"></div></div>
+      <div><p class="caption">A follow-up, once made</p><div class="mock-panel" id="ed-after"></div></div>
+      <div><p class="caption">On a phone, 360 wide</p><div class="mock-panel mock-phone" id="ed-phone"></div></div>
+    </div>
+  </section>
+
+  <!-- B. The board -->
+  <section class="option">
+    <div class="option-head"><span class="letter">B</span><h2 class="name">On the board: the card wears it</h2></div>
+    <p class="why">An arrow and "Follow-up" in the card's meta row, the way Repeats shows its arrows and "Weekly". Resting the pointer on the card shows what comes next in the hover box, under the notes. The follow-up card itself looks like any other card: the chain stays off the board.</p>
+    <p class="ask"><b>One thing to judge by eye:</b> does "Follow-up" on a card read as <i>this card has one waiting</i>, or as <i>this card is one</i>? If the second, the card's mark can say "Then…" instead, and the pill in the editor stays "Follow-up".</p>
+    <div class="board-row" id="board"></div>
+  </section>
+
+  <!-- C. After Mark done -->
+  <section class="option">
+    <div class="option-head"><span class="letter">C</span><h2 class="name">After Mark done: one tap to place it</h2></div>
+    <p class="why">The finished card is saved before this step appears, so nothing here can undo it. The editor turns into one question: what comes next, and when? Each "when" button adds the card and closes, in one tap. Today, Tomorrow, and This week mean what they mean in triage (This week is the last day of the week; it's left out on a Sunday). Pick a date opens the date box. The new card keeps the category and project.</p>
+    <p class="why">Nothing after all, the X, or Escape: a follow-up you wrote in advance goes to Someday rather than vanishing; a blank one is simply let go of. If it was blank, the buttons wait until there's a title.</p>
+    <div class="stage">
+      <div><p class="caption">Written in advance</p><div class="mock-panel" id="done-written"></div></div>
+      <div><p class="caption">Left blank: asked now</p><div class="mock-panel" id="done-blank"></div></div>
+    </div>
+  </section>
+
+  <!-- D. What you did -->
+  <section class="option">
+    <div class="option-head"><span class="letter">D</span><h2 class="name">What you did: the chain</h2></div>
+    <p class="why">In the list, a card that's part of a chain gets a small link mark after its title, like the repeat mark. Click the row, and its box shows the whole chain, oldest first, this card in bold: a filled check for finished, an open circle for still on the board, and "Let go" where you set one down.</p>
+    <p class="why">Copy as text adds the chain only with the notes option ticked, as one "After:" line, so the plain list stays plain.</p>
+    <div class="stage">
+      <div class="mock-record"><p class="caption">The week's list</p><ul class="record-list" id="rec-list"></ul></div>
+      <div><p class="caption">The middle card's box</p><div class="mock-box small-panel" id="rec-box"></div></div>
+      <div class="mock-record"><p class="caption">Copy as text, notes ticked</p>
+<pre class="copy-sample">Fri, Nov 20  Send the withdrawn list to Tech Services  Collection Development
+    After: Weed graphic novels, 741.5 (Thu, Nov 19)
+Thu, Nov 19  Weed graphic novels, 741.5  Collection Development
+    Notes: Pulled 38. Kept everything with holds.</pre>
+      </div>
+    </div>
+  </section>
+</div>
+
+<script>
+  // Builds the drawings. Nothing here is saved anywhere.
+  const PLUS = '<svg class="tick-off" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"></path></svg>';
+  const HALF = '<svg class="tick-on" width="12" height="12" viewBox="0 0 10 10" aria-hidden="true"><circle cx="5" cy="5" r="4" fill="none" stroke="currentColor" stroke-width="1.5"></circle><path d="M5 1 A4 4 0 0 1 5 9 Z" fill="currentColor"></path></svg>';
+  const CHECK = (cls = 'tick-on', s = 14) => `<svg class="${cls}" width="${s}" height="${s}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"></path></svg>`;
+  // The follow-up arrow: down, then onward. Not the repeat's two arrows,
+  // not the project's diagonal.
+  const THEN = (s = 14, cls = '') => `<svg${cls ? ` class="${cls}"` : ''} width="${s}" height="${s}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 4v7a4 4 0 0 0 4 4h9"></path><path d="M15 11l4 4-4 4"></path></svg>`;
+  const LINK = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1"></path><path d="M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1"></path></svg>';
+  const CIRCLE = '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="8.5"></circle></svg>';
+  const FILLED = '<svg width="15" height="15" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10" fill="currentColor"></circle><path d="M7.5 12.5l3 3 6-6.5" fill="none" stroke="#FFFFFF" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"></path></svg>';
+  const X = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"></path></svg>';
+  const NOTES = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 3h9l4 4v13a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1z"></path><path d="M9 11h7M9 15h7M9 7h3"></path></svg>';
+  const SWATCH = (c) => `<svg width="10" height="10" viewBox="0 0 10 10" aria-hidden="true"><rect width="10" height="10" rx="3" fill="${c}"></rect></svg>`;
+  const GREEN = '#2F7D6B';
+  let uid = 0;
+
+  function head(title) {
+    return `<div class="panel-head"><h2 class="panel-title">${title}</h2><button type="button" class="icon-button" aria-label="Close">${X}</button></div>`;
+  }
+
+  function ticks({ progress = false, follow = false, written = '' }) {
+    const n = ++uid;
+    const c = (on) => (on ? ' checked' : '');
+    return `<div class="fu-wrap">
+      <div class="ticks">
+        <span class="tick tick-progress"><input type="checkbox" id="p${n}" class="tick-input"${c(progress)}><label for="p${n}" class="tick-face">${PLUS}${HALF}In progress</label></span>
+        <span class="tick tick-hard"><input type="checkbox" id="h${n}" class="tick-input"><label for="h${n}" class="tick-face">${PLUS}${CHECK()}Hard deadline</label></span>
+        <span class="tick tick-follow"><input type="checkbox" id="f${n}" class="tick-input"${c(follow)} aria-describedby="ft${n}"><label for="f${n}" class="tick-face">${PLUS}${THEN(14, 'tick-on')}Follow-up</label>
+          <span id="ft${n}" class="tick-tip" role="tooltip">Another task comes after this one. When you mark it done, Horizon asks when.</span></span>
+      </div>
+      <div class="fu-line field-new" style="flex-direction:column;gap:6px">
+        <label class="field">What comes next?
+          <input type="text" class="field-input" value="${written}" placeholder="Leave blank to be asked when it's done" autocomplete="off">
+        </label>
+        <p class="field-note" style="margin:0">It becomes its own card when you mark this one done, with the same category and project.</p>
+      </div>
+    </div>`;
+  }
+
+  function editor({ title, notes = '', due, repeat = 'Doesn’t repeat', category = 'Collection Development', project = 'Graphic novel refresh', after = '', ...t }) {
+    return `${head('Edit card')}
+      <div class="panel-body">
+        ${after}
+        <label class="field">Title<input type="text" class="field-input field-title" value="${title}"></label>
+        <label class="field">Notes<textarea class="field-input field-notes" rows="2">${notes}</textarea></label>
+        <div class="field-row field-row-time">
+          <div class="field"><label>Due</label><div class="field-due"><input type="date" class="field-input field-date" value="${due}"><button type="button" class="button button-small">No date</button></div></div>
+          <label class="field">Repeats<select class="field-input"><option>${repeat}</option></select></label>
+        </div>
+        <div class="field-row">
+          <label class="field">Category<select class="field-input"><option>${category}</option></select></label>
+          <label class="field">Project<select class="field-input"><option>${project}</option></select></label>
+        </div>
+        ${ticks(t)}
+      </div>
+      <div class="panel-foot">
+        <button type="button" class="button">${CHECK('', 16)}Mark done</button>
+        <div class="panel-foot-end"><button type="button" class="button">Cancel</button><button type="button" class="button button-primary">Save</button></div>
+      </div>`;
+  }
+
+  const weed = { title: 'Weed graphic novels, 741.5', notes: 'Pull anything not checked out in 3 years. Keep items with holds.', due: '2026-11-19' };
+  document.getElementById('ed-off').innerHTML = editor(weed);
+  document.getElementById('ed-on').innerHTML = editor({ ...weed, progress: true, follow: true, written: 'Send the withdrawn list to Tech Services' });
+  document.getElementById('ed-after').innerHTML = editor({
+    title: 'Send the withdrawn list to Tech Services', due: '2026-11-20',
+    after: `<p class="fu-after">${THEN(14)}<span>After <b>Weed graphic novels, 741.5</b>, done <span class="mono">Thu, Nov 19</span></span></p>`,
+  });
+  document.getElementById('ed-phone').innerHTML = editor({ ...weed, follow: true, written: 'Send the withdrawn list to Tech Services' });
+
+  // B. Cards on the board.
+  const card = ({ band, cat, title, meta, marks = '' }) => `
+    <article class="card" style="--band:${band}">
+      <div class="card-top"><span class="card-category">${cat}</span>${marks}</div>
+      <h3 class="card-title"><span class="card-open">${title}</span></h3>
+      <div class="card-meta">${meta}</div>
+      <span class="card-project"><span class="card-project-arrow" style="--project:#6A4FB3" aria-hidden="true">↗</span>Graphic novel refresh</span>
+    </article>`;
+  const follow = `<span class="card-follow">${THEN(13)}<span class="visually-hidden">Has a follow-up: </span>Follow-up</span>`;
+  const notesMark = `<span class="card-marks"><span class="card-notes-mark">${NOTES}</span></span>`;
+  document.getElementById('board').innerHTML = `
+    <div><p class="caption">Follow-up written, notes too, pointer resting</p>
+      <div class="peek-pair">
+        ${card({ band: GREEN, cat: 'Collection Development', title: 'Weed graphic novels, 741.5', meta: `<span class="card-date">Thu, Nov 19</span>${follow}<span class="card-progress">${HALF.replace(' class="tick-on"', '')}In progress</span>`, marks: notesMark })}
+        <div class="notes-peek"><p class="notes-peek-text">Pull anything not checked out in 3 years. Keep items with holds.</p>
+          <div class="peek-then">${THEN(13)}<span>Then: Send the withdrawn list to Tech Services</span></div></div>
+      </div></div>
+    <div><p class="caption">Follow-up left blank, pointer resting</p>
+      <div class="peek-pair">
+        ${card({ band: '#3B6FB6', cat: 'Digital Resources', title: 'Reply to Bonnie about Libby holds', meta: `<span class="card-date">Fri, Nov 20</span>${follow}` })}
+        <div class="notes-peek"><div class="peek-then" style="margin:0;padding:0;border:0">${THEN(13)}<span><i>Then: you'll be asked when it's done</i></span></div></div>
+      </div></div>
+    <div><p class="caption">The follow-up, once made: a plain card</p>
+      ${card({ band: GREEN, cat: 'Collection Development', title: 'Send the withdrawn list to Tech Services', meta: '<span class="card-date">Fri, Nov 20</span>' })}</div>`;
+
+  // C. The step after Mark done.
+  function doneStep({ written }) {
+    const off = written ? '' : ' aria-disabled="true"';
+    return `${head('What comes next?')}
+      <div class="panel-body">
+        <p class="fu-done-line">${CHECK('', 16)}<span><b style="font-weight:600">Weed graphic novels, 741.5</b> is done.</span></p>
+        <label class="field">Next card<input type="text" class="field-input field-title" value="${written}" placeholder="What came out of it?" autocomplete="off"></label>
+        <p class="fu-keeps">Keeps Collection Development and Graphic novel refresh.</p>
+        <p class="fu-when-label">When</p>
+        <div class="fu-when" role="group" aria-label="When">
+          <button type="button" class="triage-button"${off}>Today</button>
+          <button type="button" class="triage-button"${off}>Tomorrow</button>
+          <button type="button" class="triage-button"${off}>This week</button>
+          <button type="button" class="triage-button"${off}>Someday</button>
+          <button type="button" class="button button-small fu-pick"${off}>Pick a date…</button>
+        </div>
+      </div>
+      <div class="panel-foot"><button type="button" class="button">Nothing after all</button></div>`;
+  }
+  document.getElementById('done-written').innerHTML = doneStep({ written: 'Send the withdrawn list to Tech Services' });
+  document.getElementById('done-blank').innerHTML = doneStep({ written: '' });
+
+  // D. What you did.
+  const row = (title, date, chain) => `<li><button type="button" class="record-row">
+      <span class="record-title">${title}${chain ? `<span class="record-chain">${LINK}<span class="visually-hidden">Part of a chain</span></span>` : ''} <span class="record-project"><span class="card-project-arrow" style="--project:#6A4FB3" aria-hidden="true">↗</span>Graphic novel refresh</span></span>
+      <span class="record-category">${SWATCH(GREEN)}Collection Development</span>
+      <span class="record-date">${date}</span></button></li>`;
+  document.getElementById('rec-list').innerHTML =
+    row('Send the withdrawn list to Tech Services', 'Fri, Nov 20', true) +
+    row('Weed graphic novels, 741.5', 'Thu, Nov 19', true) +
+    row('Order replacement copies for the series gaps', 'Tue, Nov 17', false);
+  document.getElementById('rec-box').innerHTML = `
+    <div class="settings-head"><h2 class="panel-title record-box-title">Send the withdrawn list to Tech Services</h2><button type="button" class="icon-button" aria-label="Close">${X}</button></div>
+    <p class="record-box-category">${SWATCH(GREEN)}Collection Development</p>
+    <p class="record-box-project"><span class="card-project-arrow" style="--project:#6A4FB3" aria-hidden="true">↗</span>Graphic novel refresh</p>
+    <p class="record-box-when">Finished Friday, November 20</p>
+    <div class="chain">
+      <p class="chain-head">The chain</p>
+      <ol class="chain-list">
+        <li class="is-done">${FILLED}<span><span class="chain-title">Weed graphic novels, 741.5</span><span class="chain-when">Done Thu, Nov 19</span></span></li>
+        <li class="is-done is-this">${FILLED}<span><span class="chain-title">Send the withdrawn list to Tech Services</span><span class="chain-when">Done Fri, Nov 20</span></span><span class="visually-hidden">(this card)</span></li>
+        <li class="is-open">${CIRCLE}<span><span class="chain-title">Process the withdrawn items</span><span class="chain-when">On the board, due Tue, Nov 24</span></span></li>
+      </ol>
+    </div>
+    <div class="small-foot record-foot"><button type="button" class="button">Put back on the board</button><button type="button" class="button button-primary">Close</button></div>`;
+</script>
+</body>
+</html>

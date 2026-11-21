@@ -446,8 +446,9 @@ per category, only if suggestions turn out to be a problem.
 
 **Now: follow-up cards, being talked out** (2026-11-21, on
 `claude/elegant-wright-plpeuh`). A card that, when done, leads to a new
-card, with the chain shown in the editor and What you did. Four small
-questions open; see "Follow-up cards" below. Nothing built yet.
+card, with the chain shown in the editor and What you did. The four
+questions are settled (every recommendation); a look sheet is drawn
+(`design/followup-options/`), waiting on your eye. Nothing built yet.
 
 **After that: the tuning slice, when you're ready** (item 3 in the queue; you
 wanted to come back to it later, not straight away). Its six questions
@@ -498,7 +499,7 @@ clearly apart. Also noted: letting go of a task doesn't count against
 you; What you did counts only finished cards, and let-go ones sit folded
 at the bottom with no score.
 
-## Follow-up cards (talking it out, 2026-11-21; not planned in detail, nothing built)
+## Follow-up cards (questions settled, look sheet drawn 2026-11-21; nothing built)
 
 Your idea: a card can say "when this is done, another task follows,"
 because tasks spawn tasks. The plumbing mostly exists: a repeating card
@@ -540,7 +541,7 @@ asked at the end.
   finished row opens in What you did, with the whole chain and this card
   in bold. Not on the board: the board is about when, not history.
 
-### Still open (my recommendation for each)
+### Settled (2026-11-21: you took every recommendation)
 1. **A repeating card with a follow-up:** each card in the series
    carries the follow-up, and each week's follow-up starts its own small
    chain (not one fifty-link chain per series).
@@ -549,6 +550,29 @@ asked at the end.
    the plain list stays plain.
 4. **The name:** Follow-up (plain in a tooltip and to a screen reader),
    over "Then…". Not "Next step," which collides with checklist steps.
+
+### The look sheet (2026-11-21, waiting on your eye)
+`design/followup-options/preview.html` (open it in a browser; the pills
+work) and `preview.png`. One look, drawn with the site's own styles:
+- **A, the editor:** the Follow-up pill, off and on, "What comes next?"
+  under it, and a follow-up's own editor opening with "After **Weed
+  graphic novels, 741.5**, done Thu, Nov 19." Three pills don't fit in
+  the editor's 420 pixels, so Follow-up wraps to a second line (shrinking
+  the others would cost their 44-pixel tap height).
+- **B, the board:** an arrow and "Follow-up" in the meta row; the hover
+  box adds "Then: ..." under the notes. **Open question for your eye:**
+  does "Follow-up" on a card read as "has one waiting" or "is one"? If
+  the second, the card says "Then…" and the pill stays "Follow-up".
+- **C, after Mark done:** the editor becomes "What comes next?": the next
+  card's title, "Keeps Collection Development and Graphic novel
+  refresh", the when buttons (Today, Tomorrow, This week, Someday, in
+  triage's style; This week is the week's last day, gone on a Sunday),
+  Pick a date, and Nothing after all. Blank: the buttons wait for a
+  title.
+- **D, What you did:** a link mark after a chained card's title; its box
+  shows "The chain", oldest first, this card in bold (filled check =
+  done, open circle = on the board, "Let go" where set down). Copy as
+  text with notes: one "After:" line.
 
 ### Noted, not proposed
 - A finished card put back on the board ("Put back on the board") keeps
