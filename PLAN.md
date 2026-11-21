@@ -406,8 +406,10 @@ instead of guessing. Needs a new Apps Script version and a hard-reload. Then M2,
 passed, and **Revision 4** trims padding from the notes (deployed).
 Then **Revision 5** (site only): the Inbox's text box worded for any
 text, and on a wide screen a screenshot opens beside the Inbox so you
-can read it while fixing the draft. After a look at both: confirm, and
-merge into `main`.
+can read it while fixing the draft. Then T5, M1, and T10 run live, and
+**Revision 6** (site only): when the words the date came from name the
+wrong weekday, the Inbox's date note turns yellow and says so. After a
+look: confirm, and merge into `main`.
 
 **Next: keep testing with `samples/haiku-checklist/`,** especially M4 (who
 you are), M2 (steps off the screen), M3 (the forward), and the one-ask
@@ -606,6 +608,19 @@ worth listing, and get no list.
 - **Verdict so far:** every test put the right task, only your steps,
   and the right date in front of you; nothing invented. The slips were
   in the notes and titles, which you review anyway.
+- **After Revision 4 (2026-11-21):** T5 (the grant report) passed
+  everything the reorder risked: Dec 10 read directly, the steps without
+  dates and the timeline with them, Hard deadline on for a portal that
+  closes, a title naming the job, no padding. M1 (the mail window)
+  passed: only the open email's three steps, nothing from the eight
+  others (the "URGENT" timesheet trap included), and a useful Need to
+  know ("keep it short"). T10 (conflicting dates): the right steps
+  (three; "send it to Rosa" folded into the title) and Dec 4, but no
+  "Check:" line, though its timeline wrote "Fri, Dec 4". So "Check:"
+  doesn't fire even on a plain conflict: Revision 6 moves the weekday
+  check to code. Also noted: Hard deadline on for T10's "please don't be
+  late" (the second time urgent wording tipped it, after M3); debatable,
+  one tap to change, no change made.
 - **Still a candidate, only if it recurs:** the summary adds no
   explanation the message doesn't give, and mentions other tasks, not
   every other item.
@@ -670,6 +685,51 @@ How to test (hard-reload first):
       it; change the date and it follows. Reload: still Weekly.
 - [ ] Add to board: the card shows Weekly. Mark it done: the next one
       arrives a week later, its checklist unticked.
+
+### Revision 6: the weekday check, in code (2026-11-21, awaiting test)
+
+**Why.** T10 ("due Thursday, December 4", when Dec 4, 2026 is a Friday)
+got the right steps and Dec 4, but no "Check:" line, and the date note
+said "Date read directly", the reassuring label, on the one date that
+deserved a second look. Haiku plainly saw the clash (its timeline wrote
+"Fri, Dec 4") and settled it quietly. A "say when you're unsure" rule
+can't be counted on, so this check moves to code, where it's reliable.
+
+**What it does.** When the words the date came from (Haiku's
+`due_date_quote`) name a weekday that isn't the date's own, the draft's
+date note turns yellow: "The text says Thursday, but Dec 4 is a Friday.
+Worth a second look." ("The screenshot says...", "What you typed
+says..."). Change the date and the note goes, as the date notes always
+have; put Haiku's date back and it returns. Full weekday names count in
+any case ("thursday"); short ones only capitalized ("Thu", "Thurs",
+"Tues", "Sat"), so "sat on my desk" isn't taken for a Saturday. If the
+words name two weekdays and one matches ("Thursday or Friday"), no
+flag. Its limit: it only sees a weekday that's inside the quoted words,
+which is where it usually is.
+
+"Check:" (Revision 3) stays in Haiku's instructions: quiet when unused,
+and the tuning slice can see whether a larger model uses it.
+
+**Files:** `js/dates.js` (`weekdayClash`), `js/inbox.js` (the date note).
+Site only: no Apps Script version.
+
+**Checked here:** `weekdayClash` on 14 cases, all right (the clash; a
+match; no weekday; "Thurs."; "Thu 12/3"; "sat on my desk"; "Sat, Nov 28"
+against both a Saturday and a Friday; "thursday or friday"; "next
+Tuesday"; "Wed the 4th"; empty words; "Tues Dec 1"; "Mondays at 3"). In
+the Inbox, 5 checks, all passing: the yellow note naming both days,
+gone when you pick another date, back with Haiku's, and the green note
+unchanged when the weekday matches. The Inbox (36) and side-pane (20)
+suites still pass.
+
+How to test (hard-reload first): paste T10. The date note should be
+yellow and name both days.
+
+**Proposal (not built):** quick add has the same gap from the other
+side. A line you type with a plainly named date ("thurs dec 4") goes
+straight onto the board without review, so a clash there would never be
+shown. The same check could send such a line to the Inbox instead, with
+this note. Site only; say yes and I'll add it.
 
 ### Revision 5: the Inbox's wording, and the screenshot beside the draft (2026-11-20, awaiting test)
 

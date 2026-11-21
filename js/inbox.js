@@ -22,7 +22,7 @@
 
 import { activeOf } from './categories.js';
 import { canRetry, costLine } from './backend.js';
-import { isISODate, todayISO } from './dates.js';
+import { formatMonthDay, isISODate, todayISO, weekdayClash } from './dates.js';
 import { draftNotes, newCard, newDraft } from './model.js';
 import { shrink, splitImages, toBase64 } from './screenshot.js';
 import { sameChecklist, sectionHTML, setupChecklist } from './checklist.js';
@@ -885,7 +885,16 @@ export function setupInbox({ read, saveDraft, changeDraft, discardDraft, addToBo
     const due = entry.due.value || null;
     let text = '';
     let tone = '';
-    if (draft.aiDueDate && due === draft.aiDueDate) {
+    // The words the date came from name a different weekday ("Thursday,
+    // December 4", when Dec 4 is a Friday): the message contradicts
+    // itself, and Haiku chose for you. Checked here in code, since Haiku
+    // tends to settle a contradiction quietly rather than mention it.
+    const clash = draft.aiDueDate && due === draft.aiDueDate ? weekdayClash(draft.dueDateQuote, due) : null;
+    if (clash) {
+      const source = words.read.charAt(0).toUpperCase() + words.read.slice(1);
+      text = `${source} says ${clash.said}, but ${formatMonthDay(due)} is a ${clash.is}. Worth a second look.`;
+      tone = 'is-inferred';
+    } else if (draft.aiDueDate && due === draft.aiDueDate) {
       if (draft.dueDateConfidence === 'explicit') {
         text = `Date read directly from ${words.read}.`;
         tone = 'is-explicit';
