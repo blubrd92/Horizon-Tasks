@@ -1,7 +1,10 @@
 # Test samples: Haiku's checklist steps
 
 Made 2026-11-20 for "Haiku suggests checklist items". Every name, address,
-and place here is invented. Dates assume today is Friday, Nov 20, 2026.
+and place here is invented. Dates assume today is Friday, Nov 20, 2026:
+on a later day, open the board as
+`https://blubrd92.github.io/Horizon-Tasks/?today=2026-11-20` so Haiku
+counts from the same day (the testing date is sent to it too).
 
 **Text samples (T1 to T9):** copy one block at a time and paste it into the
 Inbox's "Or paste the text of an email" box, then press Read the text.
@@ -213,6 +216,33 @@ Para el taller de alfabetización digital del sábado 12 de diciembre,
 
 Muchas gracias,
 Carmen
+```
+
+## T10. Two dates that disagree (does "Check:" ever fire?)
+
+**Good answer:** four steps (fill in sections 1 and 2, attach last year's
+spending summary, get Lena's signature, send the form to Rosa); due
+Thursday, Dec 3 or Friday, Dec 4; and a **"Check:" line** in the notes
+saying the email names both, since Dec 4, 2026 is a Friday. A date that
+picks one quietly, with no "Check:", means the flag isn't firing even on a
+plain conflict.
+
+```
+From: Rosa Medina <rosa.medina@example.org>
+Subject: Budget request form for next year
+
+Hi,
+
+The budget request form for next year is due Thursday, December 4.
+Before you send it to me, please:
+
+- fill in sections 1 and 2
+- attach last year's spending summary
+- get Lena's signature on the last page
+
+Finance needs everything from me by the 4th, so please don't be late!
+
+Rosa
 ```
 
 ---
