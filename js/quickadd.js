@@ -17,6 +17,7 @@
 // fades and gives it back. An error stays until the next quick add.
 
 const CONFIRM_FOR = 6000; // milliseconds a confirmation stays
+const HEADS_UP_FOR = 15000; // and one with something to check in it
 const FADE = 300; // milliseconds it takes to fade (matches the CSS)
 // A paste longer than this, or with more than one line, is taken for an
 // email and sent to the Inbox to read (when onPasteText is given). A
@@ -105,19 +106,21 @@ export function setupQuickAdd({ input, status, since, onCompose, onAdd, onRead, 
     });
   });
 
-  function showAdded(text, id) {
-    showAction(text, 'Edit', () => onEdit(id));
+  // headsUp: the line holds something to check (a weekday that doesn't
+  // match the date), so it stays longer.
+  function showAdded(text, id, { headsUp = false } = {}) {
+    showAction(text, 'Edit', () => onEdit(id), headsUp ? HEADS_UP_FOR : CONFIRM_FOR);
   }
 
   // A confirmation with one button after it ("Edit", "Review").
-  function showAction(text, label, onClick) {
+  function showAction(text, label, onClick, stay = CONFIRM_FOR) {
     const action = document.createElement('button');
     action.type = 'button';
     action.className = 'link-button';
     action.textContent = label;
     action.addEventListener('click', onClick);
     showMessage([`${text} `, action]);
-    deadline = performance.now() + CONFIRM_FOR;
+    deadline = performance.now() + stay;
     schedule();
   }
 

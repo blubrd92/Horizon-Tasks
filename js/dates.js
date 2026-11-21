@@ -135,23 +135,24 @@ export function weekdayName(iso) {
 // A weekday named in some words that doesn't match a date's own weekday:
 // "Thursday, December 4" when Dec 4 is a Friday. Returns { said, is } as
 // full names ("Thursday", "Friday"), or null when the words name no
-// weekday, or name the right one. Full names in any case ("thursday");
-// short ones only capitalized ("Thu", "Thurs."), so "sat" or "sun" in a
-// sentence isn't taken for a day. Used for the Inbox's date note: Haiku
-// reads the date, and this checks it against the words it came from.
+// weekday, or name the right one. The words are only the ones a date came
+// from (Haiku's quote of them), never a whole sentence, so short forms
+// count in any case: "thurs dec 4", "Sat, Nov 28", "weds". Used for the
+// Inbox's date note and quick add's line: Haiku reads the date, and this
+// checks it against the words it came from.
 const WEEKDAY_WORDS = [
-  ['Sunday', /\bsundays?\b/i, /\bSun\b/],
-  ['Monday', /\bmondays?\b/i, /\bMon\b/],
-  ['Tuesday', /\btuesdays?\b/i, /\bTues?\b/],
-  ['Wednesday', /\bwednesdays?\b/i, /\bWed\b/],
-  ['Thursday', /\bthursdays?\b/i, /\bThu(?:rs?)?\b/],
-  ['Friday', /\bfridays?\b/i, /\bFri\b/],
-  ['Saturday', /\bsaturdays?\b/i, /\bSat\b/],
+  ['Sunday', /\b(?:sundays?|sun)\b/i],
+  ['Monday', /\b(?:mondays?|mon)\b/i],
+  ['Tuesday', /\b(?:tuesdays?|tues?)\b/i],
+  ['Wednesday', /\b(?:wednesdays?|weds?)\b/i],
+  ['Thursday', /\b(?:thursdays?|thu(?:rs?)?)\b/i],
+  ['Friday', /\b(?:fridays?|fri)\b/i],
+  ['Saturday', /\b(?:saturdays?|sat)\b/i],
 ];
 
 export function weekdayClash(words, iso) {
   if (typeof words !== 'string' || !isISODate(iso)) return null;
-  const named = WEEKDAY_WORDS.filter(([, full, short]) => full.test(words) || short.test(words)).map(([name]) => name);
+  const named = WEEKDAY_WORDS.filter(([, pattern]) => pattern.test(words)).map(([name]) => name);
   const is = weekdayName(iso);
   if (!named.length || named.includes(is)) return null;
   return { said: named[0], is };

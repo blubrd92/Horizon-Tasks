@@ -408,8 +408,10 @@ Then **Revision 5** (site only): the Inbox's text box worded for any
 text, and on a wide screen a screenshot opens beside the Inbox so you
 can read it while fixing the draft. Then T5, M1, and T10 run live, and
 **Revision 6** (site only): when the words the date came from name the
-wrong weekday, the Inbox's date note turns yellow and says so. After a
-look: confirm, and merge into `main`.
+wrong weekday, the Inbox's date note turns yellow and says so. Then
+**Revision 7** (site only): quick add's line says the same when a card
+goes straight onto the board ("You typed Thursday."). After a look:
+confirm, and merge into `main`.
 
 **Next: keep testing with `samples/haiku-checklist/`,** especially M4 (who
 you are), M2 (steps off the screen), M3 (the forward), and the one-ask
@@ -686,6 +688,40 @@ How to test (hard-reload first):
 - [ ] Add to board: the card shows Weekly. Mark it done: the next one
       arrives a week later, its checklist unticked.
 
+### Revision 7: quick add's heads-up (2026-11-21, awaiting test)
+
+A line you type with a plainly named date goes straight onto the board,
+with no review; if it names a weekday that isn't the date's own ("budget
+form thurs dec 4", Dec 4 being a Friday), nothing would have told you.
+Sending those lines to the Inbox would add a review step to your own
+words, so instead (your choice, on my recommendation) the card still
+goes straight on, and the line under quick add says where it landed and
+what you typed: "Added "Budget form" for Fri, Dec 4. You typed
+Thursday." with its usual Edit button. On a date that's today: "Added
+"Lunch order" to Today, Fri, Nov 20. You typed Thursday." A line with a
+heads-up stays 15 seconds instead of 6. Lines with no weekday, or the
+right one, are unchanged.
+
+The same check as the Inbox's date note (`weekdayClash`), which now
+counts short forms in any case ("thurs", "weds"), since quick adds are
+typed in lowercase shorthand.
+
+**Files:** `js/app.js` (the heads-up), `js/quickadd.js` (a longer stay
+for it), `js/dates.js` (short forms in any case, "weds"). Site only.
+
+**Checked here:** `weekdayClash` on 18 cases, all right (now with
+"thurs dec 4", "weds dec 9", "sat dec 5", "december 4", and "Saturn",
+which isn't a day). Quick add, 8 checks, all passing: the clash card goes
+straight onto the board on Haiku's date with no draft; the line names
+the day and what you typed, with Edit; it's still there after 7 seconds;
+no weekday, or the right one, gives the plain line; a clash on today
+says "to Today, Fri, Nov 20". The Inbox note (5), the Inbox (36), and
+checklists (55) still pass.
+
+How to test (hard-reload first): type "budget form thurs dec 4" in quick
+add and press Enter. The card goes on Dec 4, and the line says "You
+typed Thursday." for 15 seconds.
+
 ### Revision 6: the weekday check, in code (2026-11-21, awaiting test)
 
 **Why.** T10 ("due Thursday, December 4", when Dec 4, 2026 is a Friday)
@@ -700,12 +736,14 @@ can't be counted on, so this check moves to code, where it's reliable.
 date note turns yellow: "The text says Thursday, but Dec 4 is a Friday.
 Worth a second look." ("The screenshot says...", "What you typed
 says..."). Change the date and the note goes, as the date notes always
-have; put Haiku's date back and it returns. Full weekday names count in
-any case ("thursday"); short ones only capitalized ("Thu", "Thurs",
-"Tues", "Sat"), so "sat on my desk" isn't taken for a Saturday. If the
-words name two weekdays and one matches ("Thursday or Friday"), no
-flag. Its limit: it only sees a weekday that's inside the quoted words,
-which is where it usually is.
+have; put Haiku's date back and it returns. Weekday names count full or
+short, in any case ("Thursday", "thurs", "Sat", "weds"): the words are
+only the few a date came from, never a whole sentence, so "sat" there
+means Saturday. (A first version counted short forms only when
+capitalized; quick add's lowercase "thurs dec 4" slipped through, so
+that guard went in Revision 7.) If the words name two weekdays and one
+matches ("Thursday or Friday"), no flag. Its limit: it only sees a
+weekday that's inside the quoted words, which is where it usually is.
 
 "Check:" (Revision 3) stays in Haiku's instructions: quiet when unused,
 and the tuning slice can see whether a larger model uses it.
@@ -725,11 +763,8 @@ suites still pass.
 How to test (hard-reload first): paste T10. The date note should be
 yellow and name both days.
 
-**Proposal (not built):** quick add has the same gap from the other
-side. A line you type with a plainly named date ("thurs dec 4") goes
-straight onto the board without review, so a clash there would never be
-shown. The same check could send such a line to the Inbox instead, with
-this note. Site only; say yes and I'll add it.
+**Proposal, built as Revision 7 (lighter than first offered):** quick
+add's straight-to-the-board path, below.
 
 ### Revision 5: the Inbox's wording, and the screenshot beside the draft (2026-11-20, awaiting test)
 

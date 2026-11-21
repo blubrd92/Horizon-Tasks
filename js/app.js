@@ -9,6 +9,7 @@ import {
   isISODate,
   pretendToday,
   todayISO,
+  weekdayClash,
   zoneBounds,
   zoneFor,
   zoneStart,
@@ -580,8 +581,14 @@ async function start() {
         notes: draft.notes,
       };
       const { id, saved } = fb.addCard(uid, card);
-      const where = !due ? 'to Someday' : due === today ? 'to Today' : `for ${formatShort(due)}`;
-      quickAdd.showAdded(`Added \u201c${draft.title}\u201d ${where}.`, id);
+      // You named a weekday that isn't the date's own ("thurs dec 4"):
+      // the card still goes straight on, and the line says which day it
+      // landed on and what you typed, so a card a day off can't slip by.
+      const clash = due ? weekdayClash(draft.dueDateQuote, due) : null;
+      let where = !due ? 'to Someday' : due === today ? 'to Today' : `for ${formatShort(due)}`;
+      if (clash && due === today) where = `to Today, ${formatShort(due)}`;
+      const heads = clash ? ` You typed ${clash.said}.` : '';
+      quickAdd.showAdded(`Added \u201c${draft.title}\u201d ${where}.${heads}`, id, { headsUp: Boolean(clash) });
       saved.catch((err) => {
         quickAdd.showText(`Couldn't save \u201c${draft.title}\u201d (${err.code || err.message}).`);
         quickAdd.giveBack(typed);
