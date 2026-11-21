@@ -444,11 +444,13 @@ picks by name alone, so an unclear name ("Saturday PIC") makes it guess;
 a clearer name is the cheap fix. Idea, not proposed: a short description
 per category, only if suggestions turn out to be a problem.
 
-**Now: follow-up cards, being talked out** (2026-11-21, on
-`claude/elegant-wright-plpeuh`). A card that, when done, leads to a new
-card, with the chain shown in the editor and What you did. The four
-questions are settled (every recommendation); a look sheet is drawn
-(`design/followup-options/`), waiting on your eye. Nothing built yet.
+**Now: Waiting and follow-up cards, a look sheet to judge** (2026-11-21,
+on `claude/elegant-wright-plpeuh`). Waiting replaces In progress (gray,
+who, and the days it's been); Follow-up makes the next card at Mark
+done, asking only when its title or date is missing; the chain shows in
+the editor and What you did. Questions settled; the second look sheet
+is in `design/followup-options/`. Nothing built yet. See "Waiting and
+follow-up cards" below.
 
 **After that: the tuning slice, when you're ready** (item 3 in the queue; you
 wanted to come back to it later, not straight away). Its six questions
@@ -499,7 +501,7 @@ clearly apart. Also noted: letting go of a task doesn't count against
 you; What you did counts only finished cards, and let-go ones sit folded
 at the bottom with no score.
 
-## Follow-up cards (questions settled, look sheet drawn 2026-11-21; nothing built)
+## Waiting and follow-up cards (questions settled, second look sheet drawn 2026-11-21; nothing built)
 
 Your idea: a card can say "when this is done, another task follows,"
 because tasks spawn tasks. The plumbing mostly exists: a repeating card
@@ -551,9 +553,53 @@ asked at the end.
 4. **The name:** Follow-up (plain in a tooltip and to a screen reader),
    over "Then…". Not "Next step," which collides with checklist steps.
 
-### The look sheet (2026-11-21, waiting on your eye)
-`design/followup-options/preview.html` (open it in a browser; the pills
-work) and `preview.png`. One look, drawn with the site's own styles:
+### Waiting replaces In progress (settled 2026-11-21)
+In progress only ever drew a pill: nothing on the board acted on it (no
+sorting, no triage). It felt wrong for three reasons, all of which you
+named: a claim that never expires, redundant with position and the
+checklist count, and blue (the board's single accent). What it stood in
+for, in library work, is usually **waiting on someone**, which the board
+can't show today. So:
+- **Waiting** takes In progress's place in the ticks row: dashed with a
+  plus when off; a soft gray pill (`--strip-day`) with an hourglass when
+  on. Never blue.
+- **On whom or what: optional** (one tap is enough).
+- **It ages in plain sight:** the day it's turned on is remembered; the
+  card's pill reads "Waiting on Tech Services · 7 days" ("today" on the
+  first day), the days in mono, on the card itself, not only on hover.
+- **It never clears itself:** only you turning it off, or Mark done.
+- **Triage:** an overdue soft card that's waiting asks "Still waiting on
+  Bonnie?" instead of "Still on your plate?"; same buttons.
+- **Stored as its own fields** (who, since when), not as a status, so
+  What you did and the board's queries are untouched. Cards marked In
+  progress today read as plain open cards; nothing is lost.
+- **SPEC.md** names the In progress pill; that line gets updated in the
+  build (you approved the change, 2026-11-21).
+
+### Follow-up, refined (settled 2026-11-21)
+You often know the next part ahead, and it has its own deadline. So the
+pill stays, and its line takes **a title and an optional due date**.
+With both, **Mark done asks nothing**: the editor closes as today, the
+next card is made, and the line beside quick add says "Done. Next: ...,
+due Fri, Dec 4. Edit" for a few seconds. The step after Mark done
+appears only when the title or the date is missing. Every card without
+Follow-up on: Mark done exactly as now. (Correction to the chat: keeping
+the pill means three pills still, so the wrap stays.)
+
+### The look sheet
+**Second drawing (2026-11-21, waiting on your eye),** replacing the first
+in `design/followup-options/preview.html` and `preview.png` (the first is
+in git history): A, the editor with Waiting, Hard deadline, Follow-up
+(and Follow-up's date); B, cards wearing Waiting and Follow-up, and the
+hover box's two new lines; C, triage's "Still waiting on Bonnie?"; D,
+Mark done: the silent case's line beside quick add, then asked when
+(title, no date) and asked what (blank); E, the chain, unchanged.
+Found while drawing: at a usual card width (260 pixels), "Waiting on
+Tech Servi…" is already cut short. Option to put to you: drop "Waiting
+on" on the card and let the hourglass say it ("Tech Services · 7
+days"; a screen reader still hears "Waiting on").
+
+**First drawing (superseded), for the record.** One look, drawn with the site's own styles:
 - **A, the editor:** the Follow-up pill, off and on, "What comes next?"
   under it, and a follow-up's own editor opening with "After **Weed
   graphic novels, 741.5**, done Thu, Nov 19." Three pills don't fit in
