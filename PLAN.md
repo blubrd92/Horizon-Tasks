@@ -426,10 +426,23 @@ cards, and Haiku's checklist steps with every Inbox revision. If GitHub
 Pages was switched to the side branch for testing, point it back at
 `main` (Settings > Pages).
 
-**Revision to categories: drag handles instead of arrows** (2026-11-21,
-awaiting test), on `claude/determined-faraday-st14l9`, before the tuning
-slice. See "Revision 2: categories move by a drag handle" under
-"Categories you set yourself". `main` waits for your test.
+**Revision to categories: drag handles instead of arrows: done and
+confirmed** (2026-11-21), on `claude/determined-faraday-st14l9`, pushed
+straight to `main` as you asked. The reason, in your words: the look
+should be consistent with a similar area (the checklist). See "Revision
+2: categories move by a drag handle" under "Categories you set
+yourself".
+
+**How Haiku knows your categories** (you asked, 2026-11-21): every
+request (screenshot, pasted text, quick add) carries your active
+categories' ids and names at that moment (`aiContext` in `js/app.js`;
+`readCategories_` and the answer's shape in `Code.gs`, which lets Haiku
+pick only one of those ids, or none). Retired ones aren't sent; colors
+and the rest of the board aren't either; the script stores none of it,
+so a change in Settings counts on the next read with no redeploy. Haiku
+picks by name alone, so an unclear name ("Saturday PIC") makes it guess;
+a clearer name is the cheap fix. Idea, not proposed: a short description
+per category, only if suggestions turn out to be a problem.
 
 **Next: the tuning slice, when you're ready** (item 3 in the queue; you
 wanted to come back to it later, not straight away). Its six questions
@@ -1920,11 +1933,12 @@ How to test (hard-reload first):
 - [ ] Switch tabs: the box stays the same size.
 - [ ] On your phone, the three tabs fit and read well.
 
-### Revision 2: categories move by a drag handle (2026-11-21, awaiting test)
+### Revision 2: categories move by a drag handle (2026-11-21, confirmed)
 
 You asked for the category rows to look like checklist items: the up and
 down arrows swapped for the six-dot drag handle, on the left; everything
-else the same. Why it's worth doing: one way to reorder across Horizon
+else the same. Your reason: the look should be consistent with a
+similar area. Side benefits: one way to reorder across Horizon
 (the checklist already drags); the name gets the room two 44-pixel
 arrow buttons took (about 50 pixels more, which matters on a phone);
 moving the twelfth category to the top is one drag instead of eleven
