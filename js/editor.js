@@ -518,6 +518,10 @@ export function setupEditor({ onSave, onDone, onCreate, onClose, onTick, onFollo
     updateBoxes();
     if (waiting.checked) waitingOn.focus();
   });
+  document.getElementById('editor-follow-nodate').addEventListener('click', () => {
+    followDue.value = '';
+    followDue.focus();
+  });
   followTick.addEventListener('change', () => {
     updateBoxes();
     if (followTick.checked) followTitle.focus();

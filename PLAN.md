@@ -619,6 +619,12 @@ Due (none: Someday), so nothing typed is lost. Site only; `index.html`,
 passing (the new ones: no When buttons, the Someday note follows the
 box, No date empties it, Enter in Due adds the card with that date).
 
+### Revision 2: the Follow-up box's date is Due too (2026-11-22, awaiting test)
+The box in the editor ("What comes next?") now has **Due** with the
+date box and **No date**, as the editor's own Due field does. An empty
+Due there still means "ask me when I mark it done." Site only;
+`index.html`, `js/editor.js`. 97 checks still pass.
+
 ### Built (2026-11-21, awaiting your test)
 Site only: no Apps Script version, no Firestore rules change, no setup
 steps. Hard-reload, and test on the live site.
