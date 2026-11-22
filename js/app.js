@@ -30,7 +30,9 @@ import { setupDatePick } from './datepick.js';
 import { setupSettings } from './settings.js';
 import { activeOf, sameCategories } from './categories.js';
 import { setupDone } from './done.js';
-import { copyText, putBackChanges, rangeFor, rangeTimes } from './record.js';
+import { copyText, dayOf, putBackChanges, rangeFor, rangeTimes } from './record.js';
+import { insertAfter, isStep, nextOpenStep, planIds, planProjectOf, stepContext, stepFields, stepNumber, stepsOf } from './plan.js';
+import { setupPlanPanel } from './planpanel.js';
 import { NEW_PROJECT, findByName, finishedOf, nextColor, openCounts, projectIdFromHash } from './projects.js';
 import { setupProjectList } from './projectlist.js';
 import { setupProjectPage } from './projectpage.js';
@@ -498,6 +500,13 @@ async function start() {
       // A new date means a new zone, where the card's old place among its
       // neighbors means nothing; it goes back to date order (see order.js).
       if ('dueDate' in changes) changes.order = null;
+      // A plan step moved to another project (or none) leaves the plan,
+      // in the same write.
+      const leaving = card && leavesPlan(card, changes);
+      if (leaving) {
+        fb.savePlan(uid, leaving.id, leaving.changes.planSteps, { updates: [{ id: cardId, changes }] }).catch(showSaveError);
+        return;
+      }
       fb.updateCard(uid, cardId, changes).catch(showSaveError);
     },
     // Marking done. A follow-up with a title and a date is made in the
@@ -523,17 +532,32 @@ async function start() {
       const madeNow = followUp && !needsAsking(followUp) ? followUpCard(finished, followUp, today) : null;
       if (madeNow) Object.assign(changes, parentChainChanges(finished));
       const adds = [repeatNext, madeNow].filter(Boolean);
-      if (adds.length) {
-        const { ids, saved } = fb.finishWith(uid, cardId, STATUS.DONE, changes, adds);
+      // A plan step: leaving the plan (moved to another project), or a
+      // follow-up joining it as the next step, written in the same go.
+      let planWrite = leavesPlan(card, changes);
+      const ids = adds.map(() => null);
+      if (!planWrite && madeNow) {
+        const joins = joinsPlan(finished, madeNow.projectId);
+        if (joins) {
+          ids[adds.length - 1] = fb.newCardId(uid);
+          planWrite = { id: joins.id, changes: { planSteps: insertAfter(planIds(joins), cardId, ids[adds.length - 1]) } };
+        }
+      }
+      if (adds.length || planWrite) {
+        const { ids: made, saved } = fb.finishWith(uid, cardId, STATUS.DONE, changes, adds, { ids, project: planWrite });
+        saved.catch(showSaveError);
         const series = repeatNext ? `The series' next one is due ${formatShort(repeatNext.dueDate)}.` : '';
         if (madeNow) {
-          activeQuickAdd().showAdded(`Done. Next: \u201c${madeNow.title}\u201d, ${whereText(madeNow.dueDate)}.${series ? ` ${series}` : ''}`, ids[ids.length - 1]);
-        } else {
-          activeQuickAdd().showAdded(`Done. The next one is due ${formatShort(repeatNext.dueDate)}.`, ids[0]);
+          activeQuickAdd().showAdded(`Done. Next: \u201c${madeNow.title}\u201d, ${whereText(madeNow.dueDate)}.${series ? ` ${series}` : ''}`, made[made.length - 1]);
+        } else if (repeatNext) {
+          activeQuickAdd().showAdded(`Done. The next one is due ${formatShort(repeatNext.dueDate)}.`, made[0]);
         }
-        saved.catch(showSaveError);
       } else {
         fb.markDone(uid, cardId, changes).catch(showSaveError);
+        // A plan step with nothing made after it: the line says what's
+        // next in the plan, if anything is.
+        const next = !followUp && nextInPlan(finished);
+        if (next) activeQuickAdd().showAdded(`Done. Next in the plan: \u201c${next.title}\u201d, ${whereText(next.dueDate)}.`, next.id);
       }
       if (followUp && !madeNow) {
         return {
@@ -562,7 +586,20 @@ async function start() {
           afterDay: base.afterDay,
         });
         if (base.sample) fields.sample = true;
-        ({ id, saved } = fb.addFollowUp(uid, fields, base.afterId, { chainId: base.chainId }));
+        // The step before it was a plan step: it joins the plan right
+        // after that step, unless you moved it to another project.
+        const planProject = projects.find((p) => p.id === base.chainId && isStep(p, base.afterId));
+        if (planProject && fields.projectId === planProject.id) {
+          const newId = fb.newCardId(uid);
+          const project = { id: planProject.id, changes: { planSteps: insertAfter(planIds(planProject), base.afterId, newId) } };
+          ({ id, saved } = fb.addFollowUp(uid, fields, base.afterId, {}, { id: newId, project }));
+        } else if (planProject) {
+          // Moved elsewhere: it follows the step, but isn't in the plan.
+          fields.chainId = null;
+          ({ id, saved } = fb.addFollowUp(uid, fields, base.afterId, {}));
+        } else {
+          ({ id, saved } = fb.addFollowUp(uid, fields, base.afterId, { chainId: base.chainId }));
+        }
         line.showAdded(`Next: \u201c${values.title}\u201d, ${whereText(values.dueDate)}.`, id);
       } else {
         ({ id, saved } = fb.addCard(uid, fields));
@@ -767,6 +804,59 @@ async function start() {
     saved.catch(showSaveError);
   }
 
+  // ---- Plans (plan.js) ----
+
+  // A plan step moved to another project, or to none, in the editor:
+  // { id, changes } for its project, without it, and the card loses the
+  // plan's chainId (added to `changes`). null for anything else.
+  function leavesPlan(card, changes) {
+    if (!('projectId' in changes)) return null;
+    const project = planProjectOf(projects, card);
+    if (!project || changes.projectId === project.id) return null;
+    changes.chainId = null;
+    return { id: project.id, changes: { planSteps: planIds(project).filter((id) => id !== card.id) } };
+  }
+
+  // The project whose plan a follow-up of `finished` joins: when finished
+  // is a step and the follow-up stays in that project. null otherwise.
+  function joinsPlan(finished, projectId) {
+    const project = planProjectOf(projects, finished);
+    return project && project.id === projectId ? project : null;
+  }
+
+  // The first open step after a step just finished, from the board's
+  // cards (every open step is on the board), or null.
+  function nextInPlan(finished) {
+    const project = planProjectOf(projects, finished);
+    if (!project || !latest) return null;
+    const open = latest.cards.filter((c) => c.id !== finished.id);
+    return nextOpenStep(stepsOf(project, [{ ...finished, status: STATUS.DONE }, ...open]), finished.id) || null;
+  }
+
+  // Where a step stands, for its editor: { number, total, prev, before,
+  // after } (plan.js stepContext). Open steps are all on the board; the
+  // finished ones are known only on the project page. Until they are,
+  // the step before may be unknown (prev null); `complete` says so.
+  function stepInfoFor(card) {
+    const project = planProjectOf(projects, card);
+    if (!project) return null;
+    const known = new Map();
+    if (projectQueryFor === project.id && projectCards) for (const c of projectCards) known.set(c.id, c);
+    if (latest) for (const c of latest.cards) known.set(c.id, c);
+    let complete = true;
+    const list = planIds(project).map((id) => {
+      if (known.has(id)) return known.get(id);
+      complete = false;
+      // Not open and not loaded: a finished step.
+      return { id, title: '', status: STATUS.DONE, projectId: project.id, completedAt: 0, unknown: true };
+    });
+    const context = stepContext(list, card.id, dayOf);
+    if (!context) return null;
+    const i = list.findIndex((c) => c.id === card.id);
+    if (context.prev && list[i - 1].unknown) context.prev = null;
+    return { project, context, complete };
+  }
+
   // "due Fri, Dec 4", "due today", "in Someday".
   function whereText(dueDate) {
     if (!dueDate) return 'in Someday';
@@ -787,7 +877,21 @@ async function start() {
     // beside, so it opens under the quick add field (or the project page's
     // heading).
     const fallback = views.project.hidden ? quickAddField : projectHeading;
-    if (card) editor.open(card, { categories, projects }, { cardId, fallback }, { startFollowUp });
+    if (!card) return;
+    // A plan step's editor says where it stands. The step before it may
+    // be finished, and then only Firestore knows its name: asked once,
+    // and the line fills in when it answers.
+    const step = stepInfoFor(card);
+    editor.open(card, { categories, projects, plan: step && step.context }, { cardId, fallback }, { startFollowUp });
+    if (step && !step.complete) {
+      fb.getChain(uid, step.project.id)
+        .then((cards) => {
+          const steps = stepsOf(step.project, [...cards.filter((c) => !latest.cards.some((o) => o.id === c.id)), ...latest.cards]);
+          editor.updatePlan(card.id, stepContext(steps, card.id, dayOf));
+        })
+        // The line is extra: without an answer, it says what it knows.
+        .catch(() => {});
+    }
   }
 
   for (const el of [zonesEl, somedayCardsEl]) {
@@ -914,6 +1018,11 @@ async function start() {
   const recordBox = setupRecordBox({
     // The chain of follow-ups a card is part of, read when its box opens.
     loadChain: (chainId) => (uid ? fb.getChain(uid, chainId) : Promise.resolve([])),
+    // A plan's steps in order, for a card that's one of them, or null.
+    planOf: (card) => {
+      const project = planProjectOf(projects, card);
+      return project && card.chainId === project.id ? planIds(project) : null;
+    },
   });
 
   const doneScreen = setupDone({
@@ -1017,6 +1126,9 @@ async function start() {
   // stopped when it closes. projectFinished is undefined while loading.
   let projectQueryFor = null;
   let projectFinished;
+  // Every card in the project, any status, for the Plan panel; undefined
+  // while loading.
+  let projectCards;
   let projectError = null;
   let stopProjectCards = null;
 
@@ -1053,6 +1165,11 @@ async function start() {
   // Delete's word on what goes with the project: "Its notes and 3 links
   // are deleted with it. " Nothing, if it has neither.
   function heldText(project) {
+    const plan = project.planSteps.length ? 'Its plan goes with it; the steps stay as cards. ' : '';
+    return plan + heldNotesText(project);
+  }
+
+  function heldNotesText(project) {
     const n = project.links.length;
     const links = n ? `${n} ${n === 1 ? 'link' : 'links'}` : '';
     if (project.notes && links) return `Its notes and ${links} are deleted with it. `;
@@ -1067,6 +1184,63 @@ async function start() {
     onSaveNotes: (id, notes) => fb.updateProject(uid, id, { notes }),
     onSaveLinks: (id, links) => fb.updateProject(uid, id, { links }),
   });
+
+  // The project's cards for the Plan panel: the page's own query (any
+  // status), with the board's live copies of the open ones over them.
+  function planCards(projectId) {
+    if (projectQueryFor !== projectId || !projectCards) return undefined;
+    const open = latest ? latest.cards.filter((c) => c.projectId === projectId) : [];
+    const openIds = new Set(open.map((c) => c.id));
+    return [...projectCards.filter((c) => !openIds.has(c.id) && c.status !== STATUS.OPEN && c.status !== STATUS.IN_PROGRESS), ...open];
+  }
+
+  // The Plan panel. Making a plan, or saving a change to one, is one
+  // write: the project's list of steps, every step changed or made, and
+  // any step taken off (it stays a card in the project, without the
+  // plan's chainId).
+  const planPanel = setupPlanPanel({
+    onOpenCard: openCard,
+    onOpenRecord: (card, onClosed) =>
+      recordBox.open(card, { categories, today: todayISO(), onPutBack: (c) => putBack(c, projectPage.showStatus), onClosed }),
+    onSave: (project, { category, rows, off }) => {
+      const known = new Map((planCards(project.id) || []).map((c) => [c.id, c]));
+      const updates = [];
+      const adds = [];
+      const planSteps = rows.map((row) => {
+        if (!row.id) {
+          const id = fb.newCardId(uid);
+          const fields = stepFields(project, { title: row.title, dueDate: row.dueDate, category: category || usualOf(project) });
+          adds.push({ id, fields });
+          return id;
+        }
+        const card = known.get(row.id);
+        if (card && !row.locked) {
+          const changes = {};
+          if (row.title !== card.title) changes.title = row.title;
+          if ((row.dueDate || null) !== (card.dueDate || null)) {
+            changes.dueDate = row.dueDate || null;
+            changes.order = null;
+          }
+          if (Object.keys(changes).length) updates.push({ id: row.id, changes });
+        }
+        return row.id;
+      });
+      for (const id of off) if (known.has(id)) updates.push({ id, changes: { chainId: null } });
+      return fb.savePlan(uid, project.id, planSteps, { updates, adds });
+    },
+  });
+
+  // A step added to a plan later gets the category most of the plan's
+  // steps have (or none).
+  function usualOf(project) {
+    const cards = planCards(project.id) || [];
+    const steps = stepsOf(project, cards);
+    const counts = new Map();
+    for (const c of steps) if (c.category) counts.set(c.category, (counts.get(c.category) || 0) + 1);
+    let best = null;
+    for (const [id, n] of counts) if (!best || n > best[1]) best = [id, n];
+    return best ? best[0] : null;
+  }
 
   const projectPage = setupProjectPage({
     onOpenCard: openCard,
@@ -1103,6 +1277,7 @@ async function start() {
     stopProjectCards = null;
     projectQueryFor = null;
     projectFinished = undefined;
+    projectCards = undefined;
     projectError = null;
   }
 
@@ -1120,6 +1295,7 @@ async function start() {
           projectId,
           (cards) => {
             projectFinished = finishedOf(cards);
+            projectCards = cards;
             refreshProject();
           },
           (err) => {
@@ -1128,6 +1304,7 @@ async function start() {
                 ? 'Firestore refused to share these cards. Check that the rules in firestore.rules are published in the Firebase console.'
                 : `Couldn't load the finished cards (${err.code || err.message}).`;
             projectFinished = { done: [], letGo: [] };
+            projectCards = [];
             refreshProject();
           },
         );
@@ -1145,6 +1322,7 @@ async function start() {
     });
     // The panels wait until the page has its project and the cards.
     projectNotes.render(project && latest ? project : null);
+    planPanel.render(project && latest ? { project, cards: planCards(projectId), categories, today: todayISO() } : null);
     document.title = `${projectPage.title()} \u00b7 Horizon`;
   }
 
@@ -1183,6 +1361,7 @@ async function start() {
     if (was === 'project') {
       stopProjectQuery();
       projectNotes.leave();
+      planPanel.leave();
       projectPage.reset();
       projectQuickAdd.clear();
     }
@@ -1324,6 +1503,9 @@ async function start() {
       const lines = [];
       if (isWaiting(card)) lines.push({ kind: 'wait', text: waitingLine(card, todayISO()) });
       if (card.followUp) lines.push({ kind: 'then', text: followUpLine(card.followUp) });
+      const planProject = planProjectOf(projects, card);
+      const step = planProject && stepNumber(planProject, card.id);
+      if (step) lines.push({ kind: 'step', text: `Step ${step.number} of ${step.total} in the plan.` });
       return { notes: card.notes, checklist: card.checklist, lines };
     },
   });

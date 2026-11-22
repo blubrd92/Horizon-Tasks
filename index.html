@@ -248,7 +248,46 @@
            above the cards, each folded to one row until you open it.
            They come first in the page's reading order, as on a phone. -->
       <div class="project-layout">
-        <aside id="project-aside" class="project-aside" aria-label="Notes and links" hidden>
+        <aside id="project-aside" class="project-aside" aria-label="Plan, notes, and links" hidden>
+          <!-- The plan (planpanel.js): the project's steps in order, each a
+               card at its own date. Read, or being made or changed. -->
+          <section id="plan-panel" class="side-panel plan-panel" aria-labelledby="plan-heading">
+            <div class="side-head">
+              <h2 id="plan-heading" class="side-title">Plan</h2>
+              <p id="plan-summary" class="side-summary"></p>
+              <button type="button" id="plan-change" class="button side-button" hidden>
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20h4L19 9l-4-4L4 16z"></path><path d="M13.5 6.5l4 4"></path></svg>
+                Change
+              </button>
+              <button type="button" id="plan-fold" class="button side-fold" aria-controls="plan-content" aria-expanded="false" aria-label="Show plan">Show</button>
+            </div>
+            <p id="plan-status" class="side-status" role="status"></p>
+            <div id="plan-content" class="side-content">
+              <div id="plan-read"></div>
+              <form id="plan-form" class="plan-form" novalidate hidden>
+                <label id="plan-cat-row" class="plan-cat">Steps go in
+                  <select id="plan-category" class="field-input"></select>
+                </label>
+                <div class="plan-box">
+                  <ul id="plan-rows" class="plan-edit" aria-label="Steps"></ul>
+                  <div class="cl-add plan-add">
+                    <span class="cl-add-plus" aria-hidden="true">
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"></path></svg>
+                    </span>
+                    <input type="text" id="plan-add" class="cl-add-input" maxlength="200" placeholder="Add a step" aria-label="Add a step" aria-describedby="plan-help" autocomplete="off">
+                  </div>
+                </div>
+                <p id="plan-help" class="visually-hidden">Enter adds the step and moves to its date. Several lines pasted here become one step each. Alt with the up or down arrow moves the step you're in.</p>
+                <p id="plan-note" class="field-note plan-note"></p>
+                <p id="plan-error" class="field-error side-error" hidden></p>
+                <div class="small-foot">
+                  <button type="button" id="plan-cancel" class="button">Cancel</button>
+                  <button type="submit" id="plan-save" class="button button-primary">Save</button>
+                </div>
+              </form>
+            </div>
+          </section>
+
           <section id="notes-panel" class="side-panel" aria-labelledby="notes-heading">
             <div class="side-head">
               <h2 id="notes-heading" class="side-title">Notes</h2>
@@ -492,6 +531,8 @@
           </label>
         </div>
         <p id="editor-someday" class="field-note" hidden>No date: this card lives in Someday.</p>
+        <!-- A plan step dated out of step with its neighbors (plan.js). -->
+        <p id="editor-step-note" class="step-note" hidden></p>
         <p id="editor-repeat-note" class="field-note" hidden></p>
 
         <div class="field-row">
@@ -578,7 +619,7 @@
               <button type="button" id="editor-follow-nodate" class="button button-small">No date</button>
             </div>
           </div>
-          <p class="field-note">With a title and a date, Mark done makes it without asking. It keeps this card's category and project.</p>
+          <p id="editor-follow-note" class="field-note">With a title and a date, Mark done makes it without asking. It keeps this card's category and project.</p>
         </div>
       </div>
 

@@ -458,13 +458,16 @@ at your request (2026-11-22; fast-forwards: nothing was rewritten).
 `main` has Phases 1, 2, and 3, your own categories, the ticks,
 checklists, Haiku's steps, and Waiting and follow-ups.
 
-**Next: plans in projects** (planned 2026-11-22; see "Plans in
-projects" below): a project's steps, each with its own date, made all
-at once as cards linked in order, every one on the board from day one.
-The detailed plan and the look sheet (`design/plan-options/`) are
-done; waiting on your answers to the six questions, the one change
-(order kept on the project), and your eye. Then build and stop for
-your test.
+**Plans in projects: built, awaiting your test** (2026-11-22), on
+`claude/gracious-dijkstra-ig4guk`. A Plan panel on the project page:
+make a plan's steps at once (each a card at its date), change it later
+(add, take off, reorder, rename, redate), the step's line in its
+editor, Repeats off for steps, a step's follow-up joining the plan, the
+yellow note when dates are out of order, the hover line, Mark done's
+"Next in the plan", and "The plan" in What you did. Site only. See
+"Plans in projects" below.
+
+**Next: test plans in projects**, then confirm, commit, and merge.
 
 **After that: the tuning slice, when you're ready** (item 3 in the queue; you
 wanted to come back to it later, not straight away). Its six questions
@@ -515,7 +518,7 @@ clearly apart. Also noted: letting go of a task doesn't count against
 you; What you did counts only finished cards, and let-go ones sit folded
 at the bottom with no score.
 
-## Plans in projects (planned 2026-11-22; look sheet waiting on your eye, nothing built)
+## Plans in projects (built 2026-11-22, awaiting your test)
 
 Your picture: a big project (an outreach, say) with many steps, each
 with its own due date, all known in advance, chained together in an
@@ -569,7 +572,7 @@ order that makes sense. Something between a checklist and follow-ups.
 6. **The editor's "After ..." line** for plan steps reads "Step 3 of 6,
    after ..."; a follow-up's still reads "After ..., done ...".
 
-### The detailed plan (2026-11-22, waiting on your answers and your eye)
+### The detailed plan (2026-11-22; you approved all of it: "I like your work, proceed")
 Look sheet: `design/plan-options/preview.html` and `preview.png`. A,
 the project page with a plan; B, making one; C, changing one later;
 D, a step's editor beside a follow-up's; E, the hover box, Mark done's
@@ -654,6 +657,81 @@ line, Repeats off, the date note), `js/app.js` (hover line, Mark done's
 line, follow-up joining), `js/recordbox.js` ("The plan"),
 `index.html`, `css/horizon.css`, `SPEC.md` (Projects and the source
 list).
+
+### Built (2026-11-22, awaiting your test)
+Site only: no Apps Script version, no Firestore rules change, no setup
+steps. Hard-reload, and test on the live site.
+
+**Files:** `js/plan.js` (new: the rules), `js/planpanel.js` (new: the
+panel), `js/model.js` (`planSteps` on projects, the `plan` source),
+`js/firebase.js` (`newCardId`, `savePlan`; `finishWith` and
+`addFollowUp` can write the project in the same go; `deleteProject`
+clears the plan's chainId), `js/editor.js` (the step line, Repeats off,
+the yellow date note, the Follow-up box's note), `js/app.js` (the
+panel's saves, the step line on the board, Mark done's line, follow-ups
+joining, a step leaving when its project changes, the hover line, the
+record box), `js/recordbox.js` ("The plan", numbered), `js/notespeek.js`
+(the step icon), `index.html`, `css/horizon.css`, `SPEC.md` (Projects,
+and the source list).
+
+**Decisions I made while building (change any of them):**
+- The record box shows every step, not the first four and "and 2 more"
+  as drawn: a plan is at most 30 steps, and the whole plan is the point.
+- Alt and an arrow skips past a struck-through step, so each press moves
+  past one real step.
+- A step added later gets the category most of the plan's steps have.
+- Escape closes Make or Change only when nothing changed; otherwise use
+  Cancel, so typing isn't lost to a stray key.
+- The step line on the board fills in a moment later when the step
+  before is finished (only Firestore knows its name; one question).
+- Deleting a project says "Its plan goes with it; the steps stay as
+  cards." in the confirmation.
+- A follow-up of a step that you move to another project in its New
+  card still follows the step, but isn't in the plan.
+- Words left in the add field when you press Save count as a step.
+- Several lines pasted into the add field become one step each (a "- "
+  or "1." at the start is dropped), as in the checklist.
+- The "Off the plan" wording on a struck row became "Off the plan;
+  still a card in this project." to fit the side column.
+
+**Checked here** (headless Chrome, the real site with a pretend
+Firebase; 54 checks, all passing): the panel's line, steps, bold next,
+and "Before step 4's date"; a step's editor from the project page
+(line, Repeats off and its note, the before and after notes) and from
+the board (the line filling in after the finished step is read); a
+plain card unchanged; the hover line; Mark done's "Next in the plan";
+a follow-up written ahead joining after its step, and one asked for
+(New card, Add card) joining too, with its own step line; a step moved
+to another project leaving the plan in one write; Change (finished
+steps locked, take off with Undo, add, Enter to the date and back, Alt
+and arrows, Save in one write, the new step's fields, the order kept);
+a refused save giving the rows back; Escape; Make a plan (empty text,
+the category, Enter, pasting three lines, the button's count, four
+cards in one write, the panel after); What you did's box ("The plan",
+numbered); deleting the project clearing the chain; at 390 wide,
+folded, open, and Change with no sideways scroll; no errors. **Not
+checked here:** real Firestore (the writes and the chain question),
+and dragging by the handle with a real mouse or finger.
+
+**How to test (hard-reload first):**
+- [ ] Open a project with no plan: the Plan panel says what a plan is.
+      Make a plan: type a step, Enter, pick its date, Enter, and so on
+      for three or four. Paste a few lines from an email into "Add a
+      step". Add them to the board: each is a card on the board at its
+      date, and the panel lists them.
+- [ ] Give a later step an earlier date (drag it on the board): the
+      yellow "Before step N's date" shows in the panel.
+- [ ] Click a step: its editor says "Step 2 of 4, after ...". Repeats
+      is grayed. Change Due to before the step ahead: the yellow note.
+- [ ] On the board, rest the pointer on a step: "Step 2 of 4 in the
+      plan." Mark one done: the line says what's next in the plan.
+- [ ] Change: drag a step by its handle; take one off (Undo, then take
+      it off again); add one and drag it between two; rename one; Save.
+      The one taken off is still a card in the project.
+- [ ] A step with a Follow-up, marked done: the follow-up becomes the
+      next step.
+- [ ] What you did: open a finished step: "The plan", numbered.
+- [ ] On your phone: the Plan row folds and opens; Change fits.
 
 ## Waiting and follow-up cards (confirmed 2026-11-22)
 

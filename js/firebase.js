@@ -254,7 +254,12 @@ export function markDone(uid, cardId, changes = {}) {
 // `changes` are edits made at the same moment; `adds` is a list of new
 // cards' fields (repeat.js, followup.js). Returns the new cards' ids at
 // once, in the same order, plus `saved`, as addCard does.
-export function finishWith(uid, cardId, how, changes, adds) {
+//
+// Two extras, both optional: `ids`, ids made ahead with newCardId for the
+// new cards (in the same order), and `project`, { id, changes } for a
+// project written in the same go (a plan step's follow-up joining the
+// plan, or a step leaving it).
+export function finishWith(uid, cardId, how, changes, adds, { ids: given = [], project = null } = {}) {
   const batch = writeBatch(db);
   const stamp = how === STATUS.DONE ? 'completedAt' : 'letGoAt';
   batch.update(doc(db, 'users', uid, 'cards', cardId), {
@@ -263,8 +268,11 @@ export function finishWith(uid, cardId, how, changes, adds) {
     [stamp]: serverTimestamp(),
     updatedAt: serverTimestamp(),
   });
-  const ids = adds.map((fields) => {
-    const ref = doc(collection(db, 'users', uid, 'cards'));
+  if (project) {
+    batch.update(doc(db, 'users', uid, 'projects', project.id), { ...project.changes, updatedAt: serverTimestamp() });
+  }
+  const ids = adds.map((fields, i) => {
+    const ref = given[i] ? doc(db, 'users', uid, 'cards', given[i]) : doc(collection(db, 'users', uid, 'cards'));
     batch.set(ref, { ...fields, createdAt: serverTimestamp(), updatedAt: serverTimestamp() });
     return ref.id;
   });
@@ -281,14 +289,42 @@ export function finishAndRepeat(uid, cardId, how, changes, next) {
 // A follow-up made after its card was finished (the editor asked when):
 // the new card, and the finished card's chain id if it's the first in the
 // chain, in one write. Returns the new card's id at once, plus `saved`.
-export function addFollowUp(uid, fields, parentId, parentChanges) {
+// `id` (made ahead with newCardId) and `project` ({ id, changes }, a plan
+// it joins) are optional, as in finishWith.
+export function addFollowUp(uid, fields, parentId, parentChanges, { id = null, project = null } = {}) {
   const batch = writeBatch(db);
-  const ref = doc(collection(db, 'users', uid, 'cards'));
+  const ref = id ? doc(db, 'users', uid, 'cards', id) : doc(collection(db, 'users', uid, 'cards'));
+  if (project) {
+    batch.update(doc(db, 'users', uid, 'projects', project.id), { ...project.changes, updatedAt: serverTimestamp() });
+  }
   batch.set(ref, { ...fields, createdAt: serverTimestamp(), updatedAt: serverTimestamp() });
   if (Object.keys(parentChanges).length) {
     batch.update(doc(db, 'users', uid, 'cards', parentId), { ...parentChanges, updatedAt: serverTimestamp() });
   }
   return { id: ref.id, saved: batch.commit() };
+}
+
+// A new card's id, made before the card is saved, so a plan can name it
+// in the same write that makes it. Nothing is written.
+export function newCardId(uid) {
+  return doc(collection(db, 'users', uid, 'cards')).id;
+}
+
+// A project's plan, in one write: the project's list of steps, changes to
+// step cards (`updates`, a list of { id, changes }), and new step cards
+// (`adds`, a list of { id, fields }, ids from newCardId). Either all of it
+// saves or none of it does. A plan holds at most 30 steps, well under a
+// write's 500 changes.
+export function savePlan(uid, projectId, planSteps, { updates = [], adds = [] } = {}) {
+  const batch = writeBatch(db);
+  batch.update(doc(db, 'users', uid, 'projects', projectId), { planSteps, updatedAt: serverTimestamp() });
+  for (const { id, changes } of updates) {
+    batch.update(doc(db, 'users', uid, 'cards', id), { ...changes, updatedAt: serverTimestamp() });
+  }
+  for (const { id, fields } of adds) {
+    batch.set(doc(db, 'users', uid, 'cards', id), { ...fields, createdAt: serverTimestamp(), updatedAt: serverTimestamp() });
+  }
+  return batch.commit();
 }
 
 // Every card in one chain of follow-ups, in any status, read once. One
@@ -349,17 +385,22 @@ export function archiveProject(uid, projectId, archived) {
 }
 
 // Deletes a project and takes it off every card that points at it, open
-// or finished. The cards themselves stay. The cards are cleared first and
+// or finished. The cards themselves stay. Its plan goes with it: the
+// steps lose the plan's chainId (the project's id) too. The cards are cleared first and
 // the project goes last, so if something fails partway the
 // project is still there and you can try again.
 export async function deleteProject(uid, projectId) {
   const snap = await getDocs(query(collection(db, 'users', uid, 'cards'), where('projectId', '==', projectId)));
   // A single write holds at most 500 changes.
   const LIMIT = 450;
-  const refs = snap.docs.map((d) => d.ref);
-  for (let i = 0; i < refs.length; i += LIMIT) {
+  const docs = snap.docs;
+  for (let i = 0; i < docs.length; i += LIMIT) {
     const batch = writeBatch(db);
-    for (const ref of refs.slice(i, i + LIMIT)) batch.update(ref, { projectId: null, updatedAt: serverTimestamp() });
+    for (const d of docs.slice(i, i + LIMIT)) {
+      const changes = { projectId: null, updatedAt: serverTimestamp() };
+      if (d.data().chainId === projectId) changes.chainId = null;
+      batch.update(d.ref, changes);
+    }
     await batch.commit();
   }
   await deleteDoc(doc(db, 'users', uid, 'projects', projectId));

@@ -41,7 +41,8 @@ Fields: title, notes (optional), due date (optional), deadline type ("soft" by
 default, or "hard" for real external cutoffs), project (optional), category,
 status (open, done, let go), waiting (since when, and on whom), a follow-up
 (the next card's title and, optionally, its date), repeat rule (none, weekly,
-monthly), source (manual, quick add, screenshot, pasted text, or follow-up),
+monthly), source (manual, quick add, screenshot, pasted text, follow-up, or
+plan step),
 created, updated, and completed or let-go timestamps.
 
 - Clicking a card opens it for editing.
@@ -99,6 +100,15 @@ shows free-text notes, a list of links (each with a title, for things like a
 Drive folder of reference images), and the project's task cards, which stay in
 sync with the Horizon. A project list (from the Projects button) opens any
 project page; clicking a card's project tag on the Horizon also opens it.
+
+A project can have one plan: its steps in order, each a real card at its own
+date, all made at once and all on the board from the day they're made. The
+plan sits in a Plan panel on the project page, where steps are added, taken
+off (they stay cards in the project), renamed, redated, and reordered. A
+step's editor says where it stands ("Step 3 of 6, after ..."), and a yellow
+note says when its date is out of step with its neighbors; nothing moves on
+its own. Plan steps don't repeat; a step's follow-up joins the plan as the
+next step.
 
 ## Screenshot to card (the AI feature)
 I add a screenshot by pasting anywhere on the page (Ctrl/Cmd+V), dragging an

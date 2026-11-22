@@ -11,7 +11,7 @@
 // through. Whatever a card has shows; a card with none of it shows nothing.
 //
 // getCard(cardId) returns { notes, checklist, lines } for the card, or
-// null; lines is a list of { kind: 'wait' or 'then', text }.
+// null; lines is a list of { kind: 'wait', 'then', or 'step', text }.
 
 const WAIT = 450; // milliseconds of resting before the notes show
 const MAX_CHARS = 1200; // a very long note shows its start, then "…"
@@ -26,6 +26,7 @@ const BOX_FULL =
 const LINE_ICONS = {
   wait: '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 3h12M6 21h12"></path><path d="M8 3v3.5a4 4 0 0 0 1.8 3.3L12 11.5l2.2-1.7A4 4 0 0 0 16 6.5V3"></path><path d="M8 21v-3.5a4 4 0 0 1 1.8-3.3l2.2-1.7 2.2 1.7a4 4 0 0 1 1.8 3.3V21"></path></svg>',
   then: '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 4v7a4 4 0 0 0 4 4h9"></path><path d="M15 11l4 4-4 4"></path></svg>',
+  step: '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 6h10M10 12h10M10 18h10"></path><path d="M4 5l1.5-1v4"></path><path d="M3.5 11.5a1.3 1.3 0 0 1 2.4.6c0 .9-2.4 1.9-2.4 2.9h2.5"></path><path d="M3.6 17.2h2.2l-1.2 1.4a1.1 1.1 0 1 1-1 1.6"></path></svg>',
 };
 
 const finePointer = window.matchMedia('(hover: hover) and (pointer: fine)');

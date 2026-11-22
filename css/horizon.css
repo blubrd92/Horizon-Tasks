@@ -3901,3 +3901,129 @@ a.link-row:focus-visible { outline-offset: -2px; }
   margin: 5px 4px;
   background: var(--border-soft);
 }
+
+/* The project page's Plan panel (planpanel.js). Read, it's the chain's
+   look; making or changing, it's the checklist's rows with the date on a
+   second line. */
+.plan-line { margin: -4px 0 0; font-size: 13px; line-height: 1.45; color: var(--ink-secondary); }
+.plan-line b { font-weight: 600; color: var(--ink); }
+.plan-empty { margin: 0; font-size: 14px; line-height: 1.5; color: var(--ink-secondary); }
+.plan-date { font-family: var(--font-mono); font-size: 12px; color: var(--ink-date); }
+.plan-list li { padding-bottom: 10px; }
+.plan-list li:not(:last-child)::before { top: 22px; }
+.plan-list svg { margin-top: 2px; }
+.plan-list .is-letgo .chain-title { color: var(--ink-secondary); }
+.plan-step {
+  display: block;
+  width: 100%;
+  min-height: 44px;
+  margin: -4px 0 0;
+  padding: 3px 4px 4px;
+  border: none;
+  border-radius: 8px;
+  background: none;
+  font: inherit;
+  text-align: left;
+  color: inherit;
+  cursor: pointer;
+}
+.plan-step:hover { background: var(--surface-soft); }
+.plan-step:focus-visible { outline: 2px solid var(--accent); outline-offset: 0; }
+.plan-num { font-family: var(--font-mono); font-size: 12px; color: var(--ink-placeholder); margin-right: 6px; }
+.plan-list .is-next .chain-title { font-weight: 600; }
+.plan-list .is-open .chain-when { font-family: var(--font-body); font-size: 13px; color: var(--ink-secondary); }
+.plan-late { font-family: var(--font-mono); font-size: 12px; color: var(--overdue-ink); }
+/* Dates out of step with the order: the Inbox's soft yellow. */
+.plan-order {
+  align-self: flex-start;
+  display: inline-block;
+  margin-top: 3px;
+  padding: 1px 7px;
+  border-radius: 8px;
+  font-size: 12px;
+  color: #6B4A00;
+  background: #FFF3D1;
+}
+
+.plan-form { display: flex; flex-direction: column; gap: 12px; }
+.plan-form[hidden] { display: none; }
+.plan-cat { display: flex; gap: 8px; align-items: center; font-size: 13px; color: var(--ink-secondary); }
+.plan-cat[hidden] { display: none; }
+.plan-cat select { flex: 1; min-width: 0; }
+.plan-box {
+  border: 1px solid var(--field-border);
+  border-radius: var(--radius-card);
+  background: var(--surface);
+  overflow: hidden;
+}
+.plan-edit { list-style: none; margin: 0; padding: 0; }
+.plan-edit:empty + .plan-add { border-top: none; }
+.plan-add { border-top: 1px solid var(--border-soft); }
+.pe-row {
+  display: grid;
+  grid-template-columns: 32px minmax(0, 1fr) 40px;
+  align-items: start;
+  padding: 4px 2px 8px 0;
+  background: var(--surface);
+}
+.pe-row + .pe-row { border-top: 1px solid var(--border-soft); }
+.pe-row .pe-handle { width: 32px; }
+.pe-row.is-dragging { position: relative; z-index: 1; border-radius: 10px; box-shadow: 0 6px 18px rgba(24, 25, 28, 0.18); }
+.plan-edit.is-sorting, .plan-edit.is-sorting .pe-handle { cursor: grabbing; }
+.pe-main { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.pe-title {
+  display: block;
+  width: 100%;
+  min-height: 44px;
+  margin: 0;
+  padding: 11px 4px;
+  border: none;
+  border-radius: 6px;
+  background: none;
+  font: inherit;
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--ink);
+  resize: none;
+  overflow: hidden;
+}
+.pe-title:focus { outline: 2px solid var(--accent); outline-offset: -2px; }
+.pe-title-fixed { padding-bottom: 0; min-height: 0; padding-top: 11px; overflow-wrap: anywhere; }
+.pe-under { grid-column: 2 / 4; padding-right: 8px; }
+.pe-due { display: flex; gap: 6px; align-items: center; padding-left: 4px; }
+.pe-due .field-date { flex: 1; min-width: 0; max-width: 180px; }
+.pe-due .button-small { flex: none; }
+.pe-x {
+  width: 40px;
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  border-radius: 8px;
+  background: none;
+  color: var(--ink-secondary);
+  cursor: pointer;
+}
+.pe-x:hover { background: var(--strip-day); color: var(--ink); }
+.pe-locked .pe-title { color: var(--ink-secondary); }
+.pe-done { padding-left: 4px; font-family: var(--font-mono); font-size: 12px; color: var(--ink-date); }
+.pe-lock { display: flex; height: 44px; align-items: center; justify-content: center; color: var(--accent); }
+.pe-off { background: var(--surface-soft); }
+.pe-off .pe-title { text-decoration: line-through; color: var(--ink-placeholder); }
+.pe-off-note { display: flex; flex-wrap: wrap; align-items: center; column-gap: 4px; padding-left: 4px; font-size: 12px; line-height: 1.4; color: var(--ink-secondary); }
+.pe-off-note .link-button { font-size: 12px; }
+.plan-note { margin: 0; }
+
+/* A plan step's line at the top of its editor uses .editor-after; its
+   yellow date note sits under Due. */
+.step-note {
+  margin: 4px 0 0;
+  padding: 6px 10px;
+  border-radius: 8px;
+  font-size: 13px;
+  line-height: 1.4;
+  color: #6B4A00;
+  background: #FFF3D1;
+}
+.step-note[hidden] { display: none; }

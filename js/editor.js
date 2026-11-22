@@ -11,6 +11,7 @@ import { NEW_PROJECT, nameOrder } from './projects.js';
 import { placeBeside } from './place.js';
 import { anchorOf, describeMove, describeRhythm, repeats } from './repeat.js';
 import { sameChecklist, setupChecklist } from './checklist.js';
+import { dateNote } from './plan.js';
 
 // The follow-up arrow, small, for the "After ..." line.
 const THEN_SMALL = () => {
@@ -20,6 +21,18 @@ const THEN_SMALL = () => {
     '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 4v7a4 4 0 0 0 4 4h9"></path><path d="M15 11l4 4-4 4"></path></svg>';
   return span;
 };
+
+// A plan step: a short numbered list, for the "Step 3 of 6" line.
+const STEPS_SMALL = () => {
+  const span = document.createElement('span');
+  span.className = 'editor-after-icon';
+  span.innerHTML =
+    '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 6h10M10 12h10M10 18h10"></path><path d="M4 5l1.5-1v4"></path><path d="M3.5 11.5a1.3 1.3 0 0 1 2.4.6c0 .9-2.4 1.9-2.4 2.9h2.5"></path><path d="M3.6 17.2h2.2l-1.2 1.4a1.1 1.1 0 1 1-1 1.6"></path></svg>';
+  return span;
+};
+
+const FOLLOW_NOTE = "With a title and a date, Mark done makes it without asking. It keeps this card's category and project.";
+const FOLLOW_NOTE_STEP = 'A follow-up here joins the plan: when this step is done, it becomes the next step, with this one\u2019s category.';
 
 // Matches the CSS: up to this width the editor fills the screen.
 const narrow = window.matchMedia('(max-width: 760px)');
@@ -61,6 +74,8 @@ export function setupEditor({ onSave, onDone, onCreate, onClose, onTick }) {
   const followTitle = document.getElementById('editor-follow-title');
   const followDue = document.getElementById('editor-follow-due');
   const after = document.getElementById('editor-after');
+  const stepNote = document.getElementById('editor-step-note');
+  const followNote = document.getElementById('editor-follow-note');
   const hard = document.getElementById('editor-hard');
   const hardTick = document.getElementById('editor-hard-tick');
   const repeat = document.getElementById('editor-repeat');
@@ -93,6 +108,10 @@ export function setupEditor({ onSave, onDone, onCreate, onClose, onTick }) {
 
   let card = null;
   let saved = false;
+  // For a plan step: { number, total, prev, before, after } (plan.js
+  // stepContext), or { number, total } until the rest is known; null for
+  // any other card.
+  let plan = null;
   // A follow-up to open as a New card once this panel has finished
   // closing (the close event comes a moment after close()).
   let reopen = null;
@@ -105,9 +124,12 @@ export function setupEditor({ onSave, onDone, onCreate, onClose, onTick }) {
   // it has nothing to mark done yet. categories and projects are yours,
   // for the menus. startFollowUp (the right-click menu's "Follow-up...")
   // opens it with Follow-up on and its title box focused.
-  function open(cardToEdit, { categories, projects }, where = null, { startFollowUp = false } = {}) {
+  //
+  // plan: for a step in a project's plan, where it stands (see above).
+  function open(cardToEdit, { categories, projects, plan: step = null }, where = null, { startFollowUp = false } = {}) {
     // A copy: a tick changes its checklist (above), never the board's.
     card = { ...cardToEdit, checklist: cardToEdit.checklist || [] };
+    plan = step;
     saved = false;
     const isNew = !card.id;
     heading.textContent = isNew ? 'New card' : 'Edit card';
@@ -128,7 +150,10 @@ export function setupEditor({ onSave, onDone, onCreate, onClose, onTick }) {
     followDue.value = card.followUp && card.followUp.dueDate ? card.followUp.dueDate : '';
     showAfter();
     updateBoxes();
-    repeat.value = card.repeat;
+    repeat.value = plan ? 'none' : card.repeat;
+    // A plan step doesn't repeat: Repeats stays at Doesn't repeat, grayed.
+    repeat.disabled = Boolean(plan);
+    followNote.textContent = plan ? FOLLOW_NOTE_STEP : FOLLOW_NOTE;
     moveSeries.checked = false;
     checklist.load(card.checklist, { finish: !isNew });
     updateSomedayNote();
@@ -150,8 +175,13 @@ export function setupEditor({ onSave, onDone, onCreate, onClose, onTick }) {
   }
 
   // "After Weed graphic novels, 741.5, done Thu, Nov 19": on a card made
-  // from another card's follow-up.
+  // from another card's follow-up. A plan step says where it stands
+  // instead: "Step 3 of 6, after Confirm the troupe, due Mon, Nov 30".
   function showAfter() {
+    if (plan) {
+      showStep();
+      return;
+    }
     after.hidden = !card.afterTitle;
     if (!card.afterTitle) return;
     const name = document.createElement('b');
@@ -166,6 +196,32 @@ export function setupEditor({ onSave, onDone, onCreate, onClose, onTick }) {
     const words = document.createElement('span');
     words.append(...parts.slice(1));
     after.replaceChildren(parts[0], words);
+  }
+
+  function showStep() {
+    after.hidden = false;
+    const words = document.createElement('span');
+    words.append(`Step ${plan.number} of ${plan.total}`);
+    if (plan.prev) {
+      const name = document.createElement('b');
+      name.textContent = plan.prev.title;
+      words.append(', after ', name);
+      if (plan.prev.day) {
+        const day = document.createElement('span');
+        day.className = 'editor-after-day';
+        day.textContent = formatShort(plan.prev.day);
+        words.append(plan.prev.how === 'open' ? ', due ' : `, ${plan.prev.how} `, day);
+      }
+    }
+    after.replaceChildren(STEPS_SMALL(), words);
+  }
+
+  // The yellow note under Due for a step dated before the step ahead of
+  // it, or after the one behind it. Nothing is moved.
+  function updateStepNote() {
+    const text = plan ? dateNote(plan, due.value || null) : '';
+    stepNote.textContent = text;
+    stepNote.hidden = !text;
   }
 
   // Waiting's and Follow-up's boxes show while they're on. Waiting says
@@ -299,6 +355,7 @@ export function setupEditor({ onSave, onDone, onCreate, onClose, onTick }) {
   // as on the card.
   function updateSomedayNote() {
     someday.hidden = Boolean(due.value);
+    updateStepNote();
     hardTick.classList.toggle('is-due', Boolean(due.value) && due.value <= todayISO());
   }
 
@@ -314,7 +371,7 @@ export function setupEditor({ onSave, onDone, onCreate, onClose, onTick }) {
     if (dateChanged) moveNote.textContent = describeMove(rule, due.value);
     const anchor = was ? anchorOf(card) : due.value || null;
     const day = was && rule === 'monthly' ? card.seriesDay : null;
-    repeatNote.textContent = describeRhythm(rule, anchor, day);
+    repeatNote.textContent = plan ? 'Plan steps don\u2019t repeat.' : describeRhythm(rule, anchor, day);
     repeatNote.hidden = !repeatNote.textContent;
     // The editor may have grown or shrunk; keep it on screen.
     follow();
@@ -478,6 +535,7 @@ export function setupEditor({ onSave, onDone, onCreate, onClose, onTick }) {
     if (!card) return;
     const closed = card;
     card = null;
+    plan = null;
     // A follow-up closed without Add card: the title as you left it goes
     // back to quick add (onClose), so a title typed here isn't lost.
     if (!closed.id && !saved && closed.afterId && title.value.trim()) closed.title = title.value.trim();
@@ -489,5 +547,15 @@ export function setupEditor({ onSave, onDone, onCreate, onClose, onTick }) {
     }
   });
 
-  return { open, close };
+  // The rest of a step's place in its plan, once it's known (the step
+  // before it may be finished, and only Firestore has those).
+  function updatePlan(cardId, step) {
+    if (!card || card.id !== cardId || !plan || !step) return;
+    plan = step;
+    showAfter();
+    updateStepNote();
+    follow();
+  }
+
+  return { open, close, updatePlan };
 }

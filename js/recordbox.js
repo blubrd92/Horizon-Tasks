@@ -24,8 +24,9 @@ const CHAIN_ICONS = {
 };
 
 // loadChain(chainId) returns a promise of every card in a chain of
-// follow-ups.
-export function setupRecordBox({ loadChain = null } = {}) {
+// follow-ups. planOf(card) returns the step ids of the plan the card is a
+// step in, in order, or null: a plan's box shows "The plan", numbered.
+export function setupRecordBox({ loadChain = null, planOf = () => null } = {}) {
   const box = document.getElementById('record-card');
   const title = document.getElementById('record-title');
   const categoryEl = document.getElementById('record-category');
@@ -38,6 +39,7 @@ export function setupRecordBox({ loadChain = null } = {}) {
   const checksList = document.getElementById('record-checklist-list');
   const chain = document.getElementById('record-chain');
   const chainList = document.getElementById('record-chain-list');
+  const chainHead = document.getElementById('record-chain-head');
 
   // The card in the box, and what the page that opened it asked for.
   let card = null;
@@ -118,11 +120,20 @@ export function setupRecordBox({ loadChain = null } = {}) {
   // The chain, once Firestore answers, if the box still shows that card.
   // A chain of one (its follow-up never made) shows nothing.
   function showChain(shown) {
+    const plan = planOf(shown);
     loadChain(shown.chainId)
       .then((cards) => {
         if (card !== shown || cards.length < 2) return;
+        // A plan: its steps in the plan's order, numbered. Cards in the
+        // chain that aren't steps (none, normally) are left out.
+        let links = chainOrder(cards);
+        if (plan) {
+          const byId = new Map(cards.map((c) => [c.id, c]));
+          links = plan.map((id) => byId.get(id)).filter(Boolean);
+        }
+        chainHead.textContent = plan ? 'The plan' : 'The chain';
         chainList.replaceChildren(
-          ...chainOrder(cards).map((link) => {
+          ...links.map((link, i) => {
             const { kind, text } = chainStatus(link, dayOf);
             const li = document.createElement('li');
             li.className = `is-${kind}${link.id === shown.id ? ' is-this' : ''}`;
@@ -130,7 +141,17 @@ export function setupRecordBox({ loadChain = null } = {}) {
             const words = document.createElement('span');
             const name = document.createElement('span');
             name.className = 'chain-title';
-            name.textContent = link.title;
+            if (plan) {
+              const num = document.createElement('span');
+              num.className = 'plan-num';
+              num.textContent = String(i + 1);
+              num.setAttribute('aria-hidden', 'true');
+              const said = document.createElement('span');
+              said.className = 'visually-hidden';
+              said.textContent = `Step ${i + 1}: `;
+              name.append(num, said);
+            }
+            name.append(link.title);
             const when = document.createElement('span');
             when.className = 'chain-when';
             when.textContent = text;

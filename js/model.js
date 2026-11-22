@@ -40,7 +40,8 @@
 //                  card is marked done.
 //   chainId        string or null: on cards linked by follow-ups, the id of
 //                  the chain's first card, shared by every card in it. The
-//                  first card gets it only once a follow-up is made.
+//                  first card gets it only once a follow-up is made. On a
+//                  plan's steps, the project's id (see plan.js).
 //   afterId        string or null: the card this one followed
 //   afterTitle     string: that card's title, copied when this one was
 //                  made, for the editor's "After ..." line ("" for none)
@@ -52,8 +53,9 @@
 //                  this card. Dragging and triage change dueDate, not this.
 //   seriesDay      1 to 31, or null: monthly only, the day of the month the
 //                  series aims for (see repeat.js)
-//   source         "manual", "quick_add", "screenshot", "pasted_text", or
-//                  "follow_up" (made from another card's follow-up)
+//   source         "manual", "quick_add", "screenshot", "pasted_text",
+//                  "follow_up" (made from another card's follow-up), or
+//                  "plan" (made as a step of a project's plan)
 //   order          number, or null: the card's place within its zone, set
 //                  when you drag it (see order.js). null means date order.
 //   checklist      list of { id, text, done }, in the order shown: up to
@@ -71,6 +73,8 @@
 //   notes          string, up to 10,000 characters; "" or missing for none
 //   links          list of { id, title, url }, in the order shown; title
 //                  is "" for none, url an http(s) address (see links.js)
+//   planSteps      list of card ids: the project's plan, first step to
+//                  last (see plan.js). [] or missing for no plan.
 //   createdAt, updatedAt   Firestore timestamps
 //
 // A draft document (the Inbox). Never holds the screenshot or the pasted
@@ -296,9 +300,23 @@ export function normalizeProject(id, data) {
     archivedAt: millis(data.archivedAt),
     notes: typeof data.notes === 'string' ? data.notes : '',
     links: normalizeLinks(data.links),
+    planSteps: normalizePlanSteps(data.planSteps),
     createdAt: millis(data.createdAt),
     updatedAt: millis(data.updatedAt),
   };
+}
+
+// A project's plan as saved: ids as strings, no repeats, and no more than
+// 60 (twice a plan's limit, so a list typed by hand in the console still
+// reads).
+function normalizePlanSteps(value) {
+  if (!Array.isArray(value)) return [];
+  const seen = new Set();
+  for (const id of value) {
+    if (typeof id === 'string' && id) seen.add(id);
+    if (seen.size >= 60) break;
+  }
+  return [...seen];
 }
 
 // The jobs a quick add key can do, and what each key does until you
