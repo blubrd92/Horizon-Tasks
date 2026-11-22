@@ -538,9 +538,9 @@ again after Cancel; at 390 wide, no sideways scroll; with a project,
 the plain list and focus left alone; archived only, the short line.
 The plans checks (54) still pass.
 
-**How to test:** you already have projects, so the empty box won't show
-on your account. To see it, open the site in a browser profile signed
-in to an approved account with no projects, or trust the screenshot.
+**How to test (hard-reload first):** with no projects yet, open
+Projects: the three lines show, and New project has the focus. Make
+your first project: the box becomes the plain list.
 
 ## Plans in projects (built 2026-11-22, awaiting your test)
 
