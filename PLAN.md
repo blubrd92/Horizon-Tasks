@@ -518,6 +518,17 @@ clearly apart. Also noted: letting go of a task doesn't count against
 you; What you did counts only finished cards, and let-go ones sit folded
 at the bottom with no score.
 
+## The empty Projects box (asked 2026-11-22, look sheet waiting on your pick)
+You said it feels like an afterthought: one gray sentence, a button,
+and the X lit up first (focus lands on it). Look sheet:
+`design/projects-empty/preview.html` and `preview.png`. A, today; B, a
+faint dashed example row; C, three lines on what a project holds (its
+cards, a plan, notes and links), **my recommendation**; D, B and C
+together. B, C, and D also move focus to New project when the list is
+empty. Site only, `js/projectlist.js`, `index.html`, `css/horizon.css`.
+Open: your screenshot's box is gray; here it draws in the cream
+surface (#FBFAF6). Something may sit over it on your screen.
+
 ## Plans in projects (built 2026-11-22, awaiting your test)
 
 Your picture: a big project (an outreach, say) with many steps, each

@@ -1,0 +1,104 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Horizon empty Projects</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,700&amp;family=IBM+Plex+Mono:wght@400;500&amp;family=IBM+Plex+Sans:wght@400;500;600&amp;display=swap" rel="stylesheet">
+<!-- The site's own styles; only the new pieces are drawn here. -->
+<link rel="stylesheet" href="../../css/horizon.css">
+<style>
+  body { padding: 40px; }
+  .sheet { max-width: 1340px; margin: 0 auto; }
+  h1 { font-family: var(--font-display); font-size: 30px; margin: 0 0 6px; letter-spacing: -0.01em; }
+  .lead { color: var(--ink-secondary); margin: 0 0 24px; max-width: 800px; font-size: 15px; line-height: 1.5; }
+  .row { display: flex; flex-wrap: wrap; gap: 28px; align-items: flex-start; }
+  .option { flex: 1 1 520px; max-width: 640px; background: var(--surface); border: 1px solid var(--border-soft); border-radius: var(--radius-panel); padding: 24px; }
+  .option-head { display: flex; align-items: baseline; gap: 12px; margin-bottom: 4px; }
+  .letter { font-family: var(--font-mono); color: var(--accent); font-size: 14px; font-weight: 500; }
+  .name { font-family: var(--font-display); font-size: 20px; margin: 0; }
+  .pick { font-size: 12px; font-weight: 600; color: var(--accent); background: var(--progress-tint); padding: 2px 8px; border-radius: 8px; }
+  .why { color: var(--ink-secondary); margin: 0 0 16px; font-size: 14px; line-height: 1.5; }
+  .backdrop { background: #B9B8B2; border-radius: var(--radius-panel); padding: 32px 20px; display: flex; justify-content: center; }
+  .mock { width: 460px; max-width: 100%; position: static; display: block; }
+  .mock .icon-button:focus { outline: none; }
+
+  /* ---------- New ---------- */
+  .pe-lead { margin: -4px 0 0; font-size: 15px; line-height: 1.5; color: var(--ink); }
+  /* B: a row as it will look, drawn faintly, labeled as an example. */
+  .ghost { border: 1px dashed var(--hard-outline); border-radius: var(--radius-card); background: var(--surface); overflow: hidden; }
+  .ghost .project-row { pointer-events: none; opacity: 0.75; }
+  .ghost-tag { display: block; padding: 6px 14px 0; font-family: var(--font-mono); font-size: 11px; color: var(--ink-placeholder); letter-spacing: 0.02em; }
+  /* C: what a project holds, a line each. */
+  .holds { list-style: none; margin: 0; padding: 4px 0; display: flex; flex-direction: column; gap: 10px; }
+  .holds li { display: grid; grid-template-columns: 32px minmax(0, 1fr); gap: 10px; align-items: start; font-size: 14px; line-height: 1.45; color: var(--ink-secondary); }
+  .holds b { display: block; font-weight: 600; color: var(--ink); }
+  .holds .ic { width: 32px; height: 32px; border-radius: 10px; display: flex; align-items: center; justify-content: center; background: var(--strip-day); color: var(--ink-secondary); }
+  .foot-left { justify-content: flex-start; }
+</style>
+</head>
+<body>
+<div class="sheet">
+  <h1>Projects, before there are any</h1>
+  <p class="lead">Today the box is one gray sentence and a button, and the first thing that lights up is the X (focus lands there). Three ways to make it feel like a door into something, drawn with the site's own styles. The box stays a box: same size, same place.</p>
+
+  <div class="row">
+    <section class="option">
+      <div class="option-head"><span class="letter">A</span><h2 class="name">Today</h2></div>
+      <p class="why">For comparison. The sentence is secondary gray, the X wears the focus ring, and nothing shows what a project turns into.</p>
+      <div class="backdrop"><div class="small-dialog projects-dialog mock"><div class="small-panel">
+        <div class="settings-head"><h2 class="panel-title">Projects</h2><button type="button" class="icon-button" style="outline:2px solid var(--accent);outline-offset:2px" aria-label="Close"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"></path></svg></button></div>
+        <p class="projects-empty">No projects yet. A project gathers the cards that belong together, like a display or a program series.</p>
+        <div class="small-foot"><button type="button" class="button button-primary">New project</button></div>
+      </div></div></div>
+    </section>
+
+    <section class="option">
+      <div class="option-head"><span class="letter">B</span><h2 class="name">Show the row it will become</h2></div>
+      <p class="why">One sentence in ink, then a faint, dashed example of a project row (its color, name, end date, open cards), so the empty list already has a shape. Focus goes to New project instead of the X.</p>
+      <div class="backdrop"><div class="small-dialog projects-dialog mock"><div class="small-panel">
+        <div class="settings-head"><h2 class="panel-title">Projects</h2><button type="button" class="icon-button" aria-label="Close"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"></path></svg></button></div>
+        <p class="pe-lead">A project gathers the cards that belong together: a display, a program series, an outreach.</p>
+        <div class="ghost" aria-hidden="true"><span class="ghost-tag">FOR EXAMPLE</span>
+          <span class="project-row"><span class="project-swatch" style="background:#B5476B"></span><span class="project-row-text"><span class="project-row-name">Lunar New Year outreach</span><span class="project-row-line">Ends Sun, Feb 14, 2027 · 6 open cards</span></span></span></div>
+        <div class="small-foot"><button type="button" class="button button-primary" style="outline:2px solid var(--accent);outline-offset:2px">New project</button></div>
+      </div></div></div>
+    </section>
+
+    <section class="option">
+      <div class="option-head"><span class="letter">C</span><h2 class="name">Say what a project holds</h2><span class="pick">My recommendation</span></div>
+      <p class="why">Three short lines, each with a quiet icon: its cards, a plan, notes and links. It names what's behind the door, including the plan you just got. Focus goes to New project.</p>
+      <div class="backdrop"><div class="small-dialog projects-dialog mock"><div class="small-panel">
+        <div class="settings-head"><h2 class="panel-title">Projects</h2><button type="button" class="icon-button" aria-label="Close"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"></path></svg></button></div>
+        <p class="pe-lead">No projects yet. A project gathers what belongs together, like a display or a program series. Each one gets a page with:</p>
+        <ul class="holds">
+          <li><span class="ic"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><rect x="4" y="5" width="16" height="14" rx="3"></rect><path d="M4 9h16"></path></svg></span><span><b>Its cards</b>Tagged on the board, gathered on one page.</span></li>
+          <li><span class="ic"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 6h10M10 12h10M10 18h10"></path><path d="M4 5l1.5-1v4"></path><path d="M3.5 11.5a1.3 1.3 0 0 1 2.4.6c0 .9-2.4 1.9-2.4 2.9h2.5"></path><path d="M3.6 17.2h2.2l-1.2 1.4a1.1 1.1 0 1 1-1 1.6"></path></svg></span><span><b>A plan</b>Its steps in order, each on the board at its date.</span></li>
+          <li><span class="ic"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1"></path><path d="M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1"></path></svg></span><span><b>Notes and links</b>The Drive folder, the contact, the details.</span></li>
+        </ul>
+        <div class="small-foot"><button type="button" class="button button-primary" style="outline:2px solid var(--accent);outline-offset:2px">New project</button></div>
+      </div></div></div>
+    </section>
+
+    <section class="option">
+      <div class="option-head"><span class="letter">D</span><h2 class="name">B and C together</h2></div>
+      <p class="why">What a project holds, then the example row. The most complete, and the most crowded: the row shows what you'll see one click later anyway.</p>
+      <div class="backdrop"><div class="small-dialog projects-dialog mock"><div class="small-panel">
+        <div class="settings-head"><h2 class="panel-title">Projects</h2><button type="button" class="icon-button" aria-label="Close"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"></path></svg></button></div>
+        <p class="pe-lead">No projects yet. A project gathers what belongs together, like a display or a program series. Each one gets a page with:</p>
+        <ul class="holds">
+          <li><span class="ic"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><rect x="4" y="5" width="16" height="14" rx="3"></rect><path d="M4 9h16"></path></svg></span><span><b>Its cards</b>Tagged on the board, gathered on one page.</span></li>
+          <li><span class="ic"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 6h10M10 12h10M10 18h10"></path><path d="M4 5l1.5-1v4"></path><path d="M3.5 11.5a1.3 1.3 0 0 1 2.4.6c0 .9-2.4 1.9-2.4 2.9h2.5"></path><path d="M3.6 17.2h2.2l-1.2 1.4a1.1 1.1 0 1 1-1 1.6"></path></svg></span><span><b>A plan</b>Its steps in order, each on the board at its date.</span></li>
+          <li><span class="ic"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1"></path><path d="M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1"></path></svg></span><span><b>Notes and links</b>The Drive folder, the contact, the details.</span></li>
+        </ul>
+        <div class="ghost" aria-hidden="true"><span class="ghost-tag">IN THE LIST, IT LOOKS LIKE</span>
+          <span class="project-row"><span class="project-swatch" style="background:#B5476B"></span><span class="project-row-text"><span class="project-row-name">Lunar New Year outreach</span><span class="project-row-line">Ends Sun, Feb 14, 2027 · 6 open cards</span></span></span></div>
+        <div class="small-foot"><button type="button" class="button button-primary" style="outline:2px solid var(--accent);outline-offset:2px">New project</button></div>
+      </div></div></div>
+    </section>
+  </div>
+</div>
+</body>
+</html>
