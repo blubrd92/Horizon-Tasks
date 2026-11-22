@@ -590,8 +590,8 @@
     </form>
 
     <!-- After Mark done, when a follow-up still needs a title or a date
-         (editor.js): the editor turns into this one question. The card is
-         already saved as done. -->
+         (editor.js): the editor turns into this one question, with the
+         editor's own Due field. The card is already saved as done. -->
     <section id="editor-next" class="panel" aria-labelledby="editor-next-heading" hidden>
       <div class="panel-head">
         <h2 id="editor-next-heading" class="panel-title" tabindex="-1">What comes next?</h2>
@@ -608,25 +608,22 @@
           <input type="text" id="editor-next-title" class="field-input field-title" maxlength="200" placeholder="What came out of it?" autocomplete="off" aria-describedby="editor-next-keeps">
         </label>
         <p id="editor-next-keeps" class="field-note"></p>
-        <div class="next-when" role="group" aria-labelledby="editor-next-when-label">
-          <p id="editor-next-when-label" class="next-when-label">When</p>
-          <div class="next-when-buttons">
-            <button type="button" class="triage-button" data-next="today">Today</button>
-            <button type="button" class="triage-button" data-next="tomorrow">Tomorrow</button>
-            <button type="button" class="triage-button" data-next="week">This week</button>
-            <button type="button" class="triage-button" data-next="someday">Someday</button>
-          </div>
-          <button type="button" id="editor-next-pick" class="button button-small next-pick" aria-expanded="false" aria-controls="editor-next-date-row">Pick a date&hellip;</button>
-          <div id="editor-next-date-row" class="next-date-row" hidden>
-            <label class="visually-hidden" for="editor-next-date">Due date</label>
-            <input type="date" id="editor-next-date" class="field-input field-date">
-            <button type="button" class="button button-primary" data-next="date">Add</button>
+        <!-- Due, as in the editor: the date box and No date. -->
+        <div class="field">
+          <label for="editor-next-due">Due</label>
+          <div class="field-due">
+            <input type="date" id="editor-next-due" class="field-input field-date">
+            <button type="button" id="editor-next-nodate" class="button button-small">No date</button>
           </div>
         </div>
+        <p id="editor-next-someday" class="field-note" hidden>No date: this card lives in Someday.</p>
         <p id="editor-next-error" class="field-error" hidden>Give the next card a title first.</p>
       </div>
       <div class="panel-foot">
         <button type="button" id="editor-next-skip" class="button">Nothing after all</button>
+        <div class="panel-foot-end">
+          <button type="button" id="editor-next-add" class="button button-primary">Add card</button>
+        </div>
       </div>
     </section>
   </dialog>

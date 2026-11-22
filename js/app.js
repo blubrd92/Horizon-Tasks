@@ -540,14 +540,11 @@ async function start() {
     },
     // The follow-up the editor asked about after Mark done: made now, in
     // the finished card's chain.
-    onFollowUp: (parent, { title, dueDate }, { closed }) => {
+    onFollowUp: (parent, { title, dueDate }) => {
       if (!uid) return;
       const fields = followUpCard(parent, { title, dueDate }, todayISO());
       const { id, saved } = fb.addFollowUp(uid, fields, parent.id, parentChainChanges(parent));
-      activeQuickAdd().showAdded(
-        closed ? `Next: \u201c${title}\u201d is in Someday.` : `Next: \u201c${title}\u201d, ${whereText(dueDate)}.`,
-        id,
-      );
+      activeQuickAdd().showAdded(`Next: \u201c${title}\u201d, ${whereText(dueDate)}.`, id);
       saved.catch(showSaveError);
     },
     onCreate: (values, { newProject }) => {

@@ -4,7 +4,7 @@
 // collects what changed; app.js decides how changes are saved.
 
 import { activeOf } from './categories.js';
-import { addDays, formatShort, todayISO, zoneBounds } from './dates.js';
+import { formatShort, todayISO } from './dates.js';
 import { PROJECT_STATUS, STATUS, WAITING_ON_MAX, FOLLOW_UP_MAX } from './model.js';
 import { daysText, isWaiting, waitingDays } from './followup.js';
 import { NEW_PROJECT, nameOrder } from './projects.js';
@@ -38,11 +38,12 @@ const narrow = window.matchMedia('(max-width: 760px)');
 // Follow-ups: onDone returns nothing when it has finished the card, or {
 // parent, followUp, keeps } when the follow-up still needs a title or a
 // date. The card is already saved as done then, and the editor turns into
-// one question, "What comes next?" (keeps is the line under the title:
-// what the new card keeps). onFollowUp(parent, { title, dueDate }, {
-// closed }) makes it: from a "when" button, or with closed true when the
-// panel is closed with a title in the box (it goes to Someday then, so a
-// title isn't lost). Nothing after all, or a blank box, makes nothing.
+// one question, "What comes next?", with the editor's own Due field (keeps
+// is the line under the title: what the new card keeps). onFollowUp(parent,
+// { title, dueDate }, { closed }) makes it: from Add card, or with closed
+// true when the panel is closed with a title in the box (so a title isn't
+// lost; no date means Someday). Nothing after all, or a blank box, makes
+// nothing.
 export function setupEditor({ onSave, onDone, onCreate, onClose, onTick, onFollowUp }) {
   const dialog = document.getElementById('editor');
   const form = document.getElementById('editor-form');
@@ -67,11 +68,9 @@ export function setupEditor({ onSave, onDone, onCreate, onClose, onTick, onFollo
   const nextParent = document.getElementById('editor-next-parent');
   const nextTitle = document.getElementById('editor-next-title');
   const nextKeeps = document.getElementById('editor-next-keeps');
-  const nextWhen = next.querySelector('.next-when');
-  const nextWeek = next.querySelector('[data-next="week"]');
-  const nextPick = document.getElementById('editor-next-pick');
-  const nextDateRow = document.getElementById('editor-next-date-row');
-  const nextDate = document.getElementById('editor-next-date');
+  const nextDue = document.getElementById('editor-next-due');
+  const nextNoDate = document.getElementById('editor-next-nodate');
+  const nextSomeday = document.getElementById('editor-next-someday');
   const nextError = document.getElementById('editor-next-error');
   const hard = document.getElementById('editor-hard');
   const hardTick = document.getElementById('editor-hard-tick');
@@ -436,8 +435,9 @@ export function setupEditor({ onSave, onDone, onCreate, onClose, onTick, onFollo
     else close();
   });
 
-  // After Mark done: "What comes next?" in place of the form, with the
-  // title written ahead (or an empty box) and the "when" buttons.
+  // After Mark done: "What comes next?" in place of the form: the title
+  // written ahead (or an empty box), and Due as in the editor, with the
+  // date written ahead if there was one.
   function startStep({ parent, followUp, keeps }) {
     step = { parent, done: false };
     form.hidden = true;
@@ -447,18 +447,14 @@ export function setupEditor({ onSave, onDone, onCreate, onClose, onTick, onFollo
     nextTitle.value = followUp.title;
     nextKeeps.textContent = keeps;
     nextKeeps.hidden = !keeps;
-    nextDate.value = followUp.dueDate || '';
-    nextDateRow.hidden = true;
-    nextPick.setAttribute('aria-expanded', 'false');
+    nextDue.value = followUp.dueDate || '';
     nextError.hidden = true;
     nextTitle.removeAttribute('aria-invalid');
-    // On a Sunday nothing is left of this week.
-    const today = todayISO();
-    nextWeek.hidden = zoneBounds(today).weekEnd <= today;
-    updateNextTitle();
-    // A title written ahead: the "when" is all that's left. A blank box:
-    // the title first.
-    if (followUp.title) next.querySelector('[data-next="today"]').focus();
+    nextTitle.setAttribute('aria-describedby', 'editor-next-keeps');
+    updateNextSomeday();
+    // A title written ahead: the date is what's left. A blank box: the
+    // title first.
+    if (followUp.title) nextDue.focus();
     else nextTitle.focus();
   }
 
@@ -469,16 +465,13 @@ export function setupEditor({ onSave, onDone, onCreate, onClose, onTick, onFollo
     dialog.setAttribute('aria-labelledby', 'editor-heading');
   }
 
-  // The "when" buttons wait (dashed) until there's a title.
-  function updateNextTitle() {
-    nextWhen.classList.toggle('is-waiting', !nextTitle.value.trim());
-    if (nextTitle.value.trim() && !nextError.hidden) {
-      nextError.hidden = true;
-      nextTitle.removeAttribute('aria-invalid');
-    }
+  // "No date: this card lives in Someday.", as in the editor.
+  function updateNextSomeday() {
+    nextSomeday.hidden = Boolean(nextDue.value);
   }
 
-  function chooseNext(kind) {
+  // Add card: the follow-up, with the date in the Due box (none: Someday).
+  function addNext() {
     if (!step) return;
     const title = nextTitle.value.trim();
     if (!title) {
@@ -488,40 +481,33 @@ export function setupEditor({ onSave, onDone, onCreate, onClose, onTick, onFollo
       nextTitle.focus();
       return;
     }
-    const today = todayISO();
-    let dueDate = null;
-    if (kind === 'today') dueDate = today;
-    else if (kind === 'tomorrow') dueDate = addDays(today, 1);
-    else if (kind === 'week') dueDate = zoneBounds(today).weekEnd;
-    else if (kind === 'date') {
-      if (!nextDate.value) {
-        nextDate.focus();
-        return;
-      }
-      dueDate = nextDate.value;
-    }
     step.done = true;
-    onFollowUp(step.parent, { title: title.slice(0, FOLLOW_UP_MAX), dueDate }, { closed: false });
+    onFollowUp(step.parent, { title: title.slice(0, FOLLOW_UP_MAX), dueDate: nextDue.value || null }, { closed: false });
     close();
   }
 
-  next.addEventListener('click', (event) => {
-    const button = event.target.closest('[data-next]');
-    if (button) chooseNext(button.dataset.next);
-  });
-  nextPick.addEventListener('click', () => {
-    const opening = nextDateRow.hidden;
-    nextDateRow.hidden = !opening;
-    nextPick.setAttribute('aria-expanded', String(opening));
-    if (opening) nextDate.focus();
-  });
-  nextDate.addEventListener('keydown', (event) => {
-    if (event.key === 'Enter') {
+  document.getElementById('editor-next-add').addEventListener('click', addNext);
+  // Enter in the title or the date adds it, as Enter saves in the editor.
+  for (const input of [nextTitle, nextDue]) {
+    input.addEventListener('keydown', (event) => {
+      if (event.key !== 'Enter' || event.isComposing) return;
       event.preventDefault();
-      chooseNext('date');
+      addNext();
+    });
+  }
+  nextNoDate.addEventListener('click', () => {
+    nextDue.value = '';
+    updateNextSomeday();
+    nextDue.focus();
+  });
+  nextDue.addEventListener('input', updateNextSomeday);
+  nextTitle.addEventListener('input', () => {
+    if (nextTitle.value.trim() && !nextError.hidden) {
+      nextError.hidden = true;
+      nextTitle.removeAttribute('aria-invalid');
+      nextTitle.setAttribute('aria-describedby', 'editor-next-keeps');
     }
   });
-  nextTitle.addEventListener('input', updateNextTitle);
   document.getElementById('editor-next-skip').addEventListener('click', () => {
     if (step) step.done = true;
     close();
@@ -572,10 +558,11 @@ export function setupEditor({ onSave, onDone, onCreate, onClose, onTick, onFollo
   });
 
   dialog.addEventListener('close', () => {
-    // Closed while asking what comes next, with a title in the box: it
-    // goes to Someday rather than vanishing.
+    // Closed while asking what comes next, with a title in the box: it's
+    // made anyway, with the date in the Due box (none: Someday), rather
+    // than vanishing.
     if (step && !step.done && nextTitle.value.trim()) {
-      onFollowUp(step.parent, { title: nextTitle.value.trim().slice(0, FOLLOW_UP_MAX), dueDate: null }, { closed: true });
+      onFollowUp(step.parent, { title: nextTitle.value.trim().slice(0, FOLLOW_UP_MAX), dueDate: nextDue.value || null }, { closed: true });
     }
     endStep();
     window.removeEventListener('resize', refit);

@@ -605,6 +605,20 @@ Firestore question on `chainId` when the box opens); Copy as text's
 **Not in this slice (proposals):** Waiting or Follow-up in Inbox
 drafts; the link mark on a project page's finished rows.
 
+### Revision 1: the question after Mark done uses the editor's Due (2026-11-22, awaiting test)
+You asked for the follow-up's date entry to be the same as the regular
+editor's. The When buttons (Today, Tomorrow, This week, Someday, Pick a
+date) are gone. In their place: **Due**, exactly as in the editor (the
+date box, No date, and "No date: this card lives in Someday."), with
+**Add card** at the bottom right beside Nothing after all. A date
+written ahead fills the box. Focus goes to Due when the title was
+written ahead, to the title when it wasn't. Enter in either adds it.
+Closing with a title in the box makes the card with whatever date is in
+Due (none: Someday), so nothing typed is lost. Site only; `index.html`,
+`js/editor.js`, `js/app.js`, `css/horizon.css`. Checked: 97 checks, all
+passing (the new ones: no When buttons, the Someday note follows the
+box, No date empties it, Enter in Due adds the card with that date).
+
 ### Built (2026-11-21, awaiting your test)
 Site only: no Apps Script version, no Firestore rules change, no setup
 steps. Hard-reload, and test on the live site.
@@ -622,9 +636,8 @@ follow-up), `js/notespeek.js`, `js/recordbox.js`, `js/done.js`,
 **Decisions I made that the talk didn't cover (change any of them):**
 - The question after Mark done stays where the editor was (the card it
   sat beside is gone), and its dialog is announced by its own heading.
-- With no title yet, the "when" buttons look dashed but still answer a
-  click, with "Give the next card a title first." Nothing is silently
-  dead.
+- Add card with no title says "Give the next card a title first."
+  (Revision 1 replaced the When buttons.)
 - The menu closes after each choice; from the keyboard, focus goes back
   to the card.
 - Turning Waiting on from the menu leaves it nameless; a name is added
@@ -662,8 +675,8 @@ query, the writes), and a real right click on a Mac (Ctrl+click).
 - [ ] Turn on Follow-up with a title and a date, then Mark done: no
       question; the line beside quick add names the new card, and it's
       on the board on that date.
-- [ ] Follow-up with a title, no date: Mark done asks when. Try Pick a
-      date too.
+- [ ] Follow-up with a title, no date: Mark done asks, with Due as in
+      the editor. Pick a date, Add card. Try No date too (Someday).
 - [ ] Follow-up left blank: Mark done asks what. Type one, press Escape:
       it lands in Someday.
 - [ ] Open a follow-up card: "After ..., done ..." at the top.

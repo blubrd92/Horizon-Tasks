@@ -3804,52 +3804,7 @@ a.link-row:focus-visible { outline-offset: -2px; }
 
 #editor-next-keeps { margin-top: -10px; }
 
-.next-when {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.next-when-label {
-  margin: 0;
-  font-size: 12px;
-  font-weight: 600;
-  color: var(--ink-secondary);
-}
-
-.next-when-buttons {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 6px;
-}
-
-.next-when-buttons .triage-button { font-size: 14px; }
-.next-when-buttons .triage-button[hidden] { display: none; }
-
-/* On a Sunday there are three; the last takes the whole row. */
-.next-when-buttons .triage-button:nth-last-child(1 of :not([hidden])):nth-child(odd of :not([hidden])) { grid-column: 1 / -1; }
-
-/* With no title yet, the "when" buttons wait, dashed. They still answer a
-   click (with a word about the title), so nothing is silently dead. */
-.next-when.is-waiting .triage-button,
-.next-when.is-waiting .next-pick,
-.next-when.is-waiting .next-date-row .button {
-  border-style: dashed;
-  background: transparent;
-  color: var(--ink-placeholder);
-}
-
-.next-pick { align-self: flex-start; }
-
-.next-date-row {
-  display: flex;
-  gap: 6px;
-}
-
-.next-date-row[hidden] { display: none; }
-.next-date-row .field-date { flex: 1; min-width: 0; }
-
-#editor-next .field-error { margin: 0; }
+#editor-next .field-error { margin: -8px 0 0; }
 
 /* The hover box's lines: Waiting, then the follow-up, each with its icon. */
 .notes-peek-line {
