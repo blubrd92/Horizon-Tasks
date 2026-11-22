@@ -1,0 +1,401 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Horizon plans in projects</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,700&amp;family=IBM+Plex+Mono:wght@400;500&amp;family=IBM+Plex+Sans:wght@400;500;600&amp;display=swap" rel="stylesheet">
+<!-- The site's own styles, so panels, fields, buttons, cards, and the
+     chain look exactly as they do in Horizon. Only the new pieces are
+     drawn here. -->
+<link rel="stylesheet" href="../../css/horizon.css">
+<style>
+  body { padding: 40px; }
+  .sheet { max-width: 1340px; margin: 0 auto; }
+  h1 { font-family: var(--font-display); font-size: 30px; margin: 0 0 6px; letter-spacing: -0.01em; }
+  .lead { color: var(--ink-secondary); margin: 0 0 6px; max-width: 800px; font-size: 15px; line-height: 1.5; }
+  .how { color: var(--ink-secondary); margin: 0 0 28px; font-size: 13px; }
+  .option { background: var(--surface); border: 1px solid var(--border-soft); border-radius: var(--radius-panel); padding: 28px; margin-bottom: 24px; }
+  .option-head { display: flex; align-items: baseline; gap: 12px; margin-bottom: 4px; }
+  .letter { font-family: var(--font-mono); color: var(--accent); font-size: 14px; font-weight: 500; }
+  .name { font-family: var(--font-display); font-size: 22px; margin: 0; }
+  .why { color: var(--ink-secondary); margin: 0 0 6px; max-width: 800px; font-size: 14px; line-height: 1.5; }
+  .why b { color: var(--ink); font-weight: 600; }
+  .ask { color: var(--ink); margin: 8px 0 0; max-width: 800px; font-size: 14px; line-height: 1.5; padding: 10px 14px; background: var(--surface-soft); border: 1px solid var(--border-soft); border-radius: var(--radius-card); }
+  .ask b { font-weight: 600; }
+  .stage { display: flex; flex-wrap: wrap; gap: 24px; align-items: flex-start; margin-top: 18px; }
+  .stage > div { min-width: 0; max-width: 100%; }
+  .caption { font-family: var(--font-mono); font-size: 12px; color: var(--ink-placeholder); margin: 0 0 8px; }
+  .mono { font-family: var(--font-mono); font-size: 12px; color: var(--ink-date); }
+
+  /* A slice of the project page: the cards' groups, and the side column. */
+  .mock-page { width: 1180px; max-width: 100%; background: var(--ground); border-radius: var(--radius-panel); padding: 20px; }
+  .mock-page .project-layout { display: grid; grid-template-columns: minmax(0, 1fr) 300px; align-items: start; gap: 24px; }
+  .mock-page .project-aside { grid-column: 2; grid-row: 1; }
+  .mock-page .project-body { grid-column: 1; grid-row: 1; }
+  .mock-page .card { cursor: default; }
+  .mock-side { width: 300px; }
+  .mock-side.wide { width: 340px; }
+  .mock-phone .side-summary { display: block !important; }
+  .mock-phone .side-fold { display: inline-flex !important; }
+  .mock-phone { width: 360px; background: var(--ground); padding: 12px; border-radius: var(--radius-panel); }
+
+  /* ---------- New: the Plan panel ---------- */
+  .plan-line { margin: -4px 0 0; font-size: 13px; line-height: 1.45; color: var(--ink-secondary); }
+  .plan-line b { font-weight: 600; color: var(--ink); }
+  .plan-empty { margin: 0; font-size: 14px; line-height: 1.5; color: var(--ink-secondary); }
+  /* The plan, read: the chain's own look, each step a button that opens it. */
+  .plan-list .chain-title { text-align: left; }
+  .plan-step { display: block; width: 100%; padding: 0; border: none; background: none; font: inherit; text-align: left; cursor: pointer; border-radius: 6px; }
+  .plan-step:hover .chain-title { text-decoration: underline; text-underline-offset: 2px; }
+  .plan-num { font-family: var(--font-mono); font-size: 12px; color: var(--ink-placeholder); margin-right: 6px; }
+  .chain-list .is-next .chain-title { font-weight: 600; }
+  .plan-late { font-family: var(--font-mono); font-size: 12px; color: var(--overdue-ink); }
+  .plan-order { align-self: flex-start; display: inline-block; margin-top: 3px; padding: 1px 7px; border-radius: 8px; font-size: 12px; color: #6B4A00; background: #FFF3D1; }
+  .chain-list .is-letgo .chain-title { color: var(--ink-secondary); }
+
+  /* The plan, changing: the checklist's rows, with a date on a second line. */
+  .plan-edit { list-style: none; margin: 0; padding: 0; border: 1px solid var(--field-border); border-radius: var(--radius-card); background: var(--surface); overflow: hidden; }
+  .pe-row { display: grid; grid-template-columns: 28px minmax(0, 1fr) 40px; align-items: start; padding: 6px 4px 8px 0; }
+  .pe-row + .pe-row { border-top: 1px solid var(--border-soft); }
+  .pe-row .cl-handle { height: 40px; }
+  .pe-main { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+  .pe-title { field-sizing: content; width: 100%; min-height: 40px; border: none; background: none; font: inherit; font-size: 14px; color: var(--ink); padding: 9px 4px; resize: none; border-radius: 6px; }
+  .pe-title:focus { outline: 2px solid var(--accent); outline-offset: -2px; }
+  .pe-due { display: flex; gap: 6px; align-items: center; padding-left: 4px; }
+  .pe-due .field-input.field-date { height: 36px; min-height: 36px; font-size: 13px; padding: 0 8px; width: 150px; }
+  .pe-due .button-small { height: 36px; }
+  .pe-x { width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; border: none; background: none; color: var(--ink-secondary); border-radius: 8px; cursor: pointer; }
+  .pe-x:hover { background: var(--strip-day); }
+  .pe-num { font-family: var(--font-mono); font-size: 12px; color: var(--ink-placeholder); display: flex; height: 40px; align-items: center; justify-content: center; }
+  .pe-locked .pe-title { color: var(--ink-secondary); }
+  .pe-locked .pe-done { padding-left: 4px; font-family: var(--font-mono); font-size: 12px; color: var(--ink-date); }
+  .pe-locked .pe-lock { display: flex; height: 40px; align-items: center; justify-content: center; color: var(--accent); }
+  .pe-off { background: var(--surface-soft); }
+  .pe-off .pe-title { text-decoration: line-through; color: var(--ink-placeholder); }
+  .pe-off-note { padding-left: 4px; font-size: 12px; color: var(--ink-secondary); }
+  .pe-off-note .link-button { font-size: 12px; }
+  .pe-new .pe-title { background: none; }
+  .plan-add { border-top: 1px solid var(--border-soft); }
+  .plan-cat { display: flex; gap: 8px; align-items: center; font-size: 13px; color: var(--ink-secondary); }
+  .plan-cat select { height: 36px; font-size: 13px; flex: 1; min-width: 0; }
+
+  /* ---------- New: the step's line in the editor ---------- */
+  .mock-panel { width: 420px; max-width: 100%; background: var(--surface-soft); border: 1px solid var(--border-soft); border-radius: var(--radius-panel); box-shadow: 0 16px 40px rgba(24, 25, 28, 0.12); overflow: hidden; }
+  .mock-panel .panel-body { overflow: visible; }
+  .step-note { margin: 2px 0 0; padding: 6px 10px; border-radius: 8px; font-size: 13px; line-height: 1.4; color: #6B4A00; background: #FFF3D1; }
+  .mock-panel select:disabled { color: var(--ink-placeholder); background: var(--surface-soft); }
+
+  /* Cards and the hover box */
+  .peek-pair { display: flex; gap: 10px; align-items: flex-start; flex-wrap: wrap; }
+  .peek-pair .card { width: 260px; cursor: default; }
+  .peek-pair .notes-peek { position: static; white-space: normal; max-width: 250px; }
+  .peek-line { display: grid; grid-template-columns: 14px minmax(0, 1fr); gap: 7px; }
+  .peek-line svg { margin-top: 3px; color: var(--ink-secondary); }
+  .notes-peek-text + .peek-line, .peek-line + .peek-line { margin-top: 8px; padding-top: 8px; border-top: 1px solid var(--border-soft); }
+  .mock-bar { width: 1060px; max-width: 100%; border: 1px solid var(--border-soft); border-radius: var(--radius-card); overflow: hidden; }
+  .mock-bar .quickadd-bar { padding: 16px 20px; border-bottom: none; }
+  .mock-bar .quickadd-status b { font-weight: 600; color: var(--ink); }
+  .mock-box { width: 440px; max-width: 100%; background: var(--surface-soft); border-radius: var(--radius-panel); box-shadow: 0 12px 32px rgba(24, 25, 28, 0.18); }
+  .chain { display: flex; flex-direction: column; gap: 6px; }
+  .chain-head { margin: 0; font-size: 12px; font-weight: 600; color: var(--ink-secondary); }
+
+  @media (max-width: 600px) {
+    body { padding: 20px 16px; }
+    .option { padding: 18px 16px; }
+    h1 { font-size: 24px; }
+    .mock-page .project-layout { display: flex; flex-direction: column; }
+  }
+</style>
+</head>
+<body>
+<div class="sheet">
+  <h1>Horizon: plans in projects</h1>
+  <p class="lead">A plan is a project's steps in order, each with its own date, made all at once as real cards. Every step is on the board from day one. The plan lives in a new <b>Plan</b> panel on the project page, above Notes and Links; it reads like the chain in What you did, and changes like the checklist.</p>
+  <p class="lead">Drawn with the site's own styles. The project, steps, and dates are made up; "today" is Sun, Nov 22.</p>
+  <p class="how">Nothing on this sheet saves or moves. It's for your eye.</p>
+
+  <!-- A. The project page -->
+  <section class="option">
+    <div class="option-head"><span class="letter">A</span><h2 class="name">The project page, with a plan</h2></div>
+    <p class="why"><b>The Plan panel</b> sits first in the side column. Under its title, one line: how far along, and what's next. Then the steps, oldest first, in the chain's own look: a filled check for done, an open circle for still on the board, a dash for let go. The next open step is in bold. Each step is a button: an open one opens its card's editor, a finished one opens the box What you did uses.</p>
+    <p class="why"><b>The steps are also cards</b>, so they sit in the groups on the left like any of the project's cards, at their own dates. The left says <i>when</i>; the plan says <i>in what order</i>. Cards carry no plan mark on their face (settled).</p>
+    <p class="why"><b>Out of order:</b> step 5 is dated before step 4 (you moved it on the board). Nothing moves for you; the step wears a soft yellow "Before step 4's date", the same yellow the Inbox uses for a date worth a second look.</p>
+    <div class="stage">
+      <div class="mock-page" id="page"></div>
+    </div>
+  </section>
+
+  <!-- B. Making a plan -->
+  <section class="option">
+    <div class="option-head"><span class="letter">B</span><h2 class="name">Making a plan</h2></div>
+    <p class="why"><b>No plan yet:</b> the panel says what a plan is, with one button. <b>Make a plan</b> turns it into the checklist's add field: type a step, Enter, and its row appears with the date box ready; Enter again goes back to the add field for the next one. A handle on each row drags it (Alt and the up or down arrow from the keyboard, as in the checklist); the X drops a row that isn't made yet.</p>
+    <p class="why"><b>Category:</b> every card needs one, so the steps get one together at the top (each can be changed later in its editor). An empty date is allowed: that step goes to Someday, as any card without a date does. <b>Add 6 steps to the board</b> makes them all in one write.</p>
+    <div class="stage">
+      <div><p class="caption">No plan yet</p><div class="mock-side" id="empty"></div></div>
+      <div><p class="caption">Making one: five typed, the sixth being typed</p><div class="mock-side wide" id="making"></div></div>
+    </div>
+  </section>
+
+  <!-- C. Changing a plan -->
+  <section class="option">
+    <div class="option-head"><span class="letter">C</span><h2 class="name">Changing a plan later (questions 1, 2, 3)</h2></div>
+    <p class="why"><b>Change</b> turns the plan into the same rows as making one. Steps already done or let go keep their place, locked, with a check. Open steps can be renamed, redated, dragged into a new order, or taken off.</p>
+    <p class="why"><b>Adding (question 1):</b> one way in, the add field at the bottom. A new step lands at the end; to put it between two steps, drag it up. That answers "between" without a second control on every row.</p>
+    <p class="why"><b>Taking off (question 2):</b> the X takes a step off the plan, not off the board. It stays a card in this project, at its date. The row stays struck through with Undo until you Save. Let it go stays a separate act, where it is now (triage).</p>
+    <p class="why"><b>Reordering (question 3):</b> the handle, as in the checklist. Order and dates stay independent: dragging a step doesn't change its date, and the yellow note says when they disagree. <b>Save</b> writes every change in one write; <b>Cancel</b> leaves the plan as it was.</p>
+    <div class="stage">
+      <div><p class="caption">Change: one taken off, one added and dragged up</p><div class="mock-side wide" id="changing"></div></div>
+    </div>
+  </section>
+
+  <!-- D. A step's editor -->
+  <section class="option">
+    <div class="option-head"><span class="letter">D</span><h2 class="name">A step's editor (questions 4 and 6)</h2></div>
+    <p class="why"><b>The line on top (question 6):</b> a follow-up looks back at what made it: "After <b>Weed graphic novels</b>, done Tue, Nov 24." A plan step says where it stands: "Step 3 of 6, after <b>Confirm the lion dance troupe</b>, due Mon, Nov 30" (or "done Thu, Nov 19" once that one's done). A different icon (a numbered list, not the follow-up's bent arrow), and the step number first, so the two never read alike.</p>
+    <p class="why"><b>Dates:</b> when Due is earlier than the step before it, the yellow note says so under Due. Nothing is moved.</p>
+    <p class="why"><b>Repeats and Follow-up (question 4):</b> Repeats is off and grayed for a plan step, with a note why. Follow-up works, and its card joins the plan: made when this step is done, it becomes the next step, and the steps after it shift down one. Its box says so.</p>
+    <div class="stage">
+      <div><p class="caption">Step 3, the step before still open</p><div class="mock-panel" id="ed-step"></div></div>
+      <div><p class="caption">Beside it, for comparison: a follow-up's line (unchanged)</p><div class="mock-panel" id="ed-follow"></div></div>
+    </div>
+  </section>
+
+  <!-- E. Board, hover box, Mark done, What you did -->
+  <section class="option">
+    <div class="option-head"><span class="letter">E</span><h2 class="name">On the board and in What you did</h2></div>
+    <p class="why"><b>The hover box</b> adds one line: "Step 3 of 6 in the plan." <b>Mark done</b> on a step uses the line beside quick add that follow-ups already use, to say what's next in the plan (my addition: say no and it goes). <b>What you did:</b> a step's box shows "The plan" instead of "The chain", numbered, this step in bold.</p>
+    <div class="stage">
+      <div><p class="caption">A step, pointer resting</p><div class="peek-pair" id="peek"></div></div>
+      <div><p class="caption">A finished step's box in What you did</p><div class="mock-box small-panel" id="rec-box"></div></div>
+    </div>
+    <div class="stage">
+      <div><p class="caption">Mark done on step 3: the line beside quick add</p>
+        <div class="mock-bar"><div class="quickadd-bar">
+          <label class="quickadd"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"></path></svg><input type="text" class="quickadd-input" placeholder="Add anything: &ldquo;flyer draft for the November program&rdquo;"><kbd class="quickadd-key" aria-hidden="true">Enter</kbd></label>
+          <div class="quickadd-line"><p class="quickadd-status">Done. Next in the plan: <b>Print and post the flyers</b>, due <span class="mono">Fri, Dec 11</span>.</p></div>
+        </div></div></div>
+    </div>
+  </section>
+
+  <!-- F. Phone -->
+  <section class="option">
+    <div class="option-head"><span class="letter">F</span><h2 class="name">On a phone</h2></div>
+    <p class="why">As Notes and Links do: folded to one row above the cards, with what's next, and Show. Open, it's the same panel; Change's rows already stack the date under the title, so they fit 360 pixels.</p>
+    <div class="stage">
+      <div><p class="caption">Folded, 360 wide</p><div class="mock-phone" id="phone-folded"></div></div>
+      <div><p class="caption">Open, 360 wide</p><div class="mock-phone" id="phone-open"></div></div>
+    </div>
+  </section>
+</div>
+
+<script>
+  // Builds the drawings. Nothing here is saved anywhere.
+  const X = (s = 16) => `<svg width="${s}" height="${s}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"></path></svg>`;
+  const CIRCLE = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="8.5"></circle></svg>';
+  const FILLED = '<svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10" fill="currentColor"></circle><path d="M7.5 12.5l3 3 6-6.5" fill="none" stroke="#FFFFFF" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"></path></svg>';
+  const DASH = '<svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9.2" fill="none" stroke="currentColor" stroke-width="1.6"></circle><path d="M8 12h8" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"></path></svg>';
+  const DOTS = '<svg width="12" height="18" viewBox="0 0 12 18" aria-hidden="true" fill="currentColor"><circle cx="3" cy="3" r="1.6"/><circle cx="9" cy="3" r="1.6"/><circle cx="3" cy="9" r="1.6"/><circle cx="9" cy="9" r="1.6"/><circle cx="3" cy="15" r="1.6"/><circle cx="9" cy="15" r="1.6"/></svg>';
+  const PLUS = (s = 16) => `<svg width="${s}" height="${s}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"></path></svg>`;
+  const CHECK = (cls = '', s = 14) => `<svg${cls ? ` class="${cls}"` : ''} width="${s}" height="${s}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"></path></svg>`;
+  const PEN = '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20h4L19 9l-4-4L4 16z"></path><path d="M13.5 6.5l4 4"></path></svg>';
+  // A plan step: a short numbered list. Not the follow-up's bent arrow.
+  const STEPS = (s = 14) => `<svg width="${s}" height="${s}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 6h10M10 12h10M10 18h10"></path><path d="M4 5l1.5-1v4"></path><path d="M3.5 11.5a1.3 1.3 0 0 1 2.4.6c0 .9-2.4 1.9-2.4 2.9h2.5"></path><path d="M3.6 17.2h2.2l-1.2 1.4a1.1 1.1 0 1 1-1 1.6"></path></svg>`;
+  const THEN = (s = 14) => `<svg width="${s}" height="${s}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 4v7a4 4 0 0 0 4 4h9"></path><path d="M15 11l4 4-4 4"></path></svg>`;
+  const NOTES = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 3h9l4 4v13a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1z"></path><path d="M9 11h7M9 15h7M9 7h3"></path></svg>';
+  const SWATCH = (c) => `<svg width="10" height="10" viewBox="0 0 10 10" aria-hidden="true"><rect width="10" height="10" rx="3" fill="${c}"></rect></svg>`;
+  const PROGRAMS = '#6A4FB3';
+  const PROJECT = '#B5476B';
+  const PROJECT_NAME = 'Lunar New Year outreach';
+
+  // The plan, as stored: the order lives on the project.
+  const steps = [
+    { title: 'Book the community room', state: 'done', when: 'Done Thu, Nov 19' },
+    { title: 'Confirm the lion dance troupe', state: 'open', due: 'Mon, Nov 30', next: true },
+    { title: 'Send the flyer draft to Comms', state: 'open', due: 'Fri, Dec 4' },
+    { title: 'Print and post the flyers', state: 'open', due: 'Fri, Dec 11' },
+    { title: 'Email the partner list', state: 'open', due: 'Wed, Dec 9', order: 'Before step 4’s date' },
+    { title: 'Social posts, week of', state: 'open', due: 'Wed, Jan 20' },
+  ];
+
+  function planList(list, { thisOne = -1, record = false } = {}) {
+    return `<ol class="chain-list plan-list">${list.map((s, i) => {
+      const mark = s.state === 'done' ? FILLED : s.state === 'letgo' ? DASH : CIRCLE;
+      const cls = `is-${s.state}${s.next && !record ? ' is-next' : ''}${i === thisOne ? ' is-this' : ''}`;
+      const when = s.state === 'open' ? (record ? `On the board, due ${s.due}` : `<span class="mono">${s.due}</span>`) : s.when;
+      const order = s.order && !record ? `<span class="plan-order">${s.order}</span>` : '';
+      const inner = `<span class="chain-title"><span class="plan-num">${i + 1}</span>${s.title}</span><span class="chain-when">${when}</span>${order}`;
+      return `<li class="${cls}">${mark}${record ? `<span>${inner}</span>` : `<button type="button" class="plan-step">${inner}</button>`}</li>`;
+    }).join('')}</ol>`;
+  }
+
+  function panel({ title = 'Plan', button = '', body, foot = '' }) {
+    return `<section class="side-panel">
+      <div class="side-head"><h2 class="side-title">${title}</h2>${button}</div>
+      ${body}${foot}</section>`;
+  }
+
+  const changeButton = `<button type="button" class="button side-button">${PEN}Change</button>`;
+  const readPanel = panel({
+    button: changeButton,
+    body: `<p class="plan-line">1 of 6 done. Next: <b>Confirm the lion dance troupe</b>, <span class="mono">Mon, Nov 30</span>.</p>${planList(steps)}`,
+  });
+
+  // A. The page.
+  const tag = `<span class="card-project"><span class="card-project-arrow" style="--project:${PROJECT}" aria-hidden="true">↗</span>${PROJECT_NAME}</span>`;
+  const card = (title, date, marks = '') => `
+    <article class="card" style="--band:${PROGRAMS}">
+      <div class="card-top"><span class="card-category">Programs</span>${marks}</div>
+      <h3 class="card-title"><span class="card-open">${title}</span></h3>
+      <div class="card-meta"><span class="card-date">${date}</span></div>
+      ${tag}
+    </article>`;
+  const group = (place, name, range, cards) => `
+    <section class="project-group project-group-${place}">
+      <div class="project-group-head"><div class="zone-head-text"><h2 class="zone-title">${name}</h2><span class="zone-range">${range}</span></div><span class="zone-count" aria-hidden="true">${cards.length}</span></div>
+      <div class="project-cards">${cards.join('')}</div>
+    </section>`;
+  const sidePanel = (title, summary) => `<section class="side-panel"><div class="side-head"><h2 class="side-title">${title}</h2><button type="button" class="button side-button">${title === 'Notes' ? PEN + 'Edit' : 'Reorder'}</button></div><p class="plan-empty">${summary}</p></section>`;
+  document.getElementById('page').innerHTML = `
+    <div class="project-layout">
+      <aside class="project-aside">
+        ${readPanel}
+        ${sidePanel('Notes', 'Troupe contact: Wei, via the Rec Center. Room holds 80.')}
+        ${sidePanel('Links', 'Flyer folder · Partner list')}
+      </aside>
+      <div class="project-body done-body"><div class="project-groups">
+        ${group('twoWeeks', 'Next Two Weeks', 'Nov 30 to Dec 13', [card('Confirm the lion dance troupe', 'Mon, Nov 30'), card('Send the flyer draft to Comms', 'Fri, Dec 4'), card('Email the partner list', 'Wed, Dec 9'), card('Print and post the flyers', 'Fri, Dec 11')])}
+        ${group('later', 'Later', 'after Dec 13', [card('Social posts, week of', 'Wed, Jan 20'), card('Ask Teen Advisory to help at the door', 'Tue, Feb 2', `<span class="card-marks"><span class="card-notes-mark">${NOTES}</span></span>`)])}
+      </div></div>
+    </div>`;
+
+  // B. Making a plan.
+  document.getElementById('empty').innerHTML = panel({
+    body: `<p class="plan-empty">No plan yet. A plan is this project's steps in order, each with its own date. Every step becomes a card on the board.</p>
+      <div class="side-foot"><button type="button" class="button side-add">${PLUS(15)}Make a plan</button></div>`,
+  });
+
+  function row(i, s, { locked = false, off = false, isNew = false } = {}) {
+    if (locked) {
+      return `<li class="pe-row pe-locked"><span class="pe-lock" title="Done: stays where it is">${CHECK('', 16)}</span>
+        <div class="pe-main"><span class="pe-title" style="padding-bottom:0">${s.title}</span><span class="pe-done">${s.when}</span></div><span></span></li>`;
+    }
+    if (off) {
+      return `<li class="pe-row pe-off"><span class="pe-num"></span>
+        <div class="pe-main"><span class="pe-title" style="padding-bottom:0">${s.title}</span><span class="pe-off-note">Off the plan: stays a card in this project. <button type="button" class="link-button">Undo</button></span></div><span></span></li>`;
+    }
+    const note = s.order ? `<span class="plan-order" style="margin-left:4px">${s.order}</span>` : '';
+    return `<li class="pe-row${isNew ? ' pe-new' : ''}"><span class="cl-handle" title="Drag to move">${DOTS}</span>
+      <div class="pe-main"><textarea class="pe-title" rows="1" aria-label="Step ${i}">${s.title}</textarea>
+        <div class="pe-due"><input type="date" class="field-input field-date" value="${s.iso || ''}" aria-label="Step ${i}'s date"><button type="button" class="button button-small">No date</button></div>${note}</div>
+      <button type="button" class="pe-x" aria-label="${isNew ? 'Drop' : 'Take off the plan'}: ${s.title}">${X(15)}</button></li>`;
+  }
+  const addField = (ph, value = '') => `<div class="cl-add plan-add"><span class="cl-add-plus" aria-hidden="true">${PLUS()}</span><input type="text" class="cl-add-input" placeholder="${ph}" value="${value}" aria-label="${ph}"></div>`;
+
+  const drafted = [
+    { title: 'Book the community room', iso: '2026-11-24' },
+    { title: 'Confirm the lion dance troupe', iso: '2026-11-30' },
+    { title: 'Send the flyer draft to Comms', iso: '2026-12-04' },
+    { title: 'Print and post the flyers', iso: '2026-12-11' },
+    { title: 'Email the partner list', iso: '2026-12-14' },
+  ];
+  document.getElementById('making').innerHTML = panel({
+    body: `<label class="plan-cat">Steps go in<select class="field-input"><option>Programs</option></select></label>
+      <div><ul class="plan-edit">${drafted.map((s, i) => row(i + 1, s, { isNew: true })).join('')}</ul>${addField('Add a step', 'Social posts, week of')}</div>
+      <p class="field-note" style="margin:0">Each step becomes a card in ${PROJECT_NAME}, at its own date. No date: that step waits in Someday.</p>`,
+    foot: `<div class="small-foot"><button type="button" class="button">Cancel</button><button type="button" class="button button-primary">Add 6 steps to the board</button></div>`,
+  });
+  // The add field sits inside the box, like the checklist's.
+  for (const box of document.querySelectorAll('#making .plan-edit, #changing .plan-edit')) {
+    const add = box.nextElementSibling;
+    box.parentElement.style.cssText = 'border:1px solid var(--field-border);border-radius:var(--radius-card);overflow:hidden;background:var(--surface)';
+    box.style.cssText = 'border:none;border-radius:0';
+  }
+
+  // C. Changing.
+  const changed = [
+    row(0, steps[0], { locked: true }),
+    row(2, { title: 'Confirm the lion dance troupe', iso: '2026-11-30' }),
+    row(3, { title: 'Send the flyer draft to Comms', iso: '2026-12-04' }),
+    row(4, { title: 'Order red envelopes for the craft table', iso: '2026-12-07' }, { isNew: true }),
+    row(5, { title: 'Print and post the flyers', iso: '2026-12-11' }),
+    row(6, { title: 'Email the partner list', iso: '2026-12-09', order: 'Before step 5’s date' }),
+    row(0, { title: 'Social posts, week of' }, { off: true }),
+  ];
+  document.getElementById('changing').innerHTML = panel({
+    title: 'Change the plan',
+    body: `<div><ul class="plan-edit">${changed.join('')}</ul>${addField('Add a step')}</div>
+      <p class="field-note" style="margin:0">Taken off: the card stays in this project, at its date. Dragging a step doesn't change its date.</p>`,
+    foot: `<div class="small-foot"><button type="button" class="button">Cancel</button><button type="button" class="button button-primary">Save</button></div>`,
+  });
+  for (const box of document.querySelectorAll('#changing .plan-edit')) {
+    box.parentElement.style.cssText = 'border:1px solid var(--field-border);border-radius:var(--radius-card);overflow:hidden;background:var(--surface)';
+    box.style.cssText = 'border:none;border-radius:0';
+  }
+
+  // D. The editors.
+  const head = (t) => `<div class="panel-head"><h2 class="panel-title">${t}</h2><button type="button" class="icon-button" aria-label="Close">${X()}</button></div>`;
+  const ticks = (followTip) => `<div class="ticks">
+      <span class="tick"><input type="checkbox" id="w${Math.random()}" class="tick-input"><label class="tick-face">${PLUS(14)}Waiting</label></span>
+      <span class="tick"><input type="checkbox" class="tick-input"><label class="tick-face">${PLUS(14)}Hard deadline</label></span>
+      <span class="tick"><input type="checkbox" class="tick-input"><label class="tick-face">${PLUS(14)}Follow-up</label></span>
+    </div>${followTip ? `<p class="field-note" style="margin:0">${followTip}</p>` : ''}`;
+  function editor({ after, title, due, dueNote = '', repeat = '', repeatNote = '', project, followTip = '' }) {
+    return `${head('Edit card')}
+      <div class="panel-body">
+        ${after}
+        <label class="field">Title<input type="text" class="field-input field-title" value="${title}"></label>
+        <label class="field">Notes<textarea class="field-input field-notes" rows="2"></textarea></label>
+        <div class="field-row field-row-time">
+          <div class="field"><label>Due</label><div class="field-due"><input type="date" class="field-input field-date" value="${due}"><button type="button" class="button button-small">No date</button></div>${dueNote}</div>
+          <label class="field">Repeats<select class="field-input"${repeat ? ' disabled' : ''}><option>Doesn’t repeat</option></select>${repeatNote}</label>
+        </div>
+        <div class="field-row">
+          <label class="field">Category<select class="field-input"><option>Programs</option></select></label>
+          <label class="field">Project<select class="field-input"><option>${project}</option></select></label>
+        </div>
+        ${ticks(followTip)}
+      </div>
+      <div class="panel-foot">
+        <button type="button" class="button">${CHECK('', 16)}Mark done</button>
+        <div class="panel-foot-end"><button type="button" class="button">Cancel</button><button type="button" class="button button-primary">Save</button></div>
+      </div>`;
+  }
+  document.getElementById('ed-step').innerHTML = editor({
+    after: `<p class="editor-after"><span class="editor-after-icon">${STEPS()}</span><span>Step 3 of 6, after <b>Confirm the lion dance troupe</b>, due <span class="editor-after-day">Mon, Nov 30</span></span></p>`,
+    title: 'Send the flyer draft to Comms', due: '2026-11-27',
+    dueNote: `<p class="step-note">This is now before step 2’s date (Mon, Nov 30).</p>`,
+    repeat: 'off', repeatNote: '<span class="field-note" style="margin-top:4px">Plan steps don’t repeat.</span>',
+    project: PROJECT_NAME,
+    followTip: 'A follow-up here joins the plan: it becomes the next step when this one is done.',
+  });
+  document.getElementById('ed-follow').innerHTML = editor({
+    after: `<p class="editor-after"><span class="editor-after-icon">${THEN()}</span><span>After <b>Weed graphic novels, 741.5</b>, done <span class="editor-after-day">Tue, Nov 24</span></span></p>`,
+    title: 'Send the withdrawn list to Tech Services', due: '2026-12-04', project: 'Graphic novel refresh',
+  });
+
+  // E. Hover box and record box.
+  document.getElementById('peek').innerHTML = `
+    ${card('Send the flyer draft to Comms', 'Fri, Dec 4', `<span class="card-marks"><span class="card-notes-mark">${NOTES}</span></span>`)}
+    <div class="notes-peek"><p class="notes-peek-text">Comms wants it 2 weeks before printing. Use the red and gold template.</p>
+      <div class="peek-line">${STEPS(13)}<span>Step 3 of 6 in the plan.</span></div></div>`;
+  const recSteps = steps.map((s, i) => i === 1 ? { ...s, state: 'done', when: 'Done Mon, Nov 30' } : s);
+  document.getElementById('rec-box').innerHTML = `
+    <div class="settings-head"><h2 class="panel-title record-box-title">Confirm the lion dance troupe</h2><button type="button" class="icon-button" aria-label="Close">${X()}</button></div>
+    <p class="record-box-category">${SWATCH(PROGRAMS)}Programs</p>
+    <p class="record-box-project"><span class="card-project-arrow" style="--project:${PROJECT}" aria-hidden="true">↗</span>${PROJECT_NAME}</p>
+    <p class="record-box-when">Finished Monday, November 30</p>
+    <div class="chain"><p class="chain-head">The plan</p>${planList(recSteps.slice(0, 4), { thisOne: 1, record: true })}<p class="plan-line" style="margin:0">and 2 more steps.</p></div>
+    <div class="small-foot record-foot"><button type="button" class="button">Put back on the board</button><button type="button" class="button button-primary">Close</button></div>`;
+
+  // F. Phone.
+  document.getElementById('phone-folded').innerHTML = `<div class="project-aside">
+    <section class="side-panel is-folded"><div class="side-head"><h2 class="side-title">Plan</h2><p class="side-summary" style="display:block">1 of 6 done · next Mon, Nov 30</p><button type="button" class="button side-fold">Show</button></div></section>
+    <section class="side-panel is-folded"><div class="side-head"><h2 class="side-title">Notes</h2><p class="side-summary" style="display:block">Troupe contact: Wei, via the Rec…</p><button type="button" class="button side-fold">Show</button></div></section>
+    <section class="side-panel is-folded"><div class="side-head"><h2 class="side-title">Links</h2><p class="side-summary" style="display:block">2 links</p><button type="button" class="button side-fold">Show</button></div></section></div>`;
+  document.getElementById('phone-open').innerHTML = readPanel; void('<div class="side-head"><h2 class="side-title">Plan</h2>', '<div class="side-head"><h2 class="side-title" style="margin-right:auto">Plan</h2>').replace('</div>\n      <p class="plan-line">', '<button type="button" class="button side-fold">Hide</button></div>\n      <p class="plan-line">');
+</script>
+</body>
+</html>

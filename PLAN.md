@@ -458,10 +458,13 @@ at your request (2026-11-22; fast-forwards: nothing was rewritten).
 `main` has Phases 1, 2, and 3, your own categories, the ticks,
 checklists, Haiku's steps, and Waiting and follow-ups.
 
-**Next: plans in projects** (talked out 2026-11-22; see "Plans in
+**Next: plans in projects** (planned 2026-11-22; see "Plans in
 projects" below): a project's steps, each with its own date, made all
 at once as cards linked in order, every one on the board from day one.
-In a fresh session: plan first, a look sheet, then build.
+The detailed plan and the look sheet (`design/plan-options/`) are
+done; waiting on your answers to the six questions, the one change
+(order kept on the project), and your eye. Then build and stop for
+your test.
 
 **After that: the tuning slice, when you're ready** (item 3 in the queue; you
 wanted to come back to it later, not straight away). Its six questions
@@ -512,7 +515,7 @@ clearly apart. Also noted: letting go of a task doesn't count against
 you; What you did counts only finished cards, and let-go ones sit folded
 at the bottom with no score.
 
-## Plans in projects (next slice; talked out 2026-11-22, not planned in detail, nothing built)
+## Plans in projects (planned 2026-11-22; look sheet waiting on your eye, nothing built)
 
 Your picture: a big project (an outreach, say) with many steps, each
 with its own due date, all known in advance, chained together in an
@@ -565,6 +568,92 @@ order that makes sense. Something between a checklist and follow-ups.
 5. **More than one plan per project?** [one, to start]
 6. **The editor's "After ..." line** for plan steps reads "Step 3 of 6,
    after ..."; a follow-up's still reads "After ..., done ...".
+
+### The detailed plan (2026-11-22, waiting on your answers and your eye)
+Look sheet: `design/plan-options/preview.html` and `preview.png`. A,
+the project page with a plan; B, making one; C, changing one later;
+D, a step's editor beside a follow-up's; E, the hover box, Mark done's
+line, and What you did; F, a phone.
+
+**Where it lives:** a new **Plan** panel, first in the project page's
+side column (above Notes and Links), folded to one row on a phone like
+them ("1 of 6 done · next Mon, Nov 30"). Read: one line ("1 of 6 done.
+Next: *Confirm the troupe*, Mon, Nov 30."), then the steps in the
+chain's look (filled check done, open circle open, dash let go), the
+next open step in bold, each step a button (open: its editor;
+finished: the record box). **No plan:** a sentence and **Make a plan**.
+**Making and changing** share one look: the checklist's rows (handle,
+title, X) with each step's date box on a second line, the add field at
+the bottom, a "Steps go in" category at the top when making; Cancel and
+**Add 6 steps to the board** / **Save**, one write either way. Done and
+let-go steps are locked in place in Change.
+
+**The six questions, my recommendation for each:**
+1. **Adding later:** one way in, the add field; a new step lands at the
+   end and is dragged up to go between. (Your leaning was both; this
+   gets both without a second control on every row.)
+2. **Taking off:** the X takes it off the plan, not the board; it stays
+   a card in the project at its date. Struck through with Undo until
+   Save. Let it go stays separate (triage, as now). (Your leaning.)
+3. **Reordering:** yes, the handle, Alt and arrows from the keyboard.
+   Order and dates stay independent; dragging never changes a date.
+   (Your leaning.)
+4. **Follow-up and Repeats:** Repeats off and grayed for steps ("Plan
+   steps don't repeat."). A step's follow-up joins the plan as the next
+   step when it's made; the steps after shift down one. (Your leaning,
+   made concrete.)
+5. **One plan per project.** (Your leaning.)
+6. **The lines:** a step's editor says "Step 3 of 6, after *Confirm the
+   troupe*, due Mon, Nov 30" (or "done Thu, Nov 19"), with a numbered-
+   list icon; a follow-up keeps "After *...*, done ..." with its bent
+   arrow. The hover box: "Step 3 of 6 in the plan."
+
+**One change from what we talked out (needs your yes):** the order
+lives on the project (`planSteps`, the step ids in order), not in each
+card's `afterId`. Why: with insert, take off, and drag, `afterId` would
+have to be rewritten on two or three cards per change, and "Step 3 of
+6" on the board's hover box needs the whole plan, finished steps
+included, which the board doesn't load. The project is already loaded
+everywhere. Steps still share a `chainId` (the project's id), so What
+you did finds the whole plan with the question it already asks.
+
+**Also on the sheet (say no to any):**
+- Mark done on a step: the line beside quick add says "Done. Next in
+  the plan: *...*, due ..." (my addition).
+- The yellow "Before step 4's date" in the panel and Change, and "This
+  is now before step 2's date (Mon, Nov 30)." under Due in the editor
+  (the settled soft note), in the Inbox's yellow.
+- What you did: a step's box says "The plan", numbered, this step in
+  bold, the first four and "and 2 more steps."
+
+**Decisions I'd make that the questions don't cover (change any):**
+- An empty date is allowed; that step waits in Someday.
+- All steps share one category when made ("Steps go in"); each can
+  change later in its editor.
+- At most 30 steps in a plan.
+- Moving a step to another project, or to none, in its editor takes it
+  off the plan (as the X does).
+- Deleting the project takes the plan with it; the cards stay (as
+  today), and lose the plan's `chainId` too.
+- "Put back on the board" on a finished step: open again, same place.
+- The steps are ordinary cards everywhere else: drag, triage, Waiting,
+  Hard deadline, notes, checklist all work.
+
+**Data (no rules change, no Apps Script change):** project gets
+`planSteps: [cardId, ...]` (empty or missing = no plan). A step card:
+`chainId` = the project's id, `source: 'plan'` (or `'follow_up'` for a
+follow-up that joined), `afterId` null. Making a plan, Save in Change,
+and a follow-up joining are each one write (cards and the project
+together).
+
+**Files I expect to touch:** `js/plan.js` (new: the rules, step number,
+order notes), `js/planpanel.js` (new: the panel, Make and Change, drag
+via `js/sortable.js`), `js/projectpage.js`, `js/firebase.js` (make,
+change, join, `deleteProject`), `js/model.js`, `js/editor.js` (the step
+line, Repeats off, the date note), `js/app.js` (hover line, Mark done's
+line, follow-up joining), `js/recordbox.js` ("The plan"),
+`index.html`, `css/horizon.css`, `SPEC.md` (Projects and the source
+list).
 
 ## Waiting and follow-up cards (confirmed 2026-11-22)
 
