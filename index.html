@@ -593,44 +593,6 @@
         </div>
       </div>
     </form>
-
-    <!-- After Mark done, when a follow-up still needs a title or a date
-         (editor.js): the editor turns into this one question, with the
-         editor's own Due field. The card is already saved as done. -->
-    <section id="editor-next" class="panel" aria-labelledby="editor-next-heading" hidden>
-      <div class="panel-head">
-        <h2 id="editor-next-heading" class="panel-title" tabindex="-1">What comes next?</h2>
-        <button type="button" id="editor-next-close" class="icon-button" aria-label="Close">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"></path></svg>
-        </button>
-      </div>
-      <div class="panel-body">
-        <p class="next-done">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"></path></svg>
-          <span><b id="editor-next-parent"></b> is done.</span>
-        </p>
-        <label class="field">Next card
-          <input type="text" id="editor-next-title" class="field-input field-title" maxlength="200" placeholder="What came out of it?" autocomplete="off" aria-describedby="editor-next-keeps">
-        </label>
-        <p id="editor-next-keeps" class="field-note"></p>
-        <!-- Due, as in the editor: the date box and No date. -->
-        <div class="field">
-          <label for="editor-next-due">Due</label>
-          <div class="field-due">
-            <input type="date" id="editor-next-due" class="field-input field-date">
-            <button type="button" id="editor-next-nodate" class="button button-small">No date</button>
-          </div>
-        </div>
-        <p id="editor-next-someday" class="field-note" hidden>No date: this card lives in Someday.</p>
-        <p id="editor-next-error" class="field-error" hidden>Give the next card a title first.</p>
-      </div>
-      <div class="panel-foot">
-        <button type="button" id="editor-next-skip" class="button">Nothing after all</button>
-        <div class="panel-foot-end">
-          <button type="button" id="editor-next-add" class="button button-primary">Add card</button>
-        </div>
-      </div>
-    </section>
   </dialog>
 
   <!-- The Inbox (inbox.js). Slides in from the right over the dimmed

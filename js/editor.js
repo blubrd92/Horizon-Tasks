@@ -36,15 +36,13 @@ const narrow = window.matchMedia('(max-width: 760px)');
 // card is ticked or unticked: a tick saves at once, not with Save.
 //
 // Follow-ups: onDone returns nothing when it has finished the card, or {
-// parent, followUp, keeps } when the follow-up still needs a title or a
-// date. The card is already saved as done then, and the editor turns into
-// one question, "What comes next?", with the editor's own Due field (keeps
-// is the line under the title: what the new card keeps). onFollowUp(parent,
-// { title, dueDate }, { closed }) makes it: from Add card, or with closed
-// true when the panel is closed with a title in the box (so a title isn't
-// lost; no date means Someday). Nothing after all, or a blank box, makes
-// nothing.
-export function setupEditor({ onSave, onDone, onCreate, onClose, onTick, onFollowUp }) {
+// card, context, where } when its follow-up still needs a title or a
+// date: the card is saved as done by then, and the editor reopens as a
+// New card with those fields (the follow-up, in the chain: see
+// followup.js), opened with context and where as open() takes them. Add
+// card goes to onCreate as for any new card; the card's own hidden fields
+// (its chain) come along as `base`.
+export function setupEditor({ onSave, onDone, onCreate, onClose, onTick }) {
   const dialog = document.getElementById('editor');
   const form = document.getElementById('editor-form');
   const title = document.getElementById('editor-title');
@@ -63,15 +61,6 @@ export function setupEditor({ onSave, onDone, onCreate, onClose, onTick, onFollo
   const followTitle = document.getElementById('editor-follow-title');
   const followDue = document.getElementById('editor-follow-due');
   const after = document.getElementById('editor-after');
-  const next = document.getElementById('editor-next');
-  const nextHeading = document.getElementById('editor-next-heading');
-  const nextParent = document.getElementById('editor-next-parent');
-  const nextTitle = document.getElementById('editor-next-title');
-  const nextKeeps = document.getElementById('editor-next-keeps');
-  const nextDue = document.getElementById('editor-next-due');
-  const nextNoDate = document.getElementById('editor-next-nodate');
-  const nextSomeday = document.getElementById('editor-next-someday');
-  const nextError = document.getElementById('editor-next-error');
   const hard = document.getElementById('editor-hard');
   const hardTick = document.getElementById('editor-hard-tick');
   const repeat = document.getElementById('editor-repeat');
@@ -104,9 +93,9 @@ export function setupEditor({ onSave, onDone, onCreate, onClose, onTick, onFollo
 
   let card = null;
   let saved = false;
-  // After Mark done, while the editor asks what comes next: { parent,
-  // done } (done once a choice is made), or null.
-  let step = null;
+  // A follow-up to open as a New card once this panel has finished
+  // closing (the close event comes a moment after close()).
+  let reopen = null;
   // Where the editor sits: { cardId, fallback } beside that card (or under
   // `fallback` if the card isn't showing), or { below } under an element.
   let anchor = null;
@@ -120,7 +109,6 @@ export function setupEditor({ onSave, onDone, onCreate, onClose, onTick, onFollo
     // A copy: a tick changes its checklist (above), never the board's.
     card = { ...cardToEdit, checklist: cardToEdit.checklist || [] };
     saved = false;
-    endStep();
     const isNew = !card.id;
     heading.textContent = isNew ? 'New card' : 'Edit card';
     saveButton.textContent = isNew ? 'Add card' : 'Save';
@@ -155,9 +143,10 @@ export function setupEditor({ onSave, onDone, onCreate, onClose, onTick, onFollo
     window.addEventListener('resize', refit);
     // Capture: scrolling the board's own sideways box counts too.
     window.addEventListener('scroll', follow, { capture: true, passive: true });
-    // A new card's title is already typed; the date is usually next.
+    // A new card's title is already typed; the date is usually next. A
+    // follow-up left blank starts with its title.
     if (startFollowUp) followTitle.focus();
-    else if (isNew) due.focus();
+    else if (isNew) (card.title ? due : title).focus();
   }
 
   // "After Weed graphic novels, 741.5, done Thu, Nov 19": on a card made
@@ -204,9 +193,6 @@ export function setupEditor({ onSave, onDone, onCreate, onClose, onTick, onFollo
   }
 
   function position() {
-    // While asking what comes next, the card it sat beside is gone (done),
-    // so the panel stays where it is.
-    if (step) return;
     for (const el of document.querySelectorAll('.card.is-editing')) el.classList.remove('is-editing');
     const cardEl = anchorCard();
     const below = cardEl ? null : anchor && (anchor.below || anchor.fallback);
@@ -414,7 +400,7 @@ export function setupEditor({ onSave, onDone, onCreate, onClose, onTick, onFollo
     if (!card.id) {
       const values = collectValues();
       if (!values) return;
-      onCreate(values, extras());
+      onCreate(values, { ...extras(), base: card });
     } else {
       const changes = collectChanges();
       if (!changes) return;
@@ -429,90 +415,13 @@ export function setupEditor({ onSave, onDone, onCreate, onClose, onTick, onFollo
     if (!changes) return;
     // Marking done sets the status itself.
     delete changes.status;
-    const asking = onDone(card.id, changes, extras());
+    const followUp = onDone(card.id, changes, extras());
     saved = true;
-    if (asking) startStep(asking);
-    else close();
-  });
-
-  // After Mark done: "What comes next?" in place of the form: the title
-  // written ahead (or an empty box), and Due as in the editor, with the
-  // date written ahead if there was one.
-  function startStep({ parent, followUp, keeps }) {
-    step = { parent, done: false };
-    form.hidden = true;
-    next.hidden = false;
-    dialog.setAttribute('aria-labelledby', 'editor-next-heading');
-    nextParent.textContent = parent.title;
-    nextTitle.value = followUp.title;
-    nextKeeps.textContent = keeps;
-    nextKeeps.hidden = !keeps;
-    nextDue.value = followUp.dueDate || '';
-    nextError.hidden = true;
-    nextTitle.removeAttribute('aria-invalid');
-    nextTitle.setAttribute('aria-describedby', 'editor-next-keeps');
-    updateNextSomeday();
-    // A title written ahead: the date is what's left. A blank box: the
-    // title first.
-    if (followUp.title) nextDue.focus();
-    else nextTitle.focus();
-  }
-
-  function endStep() {
-    step = null;
-    form.hidden = false;
-    next.hidden = true;
-    dialog.setAttribute('aria-labelledby', 'editor-heading');
-  }
-
-  // "No date: this card lives in Someday.", as in the editor.
-  function updateNextSomeday() {
-    nextSomeday.hidden = Boolean(nextDue.value);
-  }
-
-  // Add card: the follow-up, with the date in the Due box (none: Someday).
-  function addNext() {
-    if (!step) return;
-    const title = nextTitle.value.trim();
-    if (!title) {
-      nextError.hidden = false;
-      nextTitle.setAttribute('aria-invalid', 'true');
-      nextTitle.setAttribute('aria-describedby', 'editor-next-keeps editor-next-error');
-      nextTitle.focus();
-      return;
-    }
-    step.done = true;
-    onFollowUp(step.parent, { title: title.slice(0, FOLLOW_UP_MAX), dueDate: nextDue.value || null }, { closed: false });
-    close();
-  }
-
-  document.getElementById('editor-next-add').addEventListener('click', addNext);
-  // Enter in the title or the date adds it, as Enter saves in the editor.
-  for (const input of [nextTitle, nextDue]) {
-    input.addEventListener('keydown', (event) => {
-      if (event.key !== 'Enter' || event.isComposing) return;
-      event.preventDefault();
-      addNext();
-    });
-  }
-  nextNoDate.addEventListener('click', () => {
-    nextDue.value = '';
-    updateNextSomeday();
-    nextDue.focus();
-  });
-  nextDue.addEventListener('input', updateNextSomeday);
-  nextTitle.addEventListener('input', () => {
-    if (nextTitle.value.trim() && !nextError.hidden) {
-      nextError.hidden = true;
-      nextTitle.removeAttribute('aria-invalid');
-      nextTitle.setAttribute('aria-describedby', 'editor-next-keeps');
-    }
-  });
-  document.getElementById('editor-next-skip').addEventListener('click', () => {
-    if (step) step.done = true;
+    // Its follow-up still needs a title or a date: a New card for it, as
+    // soon as this one has closed.
+    reopen = followUp || null;
     close();
   });
-  document.getElementById('editor-next-close').addEventListener('click', close);
 
   waiting.addEventListener('change', () => {
     updateBoxes();
@@ -562,13 +471,6 @@ export function setupEditor({ onSave, onDone, onCreate, onClose, onTick, onFollo
   });
 
   dialog.addEventListener('close', () => {
-    // Closed while asking what comes next, with a title in the box: it's
-    // made anyway, with the date in the Due box (none: Someday), rather
-    // than vanishing.
-    if (step && !step.done && nextTitle.value.trim()) {
-      onFollowUp(step.parent, { title: nextTitle.value.trim().slice(0, FOLLOW_UP_MAX), dueDate: nextDue.value || null }, { closed: true });
-    }
-    endStep();
     window.removeEventListener('resize', refit);
     window.removeEventListener('scroll', follow, { capture: true });
     for (const el of document.querySelectorAll('.card.is-editing')) el.classList.remove('is-editing');
@@ -576,7 +478,15 @@ export function setupEditor({ onSave, onDone, onCreate, onClose, onTick, onFollo
     if (!card) return;
     const closed = card;
     card = null;
+    // A follow-up closed without Add card: the title as you left it goes
+    // back to quick add (onClose), so a title typed here isn't lost.
+    if (!closed.id && !saved && closed.afterId && title.value.trim()) closed.title = title.value.trim();
     onClose(closed, saved);
+    if (reopen) {
+      const { card: next, context, where } = reopen;
+      reopen = null;
+      open(next, context, where);
+    }
   });
 
   return { open, close };

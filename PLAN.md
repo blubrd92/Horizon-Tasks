@@ -444,13 +444,15 @@ picks by name alone, so an unclear name ("Saturday PIC") makes it guess;
 a clearer name is the cheap fix. Idea, not proposed: a short description
 per category, only if suggestions turn out to be a problem.
 
-**Now: Waiting and follow-up cards, built, awaiting your test**
-(2026-11-21, on `claude/elegant-wright-plpeuh`). Waiting replaces In
+**Now: Waiting and follow-up cards, built, awaiting your test on the
+live site** (2026-11-22; built on `claude/elegant-wright-plpeuh` and
+pushed to `main` at your request, so the live site has it). Waiting replaces In
 progress (a gray hourglass and the days on the card); Follow-up makes
 the next card at Mark done, asking only when its title or date is
 missing; the chain shows in the editor and What you did; a right-click
-menu toggles Waiting and Hard deadline. Site only. See "Waiting and
-follow-up cards" below for the test list.
+menu toggles Waiting and Hard deadline. A follow-up missing its title
+or date opens the full editor as a New card (Revision 3). Site only.
+See "Waiting and follow-up cards" below for the test list.
 
 **After that: the tuning slice, when you're ready** (item 3 in the queue; you
 wanted to come back to it later, not straight away). Its six questions
@@ -619,6 +621,28 @@ Due (none: Someday), so nothing typed is lost. Site only; `index.html`,
 passing (the new ones: no When buttons, the Someday note follows the
 box, No date empties it, Enter in Due adds the card with that date).
 
+### Revision 3: a follow-up that needs more opens the full editor (2026-11-22, awaiting test)
+Your idea: the new task deserves the whole editor, not a small form.
+The question box ("What comes next?", Revision 1) is gone. When a
+follow-up's title or date is missing, Mark done saves the card as done,
+and the editor reopens as **New card** for the follow-up, under quick
+add: the title and date written ahead (if any), the same category and
+project, and the "After *...*, done ..." line on top (which also says
+the first card is done). Notes, checklist, Repeats, Waiting, Hard
+deadline, and its own Follow-up are all there, so a chain can keep
+growing. **Add card** makes it in the chain, and the line beside quick
+add says "Next: ..., due ...". **Cancel, the X, or Escape** make
+nothing, and the title as you left it goes back into quick add, as a
+new card's Cancel always does. (That title is plain text then: added
+later, it's an ordinary card, not a link in the chain.) The silent case
+is unchanged: a title and a date written ahead still make it with no
+editor. Focus: Due when the title was written ahead, the title when not.
+Site only; `index.html`, `js/editor.js`, `js/app.js`, `css/horizon.css`.
+Checked: 99 checks, all passing (the reopened editor's heading, fields,
+After line, and focus; Add card with notes, in the chain; no title asks
+for one; a blank follow-up can carry its own follow-up; Cancel and
+Escape make nothing and give the title back).
+
 ### Revision 2: the Follow-up box's date is Due too (2026-11-22, awaiting test)
 The box in the editor ("What comes next?") now has **Due** with the
 date box and **No date**, as the editor's own Due field does. An empty
@@ -642,8 +666,8 @@ follow-up), `js/notespeek.js`, `js/recordbox.js`, `js/done.js`,
 **Decisions I made that the talk didn't cover (change any of them):**
 - The question after Mark done stays where the editor was (the card it
   sat beside is gone), and its dialog is announced by its own heading.
-- Add card with no title says "Give the next card a title first."
-  (Revision 1 replaced the When buttons.)
+- (Revisions 1 and 3 replaced the When buttons, then the question box,
+  with the full editor.)
 - The menu closes after each choice; from the keyboard, focus goes back
   to the card.
 - Turning Waiting on from the menu leaves it nameless; a name is added
@@ -681,10 +705,10 @@ query, the writes), and a real right click on a Mac (Ctrl+click).
 - [ ] Turn on Follow-up with a title and a date, then Mark done: no
       question; the line beside quick add names the new card, and it's
       on the board on that date.
-- [ ] Follow-up with a title, no date: Mark done asks, with Due as in
-      the editor. Pick a date, Add card. Try No date too (Someday).
-- [ ] Follow-up left blank: Mark done asks what. Type one, press Escape:
-      it lands in Someday.
+- [ ] Follow-up with a title, no date: Mark done opens a New card for
+      it, After line on top. Add notes and a date, Add card.
+- [ ] Follow-up left blank: Mark done opens a New card at its title.
+      Type one, then Cancel: nothing made, the title is in quick add.
 - [ ] Open a follow-up card: "After ..., done ..." at the top.
 - [ ] What you did: the link mark on chained cards; click one: the
       chain. Copy as text with Include notes: the "After:" line.

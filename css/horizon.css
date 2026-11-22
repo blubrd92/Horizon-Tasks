@@ -3741,8 +3741,8 @@ a.link-row:focus-visible { outline-offset: -2px; }
 .notes-peek-list .notes-peek-more { display: block; color: var(--ink-secondary); }
 
 /* Waiting and follow-ups: the editor's boxes and "After ..." line, the
-   question after Mark done, the hover box's lines, the chain in a finished
-   card's box, and the right-click menu on a card. */
+   hover box's lines, the chain in a finished card's box, and the
+   right-click menu on a card. */
 
 /* Waiting's and Follow-up's boxes, under the ticks while they're on. */
 .tick-box {
@@ -3779,32 +3779,6 @@ a.link-row:focus-visible { outline-offset: -2px; }
 .editor-after-icon { display: flex; flex: none; margin-top: 2px; }
 .editor-after b { font-weight: 600; color: var(--ink); }
 .editor-after-day { font-family: var(--font-mono); font-size: 12px; color: var(--ink-date); }
-
-/* The question after Mark done takes the form's place in the panel. */
-#editor-next[hidden] { display: none; }
-
-.panel-dialog.is-beside #editor-next {
-  height: auto;
-  max-height: calc(100vh - 32px);
-}
-
-.next-done {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin: 0;
-  font-size: 14px;
-  line-height: 1.4;
-  color: var(--ink);
-  overflow-wrap: anywhere;
-}
-
-.next-done svg { flex: none; color: var(--accent); }
-.next-done b { font-weight: 600; }
-
-#editor-next-keeps { margin-top: -10px; }
-
-#editor-next .field-error { margin: -8px 0 0; }
 
 /* The hover box's lines: Waiting, then the follow-up, each with its icon. */
 .notes-peek-line {

@@ -503,10 +503,10 @@ async function start() {
     // Marking done. A follow-up with a title and a date is made in the
     // same write (with a repeating card's next card, if it has one), and
     // nothing is asked. A follow-up missing either: the card is saved as
-    // done now, and the editor asks what comes next (returned to it here;
-    // see editor.js). The card's own follow-up is cleared either way: the
-    // decision is made now, so putting it back on the board later can't
-    // make a second one.
+    // done now, and the editor reopens as a New card for it, filled in
+    // and in the chain (returned to it here; see editor.js). The card's
+    // own follow-up is cleared either way: the decision is made now, so
+    // putting it back on the board later can't make a second one.
     onDone: (cardId, changes, { moveSeries, newProject }) => {
       resolveProject(changes, newProject);
       const card = findCard(cardId);
@@ -535,24 +535,39 @@ async function start() {
       } else {
         fb.markDone(uid, cardId, changes).catch(showSaveError);
       }
-      if (followUp && !madeNow) return { parent: { ...finished, id: cardId }, followUp, keeps: keepsText(finished) };
+      if (followUp && !madeNow) {
+        return {
+          card: { id: null, ...followUpCard({ ...finished, id: cardId }, followUp, today) },
+          context: { categories, projects },
+          where: { below: views.project.hidden ? quickAddField : projectPage.quickAddField },
+        };
+      }
       return null;
     },
-    // The follow-up the editor asked about after Mark done: made now, in
-    // the finished card's chain.
-    onFollowUp: (parent, { title, dueDate }) => {
-      if (!uid) return;
-      const fields = followUpCard(parent, { title, dueDate }, todayISO());
-      const { id, saved } = fb.addFollowUp(uid, fields, parent.id, parentChainChanges(parent));
-      activeQuickAdd().showAdded(`Next: \u201c${title}\u201d, ${whereText(dueDate)}.`, id);
-      saved.catch(showSaveError);
-    },
-    onCreate: (values, { newProject }) => {
+    onCreate: (values, { newProject, base }) => {
       resolveProject(values, newProject);
       const fresh = { id: null, ...newCard(values) };
-      const { id, saved } = fb.addCard(uid, { ...newCard(values), ...values, ...seriesChanges(fresh, values, false) });
+      const fields = { ...newCard(values), ...values, ...seriesChanges(fresh, values, false) };
       const line = activeQuickAdd();
-      line.showAdded(addedText(values.dueDate), id);
+      let id;
+      let saved;
+      if (base && base.afterId) {
+        // A follow-up, opened by Mark done: it joins the chain, and the
+        // card it follows gets the chain's id (the same one if it had it).
+        Object.assign(fields, {
+          source: 'follow_up',
+          chainId: base.chainId,
+          afterId: base.afterId,
+          afterTitle: base.afterTitle,
+          afterDay: base.afterDay,
+        });
+        if (base.sample) fields.sample = true;
+        ({ id, saved } = fb.addFollowUp(uid, fields, base.afterId, { chainId: base.chainId }));
+        line.showAdded(`Next: \u201c${values.title}\u201d, ${whereText(values.dueDate)}.`, id);
+      } else {
+        ({ id, saved } = fb.addCard(uid, fields));
+        line.showAdded(addedText(values.dueDate), id);
+      }
       saved.catch((err) => {
         line.showText(`Couldn't save \u201c${values.title}\u201d (${err.code || err.message}).`);
         line.giveBack(values.title);
@@ -757,15 +772,6 @@ async function start() {
     if (!dueDate) return 'in Someday';
     if (dueDate === todayISO()) return 'due today';
     return `due ${formatShort(dueDate)}`;
-  }
-
-  // What a follow-up keeps from the card it follows, for the editor's
-  // question: "Keeps Collection Development and Graphic novel refresh."
-  function keepsText(card) {
-    const category = card.category && categories.find((c) => c.id === card.category);
-    const project = card.projectId && projects.find((p) => p.id === card.projectId);
-    const names = [category && category.name, project && project.name].filter(Boolean);
-    return names.length ? `Keeps ${names.join(' and ')}.` : '';
   }
 
   function addedText(dueDate) {
