@@ -444,17 +444,19 @@ picks by name alone, so an unclear name ("Saturday PIC") makes it guess;
 a clearer name is the cheap fix. Idea, not proposed: a short description
 per category, only if suggestions turn out to be a problem.
 
-**Now: Waiting and follow-up cards, built, awaiting your test on the
-live site** (2026-11-22; built on `claude/elegant-wright-plpeuh` and
-pushed to `main` at your request, so the live site has it). Waiting replaces In
-progress (a gray hourglass and the days on the card); Follow-up makes
-the next card at Mark done, asking only when its title or date is
-missing; the chain shows in the editor and What you did; a right-click
-menu toggles Waiting and Hard deadline. A follow-up missing its title
-or date opens the full editor as a New card (Revision 3). Site only.
-See "Waiting and follow-up cards" below for the test list.
-You said it's looking great (2026-11-22); it becomes "confirmed" once
-you say the test list holds.
+**Waiting and follow-up cards: done and confirmed** (2026-11-22), on
+`claude/elegant-wright-plpeuh`. Waiting replaces In progress (a gray
+hourglass and the days on the card, who on hover; "Still waiting on
+...?" in triage); Follow-up makes the next card at Mark done, silently
+with a title and a date written ahead, otherwise by opening the full
+editor as a New card (Revision 3); the chain shows in the editor ("After
+...") and What you did; a right-click menu toggles Waiting and Hard
+deadline. Site only. See "Waiting and follow-up cards" below.
+
+**Branch:** built on `claude/elegant-wright-plpeuh` and pushed to `main`
+at your request (2026-11-22; fast-forwards: nothing was rewritten).
+`main` has Phases 1, 2, and 3, your own categories, the ticks,
+checklists, Haiku's steps, and Waiting and follow-ups.
 
 **Next: plans in projects** (talked out 2026-11-22; see "Plans in
 projects" below): a project's steps, each with its own date, made all
@@ -564,7 +566,7 @@ order that makes sense. Something between a checklist and follow-ups.
 6. **The editor's "After ..." line** for plan steps reads "Step 3 of 6,
    after ..."; a follow-up's still reads "After ..., done ...".
 
-## Waiting and follow-up cards (built 2026-11-21, awaiting your test)
+## Waiting and follow-up cards (confirmed 2026-11-22)
 
 Your idea: a card can say "when this is done, another task follows,"
 because tasks spawn tasks. The plumbing mostly exists: a repeating card
