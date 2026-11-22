@@ -453,6 +453,13 @@ missing; the chain shows in the editor and What you did; a right-click
 menu toggles Waiting and Hard deadline. A follow-up missing its title
 or date opens the full editor as a New card (Revision 3). Site only.
 See "Waiting and follow-up cards" below for the test list.
+You said it's looking great (2026-11-22); it becomes "confirmed" once
+you say the test list holds.
+
+**Next: plans in projects** (talked out 2026-11-22; see "Plans in
+projects" below): a project's steps, each with its own date, made all
+at once as cards linked in order, every one on the board from day one.
+In a fresh session: plan first, a look sheet, then build.
 
 **After that: the tuning slice, when you're ready** (item 3 in the queue; you
 wanted to come back to it later, not straight away). Its six questions
@@ -502,6 +509,60 @@ editor too (already a proposal), so the two sit side by side and
 clearly apart. Also noted: letting go of a task doesn't count against
 you; What you did counts only finished cards, and let-go ones sit folded
 at the bottom with no score.
+
+## Plans in projects (next slice; talked out 2026-11-22, not planned in detail, nothing built)
+
+Your picture: a big project (an outreach, say) with many steps, each
+with its own due date, all known in advance, chained together in an
+order that makes sense. Something between a checklist and follow-ups.
+
+### Why it's its own thing
+- A **checklist**'s items share one date and live inside one card.
+- A **follow-up** shows one next step at a time and makes it only when
+  the step before is done; a step known to be due Dec 12 would stay
+  hidden until then, and on a board where position means time, that's
+  the board keeping something from you.
+- A **plan** is a chain made all at once, ahead of time: real cards,
+  each at its own date, linked in order. It reuses what exists: the
+  project (page, notes, links), cards, and the chain (`chainId`,
+  `afterId`, drawn in What you did).
+
+### Settled (2026-11-22: you took every recommendation)
+- **A plan always belongs to a project.** It's made on the project
+  page.
+- **Every step is on the board from day one**, at its own date (far ones
+  rest in Later). The board never hides a known deadline.
+- **You can add steps to a plan, or take them off, later.**
+- **Made on the project page:** a "Plan steps" box, like the
+  checklist's add field (type a step, Enter, give it a date); "Add to
+  the board" makes them all as cards in one write, linked in order.
+- **Seen:** the project page shows the plan as a line of steps, done and
+  open (like the chain in What you did); each step's editor says "Step 3
+  of 6, after *Book the room*"; the hover box says it too. Not on the
+  card's face: cards carry enough, and "3/6" would read as a checklist
+  count.
+- **A date that slips** isn't moved for you: the editor shows a soft
+  yellow note ("This is now after step 3's date.").
+- **A simple sequence** to start; steps that happen together share a
+  date.
+- **Later, not now:** Haiku reading an outreach plan from a pasted email
+  into steps (no Haiku changes for now, your call 2026-11-21).
+
+### Questions for the detailed plan (my leaning in brackets)
+1. **Adding a step later:** at the end, or between two steps? [both:
+   inserting relinks the step after it]
+2. **Taking a step off:** does it leave the plan as a plain project card,
+   get let go, or something else? There's no Delete for cards yet (the
+   Delete button is still being thought about). [leaves the plan, stays
+   a card; Let it go stays a separate choice]
+3. **Reordering steps** after they're made: needed? [a drag handle on
+   the project page's plan, like the checklist's]
+4. **A step's own follow-up, or a repeating step:** allowed inside a
+   plan? [follow-ups yes, they extend the chain after that step; Repeats
+   off for plan steps]
+5. **More than one plan per project?** [one, to start]
+6. **The editor's "After ..." line** for plan steps reads "Step 3 of 6,
+   after ..."; a follow-up's still reads "After ..., done ...".
 
 ## Waiting and follow-up cards (built 2026-11-21, awaiting your test)
 
