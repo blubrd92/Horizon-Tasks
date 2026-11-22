@@ -4027,3 +4027,11 @@ a.link-row:focus-visible { outline-offset: -2px; }
   background: #FFF3D1;
 }
 .step-note[hidden] { display: none; }
+
+/* The Projects box before your first project (projectlist.js): what a
+   project is, in ink, then what its page holds, a line each. */
+.projects-intro { margin: 0; font-size: 15px; line-height: 1.5; color: var(--ink); }
+.projects-holds { list-style: none; margin: 0; padding: 4px 0; display: flex; flex-direction: column; gap: 10px; }
+.projects-holds li { display: grid; grid-template-columns: 32px minmax(0, 1fr); gap: 10px; align-items: start; font-size: 14px; line-height: 1.45; color: var(--ink-secondary); }
+.projects-holds b { display: block; font-weight: 600; color: var(--ink); }
+.projects-holds-icon { width: 32px; height: 32px; border-radius: 10px; display: flex; align-items: center; justify-content: center; background: var(--strip-day); color: var(--ink-secondary); }

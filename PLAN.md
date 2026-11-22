@@ -518,16 +518,29 @@ clearly apart. Also noted: letting go of a task doesn't count against
 you; What you did counts only finished cards, and let-go ones sit folded
 at the bottom with no score.
 
-## The empty Projects box (asked 2026-11-22, look sheet waiting on your pick)
-You said it feels like an afterthought: one gray sentence, a button,
-and the X lit up first (focus lands on it). Look sheet:
-`design/projects-empty/preview.html` and `preview.png`. A, today; B, a
-faint dashed example row; C, three lines on what a project holds (its
-cards, a plan, notes and links), **my recommendation**; D, B and C
-together. B, C, and D also move focus to New project when the list is
-empty. Site only, `js/projectlist.js`, `index.html`, `css/horizon.css`.
-Open: your screenshot's box is gray; here it draws in the cream
-surface (#FBFAF6). Something may sit over it on your screen.
+## The empty Projects box (built 2026-11-22, awaiting your test)
+You said it felt like an afterthought: one gray sentence, a button, and
+the X lit up first. Look sheet: `design/projects-empty/` (A today, B an
+example row, C what a project holds, D both). You took C.
+
+**Built:** before your first project, the box says "No projects yet. A
+project gathers what belongs together, like a display or a program
+series. Each one gets a page with:" and three lines, each with a quiet
+icon: Its cards, A plan, Notes and links. Focus starts on New project
+(also when you come back from the form with Cancel). Once there's any
+project, even an archived one, the box is the plain list as before
+("No active projects." when all are archived). Site only:
+`js/projectlist.js`, `css/horizon.css`.
+
+**Checked here** (headless Chrome, pretend Firebase; 9 checks, all
+passing): the three lines and the words; focus on New project, and
+again after Cancel; at 390 wide, no sideways scroll; with a project,
+the plain list and focus left alone; archived only, the short line.
+The plans checks (54) still pass.
+
+**How to test:** you already have projects, so the empty box won't show
+on your account. To see it, open the site in a browser profile signed
+in to an approved account with no projects, or trust the screenshot.
 
 ## Plans in projects (built 2026-11-22, awaiting your test)
 

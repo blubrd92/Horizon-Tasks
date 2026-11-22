@@ -6,6 +6,17 @@ import { escapeHTML } from './board.js';
 import { PROJECT_STATUS } from './model.js';
 import { NAME_LIMIT, PROJECT_COLORS, endLine, findByName, listOrder, nextColor, openLine, projectHref } from './projects.js';
 
+// Before your first project: what one is, and what its page holds, a
+// line each. Once there's a project (even an archived one), the box is
+// just the list.
+const EMPTY_HTML = `
+  <p class="projects-intro">No projects yet. A project gathers what belongs together, like a display or a program series. Each one gets a page with:</p>
+  <ul class="projects-holds">
+    <li><span class="projects-holds-icon" aria-hidden="true"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><rect x="4" y="5" width="16" height="14" rx="3"></rect><path d="M4 9h16"></path></svg></span><span><b>Its cards</b>Tagged on the board, gathered on one page.</span></li>
+    <li><span class="projects-holds-icon" aria-hidden="true"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 6h10M10 12h10M10 18h10"></path><path d="M4 5l1.5-1v4"></path><path d="M3.5 11.5a1.3 1.3 0 0 1 2.4.6c0 .9-2.4 1.9-2.4 2.9h2.5"></path><path d="M3.6 17.2h2.2l-1.2 1.4a1.1 1.1 0 1 1-1 1.6"></path></svg></span><span><b>A plan</b>Its steps in order, each on the board at its date.</span></li>
+    <li><span class="projects-holds-icon" aria-hidden="true"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1"></path><path d="M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1"></path></svg></span><span><b>Notes and links</b>The Drive folder, the contact, the details.</span></li>
+  </ul>`;
+
 // onCreate({ name, color, endDate }) for a new project; onSave(id,
 // changes) with only what changed; onArchive(id, archived);
 // onDelete(id). deleteText(project) is the question Delete asks, with the
@@ -48,6 +59,13 @@ export function setupProjectList({ onCreate, onSave, onArchive, onDelete, delete
     state = next;
     drawList();
     list.showModal();
+    focusStart();
+  }
+
+  // With no projects yet, making one is the only thing to do here, so
+  // focus starts on New project rather than the X.
+  function focusStart() {
+    if (state && !state.projects.length) document.getElementById('projects-new').focus();
   }
 
   // Live: projects and counts change while the list is open.
@@ -77,9 +95,9 @@ export function setupProjectList({ onCreate, onSave, onArchive, onDelete, delete
 
     let html = active.length
       ? `<ul class="projects-list">${active.map(row).join('')}</ul>`
-      : `<p class="projects-empty">${
-          archived.length ? 'No active projects.' : 'No projects yet. A project gathers the cards that belong together, like a display or a program series.'
-        }</p>`;
+      : archived.length
+        ? '<p class="projects-empty">No active projects.</p>'
+        : EMPTY_HTML;
     if (archived.length) {
       html += `
         <div class="projects-archived">
@@ -267,6 +285,7 @@ export function setupProjectList({ onCreate, onSave, onArchive, onDelete, delete
       backToList = false;
       list.showModal();
       drawList();
+      focusStart();
     }
   });
 
