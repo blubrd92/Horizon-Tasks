@@ -1018,6 +1018,8 @@ async function start() {
   const recordBox = setupRecordBox({
     // The chain of follow-ups a card is part of, read when its box opens.
     loadChain: (chainId) => (uid ? fb.getChain(uid, chainId) : Promise.resolve([])),
+    // Changing a finished card's category, from its box.
+    onCategory: (card, category) => (uid ? fb.updateCard(uid, card.id, { category }) : Promise.reject(new Error('signed out'))),
     // A plan's steps in order, for a card that's one of them, or null.
     planOf: (card) => {
       const project = planProjectOf(projects, card);

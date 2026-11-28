@@ -518,6 +518,27 @@ clearly apart. Also noted: letting go of a task doesn't count against
 you; What you did counts only finished cards, and let-go ones sit folded
 at the bottom with no score.
 
+## Changing a finished card's category (built 2026-11-28, awaiting your test)
+You asked to change a task's category on What you did. The box a
+finished row opens (What you did, and a project page's finished rows;
+they share it) now has the category as a quiet menu where the line
+was: it reads like the old line until you hover it. Picking one saves
+at once, only the category (like a checklist tick), and says "Saved.";
+the page's tiles and rows follow. If Firestore refuses, the menu goes
+back and says it didn't save. A retired category, or one no longer on
+your list, stays as an option, so opening a box changes nothing. Site
+only: `index.html`, `js/recordbox.js`, `js/app.js`, `css/horizon.css`.
+
+**Checked here** (headless Chrome, pretend Firebase; 13 checks, all
+passing): the menu's choices; saved at once, one field; "Saved."; the
+row follows; a refusal puts it back; an unknown category kept; opening
+writes nothing; the project page's box too; at 390 wide, no sideways
+scroll. The plans (54) and empty-box (9) checks still pass.
+
+**How to test (hard-reload first):** What you did: click a finished
+card, pick another category: "Saved.", and its row and the tiles at the
+top change. Close and reopen: it kept it.
+
 ## The empty Projects box (built 2026-11-22, awaiting your test)
 You said it felt like an afterthought: one gray sentence, a button, and
 the X lit up first. Look sheet: `design/projects-empty/` (A today, B an

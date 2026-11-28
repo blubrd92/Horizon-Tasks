@@ -5,6 +5,7 @@
 
 import { formatShort } from './dates.js';
 import { escapeHTML } from './board.js';
+import { activeOf } from './categories.js';
 import { STATUS } from './model.js';
 import { REPEAT_NAMES, repeats } from './repeat.js';
 import { categoryOf, dayOf, finishedDay } from './record.js';
@@ -26,10 +27,18 @@ const CHAIN_ICONS = {
 // loadChain(chainId) returns a promise of every card in a chain of
 // follow-ups. planOf(card) returns the step ids of the plan the card is a
 // step in, in order, or null: a plan's box shows "The plan", numbered.
-export function setupRecordBox({ loadChain = null, planOf = () => null } = {}) {
+//
+// onCategory(card, categoryId) saves a new category for the card in the
+// box (null for none), returning a promise that fails if Firestore
+// refuses. The record updates itself from Firestore.
+export function setupRecordBox({ loadChain = null, planOf = () => null, onCategory = null } = {}) {
   const box = document.getElementById('record-card');
   const title = document.getElementById('record-title');
   const categoryEl = document.getElementById('record-category');
+  const swatch = document.getElementById('record-swatch');
+  const categoryStatus = document.getElementById('record-category-status');
+  // Your categories, for the menu and its swatch.
+  let categoryList = [];
   const projectEl = document.getElementById('record-project');
   const when = document.getElementById('record-when');
   const notes = document.getElementById('record-notes');
@@ -71,9 +80,10 @@ export function setupRecordBox({ loadChain = null, planOf = () => null } = {}) {
   function open(shown, { categories, project = null, today, onPutBack, onClosed }) {
     card = shown;
     callbacks = { onPutBack, onClosed };
-    const category = categoryOf(card, new Map(categories.map((c) => [c.id, c])));
     title.textContent = card.title;
-    categoryEl.innerHTML = `<span class="swatch" style="background: ${escapeHTML(category.color)}"></span>${escapeHTML(category.name)}`;
+    categoryList = categories;
+    fillCategories();
+    categoryStatus.textContent = '';
     projectEl.hidden = !project;
     projectEl.innerHTML = project
       ? `<span class="card-project-arrow" style="--project: ${escapeHTML(project.color)}" aria-hidden="true">↗</span><span class="visually-hidden">Project: </span>${escapeHTML(project.name)}`
@@ -116,6 +126,52 @@ export function setupRecordBox({ loadChain = null, planOf = () => null } = {}) {
     if (card.chainId && loadChain) showChain(card);
     box.showModal();
   }
+
+  // Your active categories, "No category" first. A card on a retired
+  // category (or one no longer on your list) keeps it as an option, so
+  // opening the box changes nothing.
+  function fillCategories() {
+    const options = [{ value: '', label: 'No category' }, ...activeOf(categoryList).map((c) => ({ value: c.id, label: c.name }))];
+    if (card.category && !options.some((o) => o.value === card.category)) {
+      const own = categoryList.find((c) => c.id === card.category);
+      options.splice(1, 0, { value: card.category, label: own ? `${own.name} (retired)` : `${card.category} (not in your categories)` });
+    }
+    categoryEl.replaceChildren(
+      ...options.map(({ value, label }) => {
+        const option = document.createElement('option');
+        option.value = value;
+        option.textContent = label;
+        return option;
+      }),
+    );
+    categoryEl.value = card.category || '';
+    categoryEl.disabled = !onCategory;
+    drawSwatch();
+  }
+
+  function drawSwatch() {
+    const category = categoryOf({ category: categoryEl.value || null }, new Map(categoryList.map((c) => [c.id, c])));
+    swatch.style.background = category.color;
+  }
+
+  // Picking a category saves it at once. If Firestore refuses, the menu
+  // goes back to what it was, with a line saying so.
+  categoryEl.addEventListener('change', () => {
+    if (!card || !onCategory) return;
+    const shown = card;
+    const was = shown.category || null;
+    const next = categoryEl.value || null;
+    shown.category = next;
+    drawSwatch();
+    categoryStatus.textContent = 'Saved.';
+    onCategory(shown, next).catch((err) => {
+      shown.category = was;
+      if (card !== shown) return;
+      categoryEl.value = was || '';
+      drawSwatch();
+      categoryStatus.textContent = `Didn't save (${err.code || err.message}).`;
+    });
+  });
 
   // The chain, once Firestore answers, if the box still shows that card.
   // A chain of one (its follow-up never made) shows nothing.

@@ -2765,11 +2765,32 @@ a.button:hover { color: var(--ink); }
 .record-box-category {
   margin: -6px 0 0;
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   gap: 7px;
   font-size: 13px;
   color: var(--ink-secondary);
 }
+
+/* The category in a finished card's box: a quiet menu that reads like the
+   line it replaced until you open it. Saved as soon as you pick. */
+.record-category-select {
+  min-height: 44px;
+  max-width: 100%;
+  padding: 0 4px 0 6px;
+  margin-left: -6px;
+  border: 1px solid transparent;
+  border-radius: var(--radius-button);
+  background-color: transparent;
+  font: inherit;
+  font-size: 13px;
+  color: var(--ink-secondary);
+  cursor: pointer;
+}
+.record-category-select:hover { border-color: var(--field-border); background-color: var(--surface); }
+.record-category-select:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+.record-category-status { font-size: 12px; color: var(--ink-secondary); }
+.record-category-status:empty { display: none; }
 
 .record-box-project {
   margin: -8px 0 0;

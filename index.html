@@ -438,7 +438,13 @@
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"></path></svg>
         </button>
       </div>
-      <p id="record-category" class="record-box-category"></p>
+      <!-- The category: changeable here, saved as soon as you pick. -->
+      <div class="record-box-category">
+        <span id="record-swatch" class="swatch" aria-hidden="true"></span>
+        <label for="record-category" class="visually-hidden">Category</label>
+        <select id="record-category" class="record-category-select" aria-describedby="record-category-status"></select>
+        <span id="record-category-status" class="record-category-status" role="status"></span>
+      </div>
       <p id="record-project" class="record-box-project" hidden></p>
       <p id="record-when" class="record-box-when"></p>
       <p id="record-notes" class="record-box-notes" hidden></p>
