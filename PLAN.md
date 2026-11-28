@@ -467,7 +467,13 @@ yellow note when dates are out of order, the hover line, Mark done's
 "Next in the plan", and "The plan" in What you did. Site only. See
 "Plans in projects" below.
 
-**Next: test plans in projects**, then confirm, commit, and merge.
+**Also on `main`, awaiting your test** (2026-11-22 to 11-28): the empty
+Projects box (what a project holds, focus on New project) and changing a
+finished card's category from its box. See their sections below.
+
+**Next: test all three live** (plans in projects first), in a fresh
+session: report what you find, fix what needs fixing, then mark each
+confirmed. After that, the tuning slice.
 
 **After that: the tuning slice, when you're ready** (item 3 in the queue; you
 wanted to come back to it later, not straight away). Its six questions
